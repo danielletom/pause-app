@@ -1,131 +1,177 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
   SafeAreaView,
-  ScrollView,
   StyleSheet,
+  ActivityIndicator,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { useRouter, useFocusEffect } from 'expo-router';
+import { useAuth } from '@clerk/clerk-expo';
+import AnimatedPressable from '@/components/AnimatedPressable';
+import { hapticMedium, hapticLight } from '@/lib/haptics';
+import { apiRequest } from '@/lib/api';
 
 export default function LogScreen() {
+  const router = useRouter();
+  const { getToken } = useAuth();
+  const [morningDone, setMorningDone] = useState(false);
+  const [eveningDone, setEveningDone] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // Check what's already logged today
+  useFocusEffect(
+    useCallback(() => {
+      (async () => {
+        try {
+          setLoading(true);
+          const token = await getToken();
+          const today = new Date().toISOString().split('T')[0];
+          const logs = await apiRequest(`/api/logs?date=${today}`, token).catch(() => []);
+          const entries = Array.isArray(logs) ? logs : [];
+          setMorningDone(entries.some((e: any) => e.logType === 'morning'));
+          setEveningDone(entries.some((e: any) => e.logType === 'evening'));
+        } catch {
+          // Non-critical
+        } finally {
+          setLoading(false);
+        }
+      })();
+    }, [])
+  );
+
+  const hour = new Date().getHours();
+  const suggestEvening = hour >= 14 || morningDone;
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingWrap}>
+          <ActivityIndicator size="large" color="#1c1917" />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>Log</Text>
-          <Text style={styles.subtitle}>How are you feeling?</Text>
-        </View>
+      <View style={styles.content}>
+        <Text style={styles.title}>Check in</Text>
+        <Text style={styles.subtitle}>How's your day going?</Text>
 
-        {/* Log Options */}
-        <View style={styles.cardsContainer}>
-          {/* Quick Log */}
-          <TouchableOpacity style={styles.card} activeOpacity={0.7}>
-            <View style={[styles.cardIcon, { backgroundColor: '#fef3c7' }]}>
-              <Ionicons name="flash" size={24} color="#f59e0b" />
-            </View>
-            <View style={styles.cardContent}>
-              <Text style={styles.cardTitle}>Quick Log</Text>
-              <Text style={styles.cardDescription}>
-                Rate your overall feeling in seconds
+        {/* Morning card */}
+        <AnimatedPressable
+          onPress={() => {
+            hapticMedium();
+            router.push({ pathname: '/(app)/quick-log', params: { mode: 'morning' } });
+          }}
+          scaleDown={0.97}
+          style={[
+            styles.card,
+            morningDone && styles.cardDone,
+            !suggestEvening && !morningDone && styles.cardHighlighted,
+          ]}
+        >
+          <View style={styles.cardRow}>
+            <Text style={styles.cardEmoji}>☀️</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.cardTitle, morningDone && styles.cardTitleDone]}>
+                Morning check-in
+              </Text>
+              <Text style={styles.cardDesc}>
+                {morningDone ? 'Completed ✓' : 'Sleep, mood & what\'s ahead'}
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="#d6d3d1" />
-          </TouchableOpacity>
+            <Text style={styles.cardArrow}>›</Text>
+          </View>
+        </AnimatedPressable>
 
-          {/* Log Meds */}
-          <TouchableOpacity style={styles.card} activeOpacity={0.7}>
-            <View style={[styles.cardIcon, { backgroundColor: '#d1fae5' }]}>
-              <Ionicons name="flask" size={24} color="#059669" />
-            </View>
-            <View style={styles.cardContent}>
-              <Text style={styles.cardTitle}>Log Meds</Text>
-              <Text style={styles.cardDescription}>
-                Track your medications and supplements
+        {/* Evening card */}
+        <AnimatedPressable
+          onPress={() => {
+            hapticMedium();
+            router.push({ pathname: '/(app)/quick-log', params: { mode: 'evening' } });
+          }}
+          scaleDown={0.97}
+          style={[
+            styles.card,
+            eveningDone && styles.cardDone,
+            suggestEvening && !eveningDone && styles.cardHighlighted,
+          ]}
+        >
+          <View style={styles.cardRow}>
+            <Text style={styles.cardEmoji}>🌙</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.cardTitle, eveningDone && styles.cardTitleDone]}>
+                Evening check-in
+              </Text>
+              <Text style={styles.cardDesc}>
+                {eveningDone ? 'Completed ✓' : 'Symptoms, mood & triggers'}
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="#d6d3d1" />
-          </TouchableOpacity>
+            <Text style={styles.cardArrow}>›</Text>
+          </View>
+        </AnimatedPressable>
 
-          {/* Detailed Log */}
-          <TouchableOpacity style={styles.card} activeOpacity={0.7}>
-            <View style={[styles.cardIcon, { backgroundColor: '#e0e7ff' }]}>
-              <Ionicons name="document-text" size={24} color="#6366f1" />
-            </View>
-            <View style={styles.cardContent}>
-              <Text style={styles.cardTitle}>Detailed Log</Text>
-              <Text style={styles.cardDescription}>
-                Full symptom tracking with notes
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#d6d3d1" />
-          </TouchableOpacity>
-        </View>
-
-        {/* Recent Logs */}
-        <Text style={styles.sectionTitle}>Recent</Text>
-        <View style={styles.emptyRecent}>
-          <Text style={styles.emptyRecentText}>No recent logs</Text>
-        </View>
-      </ScrollView>
+        {/* Helper text */}
+        <Text style={styles.helperText}>
+          {morningDone && eveningDone
+            ? 'Both check-ins done today — great job! 🎉'
+            : '3 steps · about 30 seconds each'}
+        </Text>
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  container: { flex: 1, backgroundColor: '#fafaf9' },
+  loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+
+  content: {
     flex: 1,
-    backgroundColor: '#fafaf9',
-  },
-  scrollContent: {
     paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 24,
+    paddingTop: 48,
   },
-  header: {
-    marginBottom: 28,
-  },
+
   title: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '700',
     color: '#1c1917',
     marginBottom: 4,
   },
   subtitle: {
-    fontSize: 16,
-    color: '#78716c',
-  },
-  cardsContainer: {
-    gap: 12,
+    fontSize: 14,
+    color: '#a8a29e',
     marginBottom: 32,
   },
+
   card: {
     backgroundColor: '#ffffff',
     borderRadius: 16,
     padding: 18,
-    flexDirection: 'row',
-    alignItems: 'center',
+    marginBottom: 12,
+    borderWidth: 2,
+    borderColor: 'transparent',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
     elevation: 1,
   },
-  cardIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
+  cardHighlighted: {
+    borderColor: '#1c1917',
   },
-  cardContent: {
-    flex: 1,
-    marginLeft: 14,
+  cardDone: {
+    opacity: 0.55,
+  },
+  cardRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+  },
+  cardEmoji: {
+    fontSize: 28,
   },
   cardTitle: {
     fontSize: 16,
@@ -133,30 +179,22 @@ const styles = StyleSheet.create({
     color: '#1c1917',
     marginBottom: 2,
   },
-  cardDescription: {
-    fontSize: 13,
+  cardTitleDone: {
     color: '#78716c',
-    lineHeight: 18,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1c1917',
-    marginBottom: 12,
-  },
-  emptyRecent: {
-    backgroundColor: '#ffffff',
-    borderRadius: 14,
-    padding: 24,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  emptyRecentText: {
-    fontSize: 14,
+  cardDesc: {
+    fontSize: 13,
     color: '#a8a29e',
+  },
+  cardArrow: {
+    fontSize: 20,
+    color: '#d6d3d1',
+  },
+
+  helperText: {
+    fontSize: 12,
+    color: '#a8a29e',
+    textAlign: 'center',
+    marginTop: 16,
   },
 });

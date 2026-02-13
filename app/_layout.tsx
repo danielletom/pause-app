@@ -3,12 +3,25 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
+import { Platform } from 'react-native';
 import 'react-native-reanimated';
-import { ClerkProvider, ClerkLoaded } from '@clerk/clerk-expo';
+import { ClerkProvider, ClerkLoaded, useAuth } from '@clerk/clerk-expo';
 import { tokenCache } from '../lib/auth';
+import * as Notifications from 'expo-notifications';
+import { useRouter } from 'expo-router';
+import { apiRequest } from '@/lib/api';
 
 import { useColorScheme } from '@/components/useColorScheme';
+
+// Configure foreground notification display
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -62,12 +75,60 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
+  const { isSignedIn, getToken } = useAuth();
+  const router = useRouter();
+  const notificationListener = useRef<Notifications.EventSubscription>();
+  const responseListener = useRef<Notifications.EventSubscription>();
+
+  // Register for push notifications when signed in
+  useEffect(() => {
+    if (!isSignedIn) return;
+
+    (async () => {
+      try {
+        const { status: existing } = await Notifications.getPermissionsAsync();
+        let finalStatus = existing;
+        if (existing !== 'granted') {
+          const { status } = await Notifications.requestPermissionsAsync();
+          finalStatus = status;
+        }
+        if (finalStatus !== 'granted') return;
+
+        const pushToken = await Notifications.getExpoPushTokenAsync();
+        const token = await getToken();
+        await apiRequest('/api/push-token', token, {
+          method: 'POST',
+          body: JSON.stringify({
+            expoToken: pushToken.data,
+            platform: Platform.OS,
+          }),
+        });
+      } catch {
+        // Non-critical — don't block app
+      }
+    })();
+
+    // Listen for notification taps (deep links)
+    responseListener.current = Notifications.addNotificationResponseReceivedListener((response) => {
+      const screen = response.notification.request.content.data?.screen;
+      if (screen && typeof screen === 'string') {
+        router.push(screen as any);
+      }
+    });
+
+    return () => {
+      if (responseListener.current) {
+        Notifications.removeNotificationSubscription(responseListener.current);
+      }
+    };
+  }, [isSignedIn]);
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+        <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
         <Stack.Screen name="(app)" options={{ headerShown: false }} />
       </Stack>
     </ThemeProvider>

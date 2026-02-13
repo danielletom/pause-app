@@ -13,15 +13,50 @@ import {
 } from 'react-native';
 import { useSignIn } from '@clerk/clerk-expo';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { useAppleAuth } from '@/lib/useAppleAuth';
+
+const __DEV__ = process.env.NODE_ENV !== 'production';
+const TEST_EMAIL = 'test@pauseapp.dev';
+const TEST_PASSWORD = 'TestPause2025!';
 
 export default function SignInScreen() {
   const { signIn, setActive, isLoaded } = useSignIn();
   const router = useRouter();
+  const { signInWithApple, loading: appleLoading, error: appleError } = useAppleAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const useTestAccount = useCallback(async () => {
+    if (!isLoaded) return;
+    setEmail(TEST_EMAIL);
+    setPassword(TEST_PASSWORD);
+    setError('');
+    setLoading(true);
+    try {
+      const result = await signIn.create({
+        identifier: TEST_EMAIL,
+        password: TEST_PASSWORD,
+      });
+      if (result.status === 'complete') {
+        await setActive({ session: result.createdSessionId });
+        router.replace('/');
+      } else {
+        setError('Test sign-in incomplete. Create the test account in Clerk first.');
+      }
+    } catch (err: any) {
+      const message =
+        err?.errors?.[0]?.longMessage ||
+        err?.errors?.[0]?.message ||
+        'Test account not found. Create it in Clerk dashboard first (test@pauseapp.dev / TestPause2025!)';
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  }, [isLoaded, signIn, setActive, router]);
 
   const onSignIn = useCallback(async () => {
     if (!isLoaded) return;
@@ -37,7 +72,7 @@ export default function SignInScreen() {
 
       if (result.status === 'complete') {
         await setActive({ session: result.createdSessionId });
-        router.replace('/(app)');
+        router.replace('/');
       } else {
         setError('Sign in could not be completed. Please try again.');
       }
@@ -61,27 +96,55 @@ export default function SignInScreen() {
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
+          {/* Back */}
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <Text style={styles.backText}>← Back</Text>
+          </TouchableOpacity>
+
           {/* Logo */}
           <View style={styles.logoContainer}>
-            <Text style={styles.logoText}>pause</Text>
             <View style={styles.logoDot} />
+            <Text style={styles.logoText}>pause</Text>
           </View>
 
           {/* Heading */}
           <Text style={styles.heading}>Welcome back</Text>
-          <Text style={styles.subheading}>
-            Sign in to continue tracking your wellbeing
-          </Text>
+          <Text style={styles.subheading}>Sign in to continue tracking</Text>
 
-          {/* Error */}
-          {error ? (
+          {/* Errors */}
+          {(error || appleError) ? (
             <View style={styles.errorContainer}>
-              <Text style={styles.errorText}>{error}</Text>
+              <Text style={styles.errorText}>{error || appleError}</Text>
             </View>
           ) : null}
 
-          {/* Form */}
+          {/* Apple Sign In — Primary */}
+          <TouchableOpacity
+            style={[styles.appleButton, appleLoading && styles.buttonDisabled]}
+            onPress={signInWithApple}
+            disabled={appleLoading}
+            activeOpacity={0.8}
+          >
+            {appleLoading ? (
+              <ActivityIndicator color="#ffffff" />
+            ) : (
+              <View style={styles.appleButtonContent}>
+                <Ionicons name="logo-apple" size={18} color="#ffffff" />
+                <Text style={styles.appleButtonText}>Continue with Apple</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+
+          {/* Divider */}
+          <View style={styles.dividerContainer}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>or</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          {/* Email/Password Form */}
           <View style={styles.form}>
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Email</Text>
@@ -99,15 +162,10 @@ export default function SignInScreen() {
             </View>
 
             <View style={styles.inputContainer}>
-              <View style={styles.labelRow}>
-                <Text style={styles.label}>Password</Text>
-                <TouchableOpacity>
-                  <Text style={styles.forgotLink}>Forgot password?</Text>
-                </TouchableOpacity>
-              </View>
+              <Text style={styles.label}>Password</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Enter your password"
+                placeholder="••••••••"
                 placeholderTextColor="#a8a29e"
                 value={password}
                 onChangeText={setPassword}
@@ -116,40 +174,46 @@ export default function SignInScreen() {
               />
             </View>
 
-            <TouchableOpacity
-              style={[styles.signInButton, loading && styles.signInButtonDisabled]}
-              onPress={onSignIn}
-              disabled={loading}
-              activeOpacity={0.8}
-            >
-              {loading ? (
-                <ActivityIndicator color="#ffffff" />
-              ) : (
-                <Text style={styles.signInButtonText}>Sign in</Text>
-              )}
+            <TouchableOpacity style={styles.forgotButton}>
+              <Text style={styles.forgotLink}>Forgot password?</Text>
             </TouchableOpacity>
           </View>
+        </ScrollView>
 
-          {/* Divider */}
-          <View style={styles.dividerContainer}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>or</Text>
-            <View style={styles.dividerLine} />
-          </View>
-
-          {/* Apple Button */}
-          <TouchableOpacity style={styles.appleButton} activeOpacity={0.8}>
-            <Text style={styles.appleButtonText}>Continue with Apple</Text>
+        {/* Bottom pinned section */}
+        <View style={styles.bottomSection}>
+          <TouchableOpacity
+            style={[styles.signInButton, loading && styles.buttonDisabled]}
+            onPress={onSignIn}
+            disabled={loading}
+            activeOpacity={0.8}
+          >
+            {loading ? (
+              <ActivityIndicator color="#ffffff" />
+            ) : (
+              <Text style={styles.signInButtonText}>Sign in</Text>
+            )}
           </TouchableOpacity>
 
-          {/* Sign Up Link */}
           <View style={styles.signUpContainer}>
             <Text style={styles.signUpText}>Don't have an account? </Text>
             <TouchableOpacity onPress={() => router.push('/(auth)/sign-up')}>
               <Text style={styles.signUpLink}>Sign up free</Text>
             </TouchableOpacity>
           </View>
-        </ScrollView>
+
+          {/* Dev Test Account */}
+          {__DEV__ && (
+            <TouchableOpacity
+              style={styles.testAccountButton}
+              onPress={useTestAccount}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="flask-outline" size={14} color="#a8a29e" />
+              <Text style={styles.testAccountText}>Use test account</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -166,40 +230,52 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: 60,
-    paddingBottom: 40,
+    paddingTop: 24,
   },
+
+  // Back
+  backButton: {
+    marginBottom: 24,
+  },
+  backText: {
+    fontSize: 13,
+    color: '#a8a29e',
+  },
+
+  // Logo
   logoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 48,
+    marginBottom: 24,
+  },
+  logoDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#1c1917',
+    marginRight: 6,
   },
   logoText: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: '700',
     color: '#1c1917',
     letterSpacing: -0.5,
   },
-  logoDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#1c1917',
-    marginLeft: 4,
-    marginTop: 2,
-  },
+
+  // Heading
   heading: {
-    fontSize: 28,
+    fontSize: 22,
     fontWeight: '700',
     color: '#1c1917',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   subheading: {
-    fontSize: 16,
-    color: '#78716c',
-    marginBottom: 32,
-    lineHeight: 22,
+    fontSize: 13,
+    color: '#a8a29e',
+    marginBottom: 24,
   },
+
+  // Error
   errorContainer: {
     backgroundColor: '#fef2f2',
     borderRadius: 12,
@@ -208,60 +284,38 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: '#dc2626',
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  form: {
-    gap: 20,
-  },
-  inputContainer: {
-    gap: 6,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#1c1917',
-  },
-  labelRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  forgotLink: {
     fontSize: 13,
-    color: '#78716c',
-    fontWeight: '500',
+    lineHeight: 18,
   },
-  input: {
-    backgroundColor: '#fafaf9',
-    borderWidth: 1,
-    borderColor: '#e7e5e4',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-    color: '#1c1917',
-  },
-  signInButton: {
+
+  // Apple button
+  appleButton: {
     backgroundColor: '#1c1917',
     borderRadius: 16,
-    paddingVertical: 16,
+    paddingVertical: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 4,
+    marginBottom: 4,
   },
-  signInButtonDisabled: {
-    opacity: 0.7,
+  appleButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
-  signInButtonText: {
+  appleButtonText: {
     color: '#ffffff',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
   },
+  buttonDisabled: {
+    opacity: 0.7,
+  },
+
+  // Divider
   dividerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 28,
+    marginVertical: 16,
   },
   dividerLine: {
     flex: 1,
@@ -269,37 +323,95 @@ const styles = StyleSheet.create({
     backgroundColor: '#e7e5e4',
   },
   dividerText: {
-    marginHorizontal: 16,
-    fontSize: 14,
-    color: '#a8a29e',
+    marginHorizontal: 12,
+    fontSize: 12,
+    color: '#d6d3d1',
   },
-  appleButton: {
-    backgroundColor: '#ffffff',
+
+  // Form
+  form: {
+    gap: 14,
+  },
+  inputContainer: {
+    gap: 4,
+  },
+  label: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#44403c',
+  },
+  input: {
     borderWidth: 1,
     borderColor: '#e7e5e4',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 14,
+    color: '#1c1917',
+    backgroundColor: '#ffffff',
+  },
+  forgotButton: {
+    alignSelf: 'flex-start',
+  },
+  forgotLink: {
+    fontSize: 12,
+    color: '#a8a29e',
+    textDecorationLine: 'underline',
+  },
+
+  // Bottom
+  bottomSection: {
+    paddingHorizontal: 24,
+    paddingBottom: 40,
+    paddingTop: 16,
+  },
+  signInButton: {
+    backgroundColor: '#1c1917',
     borderRadius: 16,
-    paddingVertical: 16,
+    paddingVertical: 14,
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: 16,
   },
-  appleButtonText: {
-    color: '#1c1917',
-    fontSize: 16,
+  signInButtonText: {
+    color: '#ffffff',
+    fontSize: 15,
     fontWeight: '600',
   },
+
+  // Sign up
   signUpContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 28,
   },
   signUpText: {
-    fontSize: 14,
-    color: '#78716c',
+    fontSize: 13,
+    color: '#d6d3d1',
   },
   signUpLink: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
     color: '#1c1917',
+    textDecorationLine: 'underline',
+  },
+
+  // Dev test
+  testAccountButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: 16,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: '#e7e5e4',
+    borderRadius: 10,
+    borderStyle: 'dashed',
+  },
+  testAccountText: {
+    fontSize: 12,
+    color: '#a8a29e',
+    fontWeight: '500',
   },
 });

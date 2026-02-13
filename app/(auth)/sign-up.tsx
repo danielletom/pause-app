@@ -13,10 +13,13 @@ import {
 } from 'react-native';
 import { useSignUp } from '@clerk/clerk-expo';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { useAppleAuth } from '@/lib/useAppleAuth';
 
 export default function SignUpScreen() {
   const { signUp, setActive, isLoaded } = useSignUp();
   const router = useRouter();
+  const { signInWithApple, loading: appleLoading, error: appleError } = useAppleAuth();
 
   const [firstName, setFirstName] = useState('');
   const [email, setEmail] = useState('');
@@ -33,12 +36,20 @@ export default function SignUpScreen() {
     setLoading(true);
 
     try {
-      await signUp.create({
+      const result = await signUp.create({
         firstName,
         emailAddress: email,
         password,
       });
 
+      // If sign-up is complete (no verification required), activate immediately
+      if (result.status === 'complete') {
+        await setActive({ session: result.createdSessionId });
+        router.replace('/');
+        return;
+      }
+
+      // If Clerk requires verification (dashboard setting), fall back to email code
       await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
       setPendingVerification(true);
     } catch (err: any) {
@@ -50,7 +61,7 @@ export default function SignUpScreen() {
     } finally {
       setLoading(false);
     }
-  }, [isLoaded, firstName, email, password, signUp]);
+  }, [isLoaded, firstName, email, password, signUp, setActive, router]);
 
   const onVerify = useCallback(async () => {
     if (!isLoaded) return;
@@ -65,7 +76,7 @@ export default function SignUpScreen() {
 
       if (result.status === 'complete') {
         await setActive({ session: result.createdSessionId });
-        router.replace('/(app)');
+        router.replace('/');
       } else {
         setError('Verification could not be completed. Please try again.');
       }
@@ -163,13 +174,37 @@ export default function SignUpScreen() {
           </Text>
 
           {/* Error */}
-          {error ? (
+          {(error || appleError) ? (
             <View style={styles.errorContainer}>
-              <Text style={styles.errorText}>{error}</Text>
+              <Text style={styles.errorText}>{error || appleError}</Text>
             </View>
           ) : null}
 
-          {/* Form */}
+          {/* Apple Sign Up — Primary */}
+          <TouchableOpacity
+            style={[styles.appleButton, appleLoading && styles.appleButtonDisabled]}
+            onPress={signInWithApple}
+            disabled={appleLoading}
+            activeOpacity={0.8}
+          >
+            {appleLoading ? (
+              <ActivityIndicator color="#ffffff" />
+            ) : (
+              <View style={styles.appleButtonContent}>
+                <Ionicons name="logo-apple" size={20} color="#ffffff" />
+                <Text style={styles.appleButtonText}>Continue with Apple</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+
+          {/* Divider */}
+          <View style={styles.dividerContainer}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>or sign up with email</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          {/* Email Form — Fallback */}
           <View style={styles.form}>
             <View style={styles.inputContainer}>
               <Text style={styles.label}>First name</Text>
@@ -316,8 +351,43 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#1c1917',
   },
-  primaryButton: {
+  appleButton: {
     backgroundColor: '#1c1917',
+    borderRadius: 16,
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  appleButtonDisabled: {
+    opacity: 0.7,
+  },
+  appleButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  appleButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 24,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#e7e5e4',
+  },
+  dividerText: {
+    marginHorizontal: 14,
+    fontSize: 13,
+    color: '#a8a29e',
+  },
+  primaryButton: {
+    backgroundColor: '#44403c',
     borderRadius: 16,
     paddingVertical: 16,
     alignItems: 'center',
