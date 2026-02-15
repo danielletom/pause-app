@@ -19,8 +19,8 @@ import { useProfile } from '@/lib/useProfile';
 
 /* ─── Constants ──────────────────────────────────────── */
 
-const MORNING_STEPS = ['Sleep', 'Body', "What's Ahead", 'Gratitude'];
-const EVENING_STEPS = ['Your Day', 'Body', 'Activity', 'Highlight'];
+const MORNING_STEPS = ['Sleep', 'Body', 'Meds', "What's Ahead", 'Gratitude'];
+const EVENING_STEPS = ['Your Day', 'Body', 'Activity', 'Meds', 'Highlight'];
 
 const SLEEP_QUALITY = [
   { val: 'terrible', emoji: '😫', label: 'Terrible', sublabel: 'Could barely sleep' },
@@ -219,6 +219,11 @@ export default function QuickLogScreen() {
   const [highlightText, setHighlightText] = useState('');
   const [learnedText, setLearnedText] = useState('');
 
+  /* ── Meds state ────── */
+  const [medications, setMedications] = useState<{ id: number; name: string; dose: string; time: string; type: string }[]>([]);
+  const [medsTaken, setMedsTaken] = useState<Set<number>>(new Set());
+  const [existingMedLogs, setExistingMedLogs] = useState<Set<number>>(new Set());
+
   /* ── Period tracker state ────── */
   const [periodStatus, setPeriodStatus] = useState<'none' | 'period' | 'spotting'>('none');
   const [flowIntensity, setFlowIntensity] = useState<'light' | 'medium' | 'heavy' | null>(null);
@@ -232,7 +237,7 @@ export default function QuickLogScreen() {
     userProfile.stage === 'Perimenopause'
   );
 
-  /* ── Fetch profile custom symptoms + morning log ── */
+  /* ── Fetch profile custom symptoms + morning log + medications ── */
   useFocusEffect(
     useCallback(() => {
       (async () => {
@@ -243,6 +248,26 @@ export default function QuickLogScreen() {
           if (profile?.customSymptoms && Array.isArray(profile.customSymptoms)) {
             setCustomSymptoms(profile.customSymptoms);
           }
+
+          // Fetch medications
+          const meds = await apiRequest('/api/meds', token).catch(() => []);
+          if (Array.isArray(meds) && meds.length > 0) {
+            // Filter by time-of-day: morning meds for AM, evening meds for PM
+            const timeMeds = meds.filter((m: any) => {
+              if (isMorning) return m.time === 'morning' || m.time === 'with_food' || m.time === 'anytime';
+              return m.time === 'evening' || m.time === 'bedtime' || m.time === 'with_food' || m.time === 'anytime';
+            });
+            setMedications(timeMeds.length > 0 ? timeMeds : meds);
+
+            // Fetch today's med logs to see which are already taken
+            const medLogs = await apiRequest(`/api/meds/logs?date=${logDate}`, token).catch(() => []);
+            if (Array.isArray(medLogs)) {
+              const takenIds = new Set<number>(medLogs.filter((l: any) => l.taken).map((l: any) => l.medicationId));
+              setExistingMedLogs(takenIds);
+              setMedsTaken(takenIds);
+            }
+          }
+
           // For evening mode, fetch today's morning log
           if (!isMorning) {
             const today = logDate;
@@ -314,6 +339,16 @@ export default function QuickLogScreen() {
     setCustomSymptomText('');
     setShowCustomInput(false);
     Keyboard.dismiss();
+  };
+
+  const toggleMed = (medId: number) => {
+    hapticLight();
+    setMedsTaken((prev) => {
+      const n = new Set(prev);
+      if (n.has(medId)) n.delete(medId);
+      else n.add(medId);
+      return n;
+    });
   };
 
   const handleNext = () => {
@@ -410,6 +445,27 @@ export default function QuickLogScreen() {
             logType: 'evening',
           }),
         });
+      }
+
+      // Log medications that were toggled
+      if (medications.length > 0) {
+        const medPromises = medications.map((med) => {
+          const taken = medsTaken.has(med.id);
+          const wasAlreadyLogged = existingMedLogs.has(med.id);
+          // Only send if status changed or not yet logged
+          if (!wasAlreadyLogged || taken !== existingMedLogs.has(med.id)) {
+            return apiRequest('/api/meds/logs', token, {
+              method: 'POST',
+              body: JSON.stringify({
+                medicationId: med.id,
+                date: logDate,
+                taken,
+              }),
+            }).catch(() => {});
+          }
+          return Promise.resolve();
+        });
+        await Promise.all(medPromises);
       }
 
       hapticSuccess();
@@ -528,8 +584,12 @@ export default function QuickLogScreen() {
       case 1:
         return renderBodyStep();
 
-      /* Step 2 — What's Ahead */
+      /* Step 2 — Meds */
       case 2:
+        return renderMedsStep();
+
+      /* Step 3 — What's Ahead */
+      case 3:
         return (
           <View>
             <Text style={styles.stepTitle}>What's ahead today?</Text>
@@ -573,8 +633,8 @@ export default function QuickLogScreen() {
           </View>
         );
 
-      /* Step 3 — Gratitude */
-      case 3:
+      /* Step 4 — Gratitude */
+      case 4:
         return (
           <View>
             <Text style={styles.stepTitle}>Start with gratitude</Text>
@@ -794,8 +854,12 @@ export default function QuickLogScreen() {
           </View>
         );
 
-      /* Step 3 — Highlight */
+      /* Step 3 — Meds */
       case 3:
+        return renderMedsStep();
+
+      /* Step 4 — Highlight */
+      case 4:
         return (
           <View>
             <Text style={styles.stepTitle}>End on a high note</Text>
@@ -844,6 +908,104 @@ export default function QuickLogScreen() {
       default:
         return null;
     }
+  };
+
+  /* ──────────────── Shared: Meds step ──────────────── */
+
+  const renderMedsStep = () => {
+    if (medications.length === 0) {
+      return (
+        <View>
+          <Text style={styles.stepTitle}>
+            {isMorning ? 'Morning meds' : 'Evening meds check'}
+          </Text>
+          <Text style={styles.stepSubtitle}>Track your medications and supplements</Text>
+
+          <View style={styles.medsEmptyCard}>
+            <Text style={styles.medsEmptyEmoji}>💊</Text>
+            <Text style={styles.medsEmptyTitle}>No medications added yet</Text>
+            <Text style={styles.medsEmptyDesc}>
+              Add your HRT, supplements, or medications in your profile to track them here.
+            </Text>
+            <AnimatedPressable
+              onPress={() => {
+                hapticLight();
+                router.push('/(app)/meds');
+              }}
+              scaleDown={0.97}
+              style={styles.medsAddButton}
+            >
+              <Text style={styles.medsAddButtonText}>+ Add medications</Text>
+            </AnimatedPressable>
+          </View>
+        </View>
+      );
+    }
+
+    return (
+      <View>
+        <Text style={styles.stepTitle}>
+          {isMorning ? 'Morning meds' : 'Evening meds check'}
+        </Text>
+        <Text style={styles.stepSubtitle}>
+          {isMorning ? 'Quick check — tap what you\'ve taken' : 'Anything left for tonight?'}
+        </Text>
+
+        <View style={{ gap: 10 }}>
+          {medications.map((med) => {
+            const taken = medsTaken.has(med.id);
+            return (
+              <AnimatedPressable
+                key={med.id}
+                onPress={() => toggleMed(med.id)}
+                scaleDown={0.97}
+                style={[styles.medCard, taken && styles.medCardTaken]}
+              >
+                <View style={[
+                  styles.medIcon,
+                  med.type === 'supplement' ? styles.medIconAmber : styles.medIconDefault,
+                ]}>
+                  <Text style={styles.medIconText}>
+                    {med.type === 'supplement' ? '⬡' : '◎'}
+                  </Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.medName, taken && styles.medNameTaken]}>
+                    {med.name}
+                  </Text>
+                  <Text style={styles.medDose}>{med.dose}</Text>
+                </View>
+                <View style={[styles.medCheck, taken && styles.medCheckTaken]}>
+                  {taken && <Text style={styles.medCheckText}>✓</Text>}
+                </View>
+              </AnimatedPressable>
+            );
+          })}
+        </View>
+
+        <AnimatedPressable
+          onPress={() => {
+            hapticLight();
+            // Skip all — clear taken
+            if (medsTaken.size > 0) {
+              setMedsTaken(new Set());
+            }
+          }}
+          scaleDown={0.97}
+          style={{ marginTop: 14 }}
+        >
+          <Text style={styles.medsSkipText}>
+            {medsTaken.size === 0 ? 'I didn\'t take anything today' : 'Clear all'}
+          </Text>
+        </AnimatedPressable>
+
+        <View style={styles.medsInfoCard}>
+          <Text style={styles.medsInfoText}>
+            Tracking this helps us see if your meds are working and spot patterns with your symptoms.
+          </Text>
+        </View>
+      </View>
+    );
   };
 
   /* ──────────────── Shared: Body/Symptoms step ──────────────── */
@@ -1464,6 +1626,78 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   promptChipText: { fontSize: 12, color: '#78716c' },
+
+  /* Meds step */
+  medsEmptyCard: {
+    backgroundColor: '#fafaf9',
+    borderRadius: 20,
+    padding: 28,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    borderColor: '#e7e5e4',
+    marginTop: 8,
+  },
+  medsEmptyEmoji: { fontSize: 32, marginBottom: 12 },
+  medsEmptyTitle: { fontSize: 14, fontWeight: '600', color: '#1c1917', marginBottom: 6 },
+  medsEmptyDesc: { fontSize: 12, color: '#a8a29e', textAlign: 'center', lineHeight: 18, marginBottom: 16, paddingHorizontal: 16 },
+  medsAddButton: {
+    backgroundColor: '#1c1917',
+    borderRadius: 14,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+  },
+  medsAddButtonText: { color: '#ffffff', fontSize: 13, fontWeight: '600' },
+
+  medCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    padding: 14,
+    borderRadius: 18,
+    borderWidth: 2,
+    borderColor: '#f5f5f4',
+    backgroundColor: '#ffffff',
+  },
+  medCardTaken: {
+    borderColor: '#34d399',
+    backgroundColor: '#f0fdf4',
+  },
+  medIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  medIconDefault: { backgroundColor: '#1c1917' },
+  medIconAmber: { backgroundColor: '#fef3c7' },
+  medIconText: { fontSize: 14, color: '#ffffff' },
+  medName: { fontSize: 14, fontWeight: '500', color: '#1c1917' },
+  medNameTaken: { color: '#a8a29e', textDecorationLine: 'line-through' },
+  medDose: { fontSize: 12, color: '#a8a29e', marginTop: 1 },
+  medCheck: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#e7e5e4',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  medCheckTaken: {
+    backgroundColor: '#22c55e',
+    borderColor: '#22c55e',
+  },
+  medCheckText: { fontSize: 12, color: '#ffffff', fontWeight: '700' },
+  medsSkipText: { fontSize: 12, color: '#a8a29e', textDecorationLine: 'underline' },
+  medsInfoCard: {
+    backgroundColor: '#fafaf9',
+    borderRadius: 14,
+    padding: 14,
+    marginTop: 16,
+  },
+  medsInfoText: { fontSize: 12, color: '#78716c', lineHeight: 18 },
 
   /* Footer */
   footer: {

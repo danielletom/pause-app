@@ -6,7 +6,6 @@ import {
   ScrollView,
   StyleSheet,
   ActivityIndicator,
-  FlatList,
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useUser, useAuth } from '@clerk/clerk-expo';
@@ -23,17 +22,21 @@ function toDateStr(d: Date): string {
   return d.toISOString().split('T')[0];
 }
 
-function buildDateStrip(count = 14): { dateStr: string; day: string; num: number; isToday: boolean }[] {
+function buildWeekStrip(): { dateStr: string; day: string; num: number; isToday: boolean }[] {
   const today = new Date();
+  const dayOfWeek = today.getDay(); // 0=Sun
+  const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - mondayOffset);
   const days: { dateStr: string; day: string; num: number; isToday: boolean }[] = [];
-  for (let i = count - 1; i >= 0; i--) {
-    const d = new Date(today);
-    d.setDate(today.getDate() - i);
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
     days.push({
       dateStr: toDateStr(d),
       day: d.toLocaleDateString('en-US', { weekday: 'short' }).slice(0, 3),
       num: d.getDate(),
-      isToday: i === 0,
+      isToday: toDateStr(d) === toDateStr(today),
     });
   }
   return days;
@@ -162,12 +165,13 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [streak, setStreak] = useState(0);
   const [lastLoggedHoursAgo, setLastLoggedHoursAgo] = useState<number | null>(null);
+  const [weekLogStatus, setWeekLogStatus] = useState<Record<string, { am: boolean; pm: boolean }>>({});
+  const [recommendation, setRecommendation] = useState<string | null>(null);
   const hasLoadedOnce = useRef(false);
-  const dateStripRef = useRef<FlatList>(null);
 
   const todayStr = useMemo(() => toDateStr(new Date()), []);
   const [selectedDate, setSelectedDate] = useState(todayStr);
-  const dateStrip = useMemo(() => buildDateStrip(14), []);
+  const dateStrip = useMemo(() => buildWeekStrip(), []);
   const isToday = selectedDate === todayStr;
 
   const dateString = useMemo(() => formatDateHeader(selectedDate), [selectedDate]);
@@ -182,12 +186,13 @@ export default function HomeScreen() {
       }
       const token = await getToken();
       const todayDate = toDateStr(new Date());
-      const [logData, medsData, medLogsData, recentLogs, articlesData] = await Promise.all([
+      const [logData, medsData, medLogsData, recentLogs, articlesData, homeData] = await Promise.all([
         apiRequest(`/api/logs?date=${selectedDate}`, token).catch(() => []),
         apiRequest('/api/meds', token).catch(() => []),
         apiRequest(`/api/meds/logs?date=${todayDate}`, token).catch(() => []),
         apiRequest('/api/logs?range=28d', token).catch(() => []),
         apiRequest('/api/articles', token).catch(() => []),
+        apiRequest(`/api/insights/home?date=${todayDate}`, token).catch(() => null),
       ]);
       // API now returns array of entries per day
       setDayLogs(Array.isArray(logData) ? logData : logData ? [logData] : []);
@@ -220,6 +225,22 @@ export default function HomeScreen() {
           setLastLoggedHoursAgo(hrs);
         }
       }
+      // Set recommendation from home API
+      if (homeData?.recommendation) {
+        setRecommendation(homeData.recommendation);
+      }
+
+      // Build week log status for AM/PM dots
+      if (Array.isArray(recentLogs) && recentLogs.length > 0) {
+        const statusMap: Record<string, { am: boolean; pm: boolean }> = {};
+        for (const log of recentLogs) {
+          if (!statusMap[log.date]) statusMap[log.date] = { am: false, pm: false };
+          if (log.logType === 'morning') statusMap[log.date].am = true;
+          if (log.logType === 'evening') statusMap[log.date].pm = true;
+        }
+        setWeekLogStatus(statusMap);
+      }
+
       hasLoadedOnce.current = true;
     } catch {
       // Non-critical
@@ -305,42 +326,49 @@ export default function HomeScreen() {
           </AnimatedPressable>
         </View>
 
-        {/* Date strip — last 14 days */}
-        <FlatList
-          ref={dateStripRef}
-          horizontal
-          data={dateStrip}
-          keyExtractor={(item) => item.dateStr}
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.dateStripContent}
-          style={styles.dateStrip}
-          initialScrollIndex={dateStrip.length - 1}
-          getItemLayout={(_, index) => ({ length: 52, offset: 52 * index, index })}
-          renderItem={({ item }) => {
+        {/* Streak calendar strip — 7-day week with AM/PM dots */}
+        <View style={styles.weekStrip}>
+          {dateStrip.map((item) => {
             const selected = item.dateStr === selectedDate;
+            const status = weekLogStatus[item.dateStr];
             return (
               <AnimatedPressable
+                key={item.dateStr}
                 onPress={() => {
                   hapticSelection();
                   setSelectedDate(item.dateStr);
                 }}
                 scaleDown={0.9}
-                style={[
-                  styles.dateStripItem,
-                  selected && styles.dateStripItemSelected,
-                ]}
+                style={[styles.weekStripItem, selected && styles.weekStripItemSelected]}
               >
-                <Text style={[styles.dateStripDay, selected && styles.dateStripDaySelected]}>
+                <Text style={[styles.weekStripDay, selected && styles.weekStripDaySelected]}>
                   {item.day}
                 </Text>
-                <Text style={[styles.dateStripNum, selected && styles.dateStripNumSelected]}>
+                <Text style={[styles.weekStripNum, selected && styles.weekStripNumSelected]}>
                   {item.num}
                 </Text>
-                {item.isToday && <View style={[styles.dateStripDot, selected && styles.dateStripDotSelected]} />}
+                <View style={styles.weekDotRow}>
+                  <View style={[styles.weekDot, status?.am ? styles.weekDotAm : styles.weekDotEmpty]} />
+                  <View style={[styles.weekDot, status?.pm ? styles.weekDotPm : styles.weekDotEmpty]} />
+                </View>
               </AnimatedPressable>
             );
-          }}
-        />
+          })}
+        </View>
+        <View style={styles.weekLegend}>
+          <View style={styles.weekLegendItem}>
+            <View style={[styles.weekLegendDot, styles.weekDotAm]} />
+            <Text style={styles.weekLegendText}>AM</Text>
+          </View>
+          <View style={styles.weekLegendItem}>
+            <View style={[styles.weekLegendDot, styles.weekDotPm]} />
+            <Text style={styles.weekLegendText}>PM</Text>
+          </View>
+          <View style={{ flex: 1 }} />
+          <AnimatedPressable onPress={() => { hapticLight(); router.push('/(app)/calendar'); }} scaleDown={0.97}>
+            <Text style={styles.seeAll}>See all →</Text>
+          </AnimatedPressable>
+        </View>
 
         {loading ? (
           <View style={styles.loadingContainer}>
@@ -394,6 +422,29 @@ export default function HomeScreen() {
                 </View>
               );
             })()}
+            {/* Readiness explanation sub-card */}
+            {recommendation && (
+              <View style={styles.readinessExplain}>
+                <Text style={styles.readinessExplainTitle}>
+                  {(readinessScore ?? 0) >= 70 ? 'Good day for activity' : (readinessScore ?? 0) >= 40 ? 'Take it easy' : 'Rest & recover'}
+                </Text>
+                <Text style={styles.readinessExplainText}>{recommendation}</Text>
+              </View>
+            )}
+            {/* Readiness stats row */}
+            {hasLog && (
+              <View style={styles.readinessStats}>
+                <Text style={styles.readinessStatText}>
+                  Sleep: {sleepLog?.sleepHours ? `${sleepLog.sleepHours}h ✓` : '—'}
+                </Text>
+                <Text style={styles.readinessStatText}>
+                  Symptoms: {symptomTrends.length > 0 ? (symptomTrends.length <= 2 ? 'Low ✓' : 'Moderate') : 'None ✓'}
+                </Text>
+                <Text style={styles.readinessStatText}>
+                  Stress: {latestMood && latestMood >= 3 ? 'Low' : 'Moderate'}
+                </Text>
+              </View>
+            )}
 
             {/* SOS + Quick check-in — side by side */}
             <View style={styles.actionRow}>
@@ -448,6 +499,145 @@ export default function HomeScreen() {
                 </View>
               </AnimatedPressable>
             </View>
+
+            {/* Daily Journal card */}
+            {isToday && (
+              <AnimatedPressable
+                onPress={() => { hapticMedium(); router.push('/(app)/journal'); }}
+                scaleDown={0.97}
+                style={styles.journalCard}
+              >
+                <View style={styles.journalCardRow}>
+                  <View style={styles.journalMorningIcon}>
+                    <Text style={{ fontSize: 18, color: '#d97706' }}>☀</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.journalCardTitle}>
+                      {morningDone ? 'Morning ✓' : 'Morning journal'}
+                    </Text>
+                    <Text style={styles.journalCardDesc}>
+                      {morningDone ? 'Completed' : "How'd you sleep? 2 min check-in"}
+                    </Text>
+                  </View>
+                  {!morningDone && hour < 14 && (
+                    <View style={styles.nowBadge}>
+                      <Text style={styles.nowBadgeText}>NOW</Text>
+                    </View>
+                  )}
+                  {morningDone && (
+                    <View style={styles.journalCheckDone}>
+                      <Text style={{ fontSize: 12, color: '#fff', fontWeight: '600' }}>✓</Text>
+                    </View>
+                  )}
+                </View>
+                <View style={[styles.journalCardRow, { marginTop: 12 }]}>
+                  <View style={styles.journalEveningIcon}>
+                    <Text style={{ fontSize: 18, color: '#6366f1' }}>☽</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.journalCardTitle, !eveningDone && hour < 19 && { color: '#78716c' }]}>
+                      {eveningDone ? 'Evening ✓' : 'Evening reflection'}
+                    </Text>
+                    <Text style={styles.journalCardDesc}>
+                      {eveningDone ? 'Completed' : hour >= 19 ? 'How was today?' : 'Available tonight at 7 PM'}
+                    </Text>
+                  </View>
+                  {eveningDone && (
+                    <View style={styles.journalCheckDone}>
+                      <Text style={{ fontSize: 12, color: '#fff', fontWeight: '600' }}>✓</Text>
+                    </View>
+                  )}
+                  {!eveningDone && <View style={styles.journalEmptyCheck} />}
+                </View>
+                {/* Mini streak */}
+                {streak > 0 && (
+                  <View style={styles.journalStreak}>
+                    <Text style={styles.journalStreakText}>{streak} day streak</Text>
+                  </View>
+                )}
+              </AnimatedPressable>
+            )}
+
+            {/* Today's Meds */}
+            {meds.length > 0 && isToday && (
+              <View style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionTitle}>Today's meds</Text>
+                  <AnimatedPressable onPress={() => { hapticLight(); router.push('/(app)/meds'); }} scaleDown={0.97}>
+                    <Text style={styles.seeAll}>Manage →</Text>
+                  </AnimatedPressable>
+                </View>
+                <View style={styles.medsCard}>
+                  {meds.map((med) => {
+                    const taken = isMedTaken(med.id);
+                    return (
+                      <AnimatedPressable
+                        key={med.id}
+                        onPress={async () => {
+                          hapticLight();
+                          try {
+                            const token = await getToken();
+                            await apiRequest('/api/meds/logs', token, {
+                              method: 'POST',
+                              body: JSON.stringify({ medicationId: med.id, date: todayStr, taken: !taken }),
+                            });
+                            fetchData();
+                          } catch { /* non-critical */ }
+                        }}
+                        scaleDown={0.97}
+                        style={styles.medRow}
+                      >
+                        <View style={[
+                          styles.medRowIcon,
+                          med.type === 'supplement' ? { backgroundColor: '#fef3c7' } : { backgroundColor: '#1c1917' },
+                        ]}>
+                          <Text style={{ fontSize: 12, color: med.type === 'supplement' ? '#d97706' : '#fff' }}>
+                            {med.type === 'supplement' ? '⬡' : '◎'}
+                          </Text>
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={[styles.medRowName, taken && styles.medRowNameTaken]}>
+                            {med.name}
+                          </Text>
+                          <Text style={styles.medRowDose}>
+                            {med.dose || ''}{med.time ? ` · ${med.time}` : ''}
+                          </Text>
+                        </View>
+                        <View style={[styles.medRowCheck, taken && styles.medRowCheckDone]}>
+                          {taken && <Text style={{ fontSize: 10, color: '#fff', fontWeight: '700' }}>✓</Text>}
+                        </View>
+                      </AnimatedPressable>
+                    );
+                  })}
+                  <View style={styles.medsSummary}>
+                    <Text style={styles.medsSummaryText}>
+                      {medsTakenCount} of {meds.length} taken today
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            )}
+
+            {/* Meds empty state for new users */}
+            {meds.length === 0 && isToday && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Today's meds</Text>
+                <View style={styles.medsEmptyCard}>
+                  <Text style={styles.medsEmptyIcon}>💊</Text>
+                  <Text style={styles.medsEmptyTitle}>Track your medications</Text>
+                  <Text style={styles.medsEmptyDesc}>
+                    Add supplements, HRT, or prescriptions to track daily
+                  </Text>
+                  <AnimatedPressable
+                    onPress={() => { hapticLight(); router.push('/(app)/meds'); }}
+                    scaleDown={0.97}
+                    style={styles.medsEmptyButton}
+                  >
+                    <Text style={styles.medsEmptyButtonText}>+ Add medications</Text>
+                  </AnimatedPressable>
+                </View>
+              </View>
+            )}
 
             {/* How you're doing — symptom trend grid */}
             {(symptomTrends.length > 0 || hasLog) && (
@@ -688,23 +878,39 @@ export default function HomeScreen() {
               </View>
             )}
 
-            {/* Meds empty state — opt-in, off by default */}
-            {false && (
+            {/* Tonight's plan */}
+            {isToday && (
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Today's meds</Text>
-                <View style={styles.medsEmptyCard}>
-                  <Text style={styles.medsEmptyIcon}>💊</Text>
-                  <Text style={styles.medsEmptyTitle}>Track your medications</Text>
-                  <Text style={styles.medsEmptyDesc}>
-                    Add supplements, HRT, or prescriptions to track daily
-                  </Text>
-                  <AnimatedPressable
-                    onPress={() => { hapticLight(); router.push('/(app)/meds'); }}
-                    scaleDown={0.97}
-                    style={styles.medsEmptyButton}
-                  >
-                    <Text style={styles.medsEmptyButtonText}>+ Add medications</Text>
-                  </AnimatedPressable>
+                <Text style={styles.sectionTitle}>Tonight's plan</Text>
+                <View style={{ gap: 8 }}>
+                  <View style={[styles.card, { flexDirection: 'row', alignItems: 'center', gap: 12 }]}>
+                    <View style={[styles.planIcon, { backgroundColor: '#e0e7ff' }]}>
+                      <Text style={{ fontSize: 14 }}>☽</Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.planTitle}>Sleep wind-down</Text>
+                      <Text style={styles.planSubtitle}>Relaxation exercise · 10 min · 9:30 PM</Text>
+                    </View>
+                  </View>
+                  {!eveningDone && (
+                    <AnimatedPressable
+                      onPress={() => {
+                        hapticLight();
+                        router.push({ pathname: '/(app)/quick-log', params: { mode: 'evening' } });
+                      }}
+                      scaleDown={0.97}
+                      style={[styles.card, { flexDirection: 'row', alignItems: 'center', gap: 12 }]}
+                    >
+                      <View style={[styles.planIcon, { backgroundColor: '#e0e7ff' }]}>
+                        <Text style={{ fontSize: 14 }}>📖</Text>
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.planTitle}>Evening journal</Text>
+                        <Text style={styles.planSubtitle}>Reflect on your day · 2 min</Text>
+                      </View>
+                      <View style={styles.planCheckbox} />
+                    </AnimatedPressable>
+                  )}
                 </View>
               </View>
             )}
@@ -817,50 +1023,71 @@ const styles = StyleSheet.create({
   },
   avatarText: { fontSize: 14, fontWeight: '500', color: '#ffffff' },
 
-  // Date strip
-  dateStrip: {
-    marginBottom: 16,
-    marginHorizontal: -24,
+  // Week strip
+  weekStrip: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+    gap: 2,
   },
-  dateStripContent: {
-    paddingHorizontal: 24,
-    gap: 4,
-  },
-  dateStripItem: {
-    width: 48,
+  weekStripItem: {
+    flex: 1,
     alignItems: 'center',
     paddingVertical: 8,
     borderRadius: 14,
   },
-  dateStripItemSelected: {
+  weekStripItemSelected: {
     backgroundColor: '#1c1917',
   },
-  dateStripDay: {
+  weekStripDay: {
     fontSize: 11,
     color: '#a8a29e',
     fontWeight: '400',
-    marginBottom: 4,
+    marginBottom: 3,
   },
-  dateStripDaySelected: {
+  weekStripDaySelected: {
     color: '#78716c',
   },
-  dateStripNum: {
-    fontSize: 16,
+  weekStripNum: {
+    fontSize: 15,
     fontWeight: '600',
-    color: '#44403c',
+    color: '#1c1917',
+    marginBottom: 4,
   },
-  dateStripNumSelected: {
+  weekStripNumSelected: {
     color: '#ffffff',
   },
-  dateStripDot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#1c1917',
-    marginTop: 4,
+  weekDotRow: {
+    flexDirection: 'row',
+    gap: 2,
   },
-  dateStripDotSelected: {
-    backgroundColor: '#ffffff',
+  weekDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  weekDotAm: { backgroundColor: '#fbbf24' },
+  weekDotPm: { backgroundColor: '#818cf8' },
+  weekDotEmpty: { backgroundColor: '#e7e5e4' },
+  weekLegend: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 16,
+  },
+  weekLegendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  weekLegendDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  weekLegendText: {
+    fontSize: 10,
+    color: '#a8a29e',
   },
 
   // Readiness score
@@ -916,6 +1143,176 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: '#78716c',
     marginTop: 4,
+  },
+
+  readinessExplain: {
+    backgroundColor: '#292524',
+    borderRadius: 14,
+    padding: 14,
+    marginTop: 10,
+  },
+  readinessExplainTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#34d399',
+    marginBottom: 4,
+  },
+  readinessExplainText: {
+    fontSize: 12,
+    color: '#78716c',
+    lineHeight: 18,
+  },
+  readinessStats: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 10,
+  },
+  readinessStatText: {
+    fontSize: 11,
+    color: '#78716c',
+  },
+
+  // Journal card
+  journalCard: {
+    backgroundColor: '#fffbeb',
+    borderRadius: 18,
+    padding: 18,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#fef3c7',
+  },
+  journalCardRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  journalMorningIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#fef3c7',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  journalEveningIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#e0e7ff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  journalCardTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#1c1917',
+  },
+  journalCardDesc: {
+    fontSize: 11,
+    color: '#a8a29e',
+    marginTop: 1,
+  },
+  nowBadge: {
+    backgroundColor: '#fbbf24',
+    borderRadius: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  nowBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#1c1917',
+  },
+  journalCheckDone: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#22c55e',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  journalEmptyCheck: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    borderColor: '#d6d3d1',
+  },
+  journalStreak: {
+    marginTop: 12,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(251,191,36,0.2)',
+    alignItems: 'flex-end',
+  },
+  journalStreakText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#d97706',
+  },
+
+  // Today's meds
+  medsCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#f5f5f4',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  medRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 6,
+  },
+  medRowIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  medRowName: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#1c1917',
+  },
+  medRowNameTaken: {
+    color: '#a8a29e',
+    textDecorationLine: 'line-through',
+  },
+  medRowDose: {
+    fontSize: 11,
+    color: '#a8a29e',
+    marginTop: 1,
+  },
+  medRowCheck: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#e7e5e4',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  medRowCheckDone: {
+    backgroundColor: '#22c55e',
+    borderColor: '#22c55e',
+  },
+  medsSummary: {
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#f5f5f4',
+  },
+  medsSummaryText: {
+    fontSize: 11,
+    color: '#a8a29e',
   },
 
   // SOS + Quick log row

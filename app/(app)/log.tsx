@@ -1,124 +1,87 @@
-import React, { useState, useCallback } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   SafeAreaView,
   StyleSheet,
-  ActivityIndicator,
 } from 'react-native';
-import { useRouter, useFocusEffect } from 'expo-router';
-import { useAuth } from '@clerk/clerk-expo';
+import { useRouter } from 'expo-router';
 import AnimatedPressable from '@/components/AnimatedPressable';
-import { hapticMedium, hapticLight } from '@/lib/haptics';
-import { apiRequest } from '@/lib/api';
+import { hapticMedium } from '@/lib/haptics';
 
 export default function LogScreen() {
   const router = useRouter();
-  const { getToken } = useAuth();
-  const [morningDone, setMorningDone] = useState(false);
-  const [eveningDone, setEveningDone] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  // Check what's already logged today
-  useFocusEffect(
-    useCallback(() => {
-      (async () => {
-        try {
-          setLoading(true);
-          const token = await getToken();
-          const today = new Date().toISOString().split('T')[0];
-          const logs = await apiRequest(`/api/logs?date=${today}`, token).catch(() => []);
-          const entries = Array.isArray(logs) ? logs : [];
-          setMorningDone(entries.some((e: any) => e.logType === 'morning'));
-          setEveningDone(entries.some((e: any) => e.logType === 'evening'));
-        } catch {
-          // Non-critical
-        } finally {
-          setLoading(false);
-        }
-      })();
-    }, [])
-  );
-
-  const hour = new Date().getHours();
-  const suggestEvening = hour >= 14 || morningDone;
-
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.loadingWrap}>
-          <ActivityIndicator size="large" color="#1c1917" />
-        </View>
-      </SafeAreaView>
-    );
-  }
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.title}>Check in</Text>
-        <Text style={styles.subtitle}>How's your day going?</Text>
+        <Text style={styles.title}>What do you want to log?</Text>
+        <Text style={styles.subtitle}>Track symptoms or medications</Text>
 
-        {/* Morning card */}
+        {/* Symptoms & mood — routes to quick-log based on time of day */}
         <AnimatedPressable
           onPress={() => {
             hapticMedium();
-            router.push({ pathname: '/(app)/quick-log', params: { mode: 'morning' } });
+            const hour = new Date().getHours();
+            const mode = hour < 14 ? 'morning' : 'evening';
+            router.push({ pathname: '/(app)/quick-log', params: { mode } });
           }}
           scaleDown={0.97}
-          style={[
-            styles.card,
-            morningDone && styles.cardDone,
-            !suggestEvening && !morningDone && styles.cardHighlighted,
-          ]}
+          style={[styles.card, styles.cardPrimary]}
         >
           <View style={styles.cardRow}>
-            <Text style={styles.cardEmoji}>☀️</Text>
+            <View style={[styles.cardIcon, styles.cardIconDark]}>
+              <Text style={styles.cardIconEmoji}>📋</Text>
+            </View>
             <View style={{ flex: 1 }}>
-              <Text style={[styles.cardTitle, morningDone && styles.cardTitleDone]}>
-                Morning check-in
-              </Text>
-              <Text style={styles.cardDesc}>
-                {morningDone ? 'Completed ✓' : 'Sleep, mood & what\'s ahead'}
-              </Text>
+              <Text style={styles.cardTitle}>Symptoms & mood</Text>
+              <Text style={styles.cardDesc}>Quick 30-second check-in</Text>
             </View>
             <Text style={styles.cardArrow}>›</Text>
           </View>
         </AnimatedPressable>
 
-        {/* Evening card */}
+        {/* Medications — routes to meds screen */}
         <AnimatedPressable
           onPress={() => {
             hapticMedium();
-            router.push({ pathname: '/(app)/quick-log', params: { mode: 'evening' } });
+            router.push('/(app)/meds');
           }}
           scaleDown={0.97}
-          style={[
-            styles.card,
-            eveningDone && styles.cardDone,
-            suggestEvening && !eveningDone && styles.cardHighlighted,
-          ]}
+          style={[styles.card, styles.cardSecondary]}
         >
           <View style={styles.cardRow}>
-            <Text style={styles.cardEmoji}>🌙</Text>
+            <View style={[styles.cardIcon, styles.cardIconAmber]}>
+              <Text style={styles.cardIconEmoji}>💊</Text>
+            </View>
             <View style={{ flex: 1 }}>
-              <Text style={[styles.cardTitle, eveningDone && styles.cardTitleDone]}>
-                Evening check-in
-              </Text>
-              <Text style={styles.cardDesc}>
-                {eveningDone ? 'Completed ✓' : 'Symptoms, mood & triggers'}
-              </Text>
+              <Text style={styles.cardTitle}>Medications & supplements</Text>
+              <Text style={styles.cardDesc}>Mark today's doses as taken</Text>
             </View>
             <Text style={styles.cardArrow}>›</Text>
           </View>
         </AnimatedPressable>
 
-        {/* Helper text */}
-        <Text style={styles.helperText}>
-          {morningDone && eveningDone
-            ? 'Both check-ins done today — great job! 🎉'
-            : '3 steps · about 30 seconds each'}
-        </Text>
+        {/* Detailed log */}
+        <AnimatedPressable
+          onPress={() => {
+            hapticMedium();
+            router.push('/(app)/detailed-log');
+          }}
+          scaleDown={0.97}
+          style={styles.card}
+        >
+          <View style={styles.cardRow}>
+            <View style={[styles.cardIcon, styles.cardIconLight]}>
+              <Text style={styles.cardIconEmoji}>📝</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.cardTitle}>Detailed log</Text>
+              <Text style={styles.cardDesc}>Symptoms, sleep, cycle, context</Text>
+            </View>
+            <Text style={styles.cardArrow}>›</Text>
+          </View>
+        </AnimatedPressable>
       </View>
     </SafeAreaView>
   );
@@ -126,75 +89,72 @@ export default function LogScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fafaf9' },
-  loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-
   content: {
     flex: 1,
     paddingHorizontal: 24,
-    paddingTop: 48,
+    paddingTop: 16,
   },
-
   title: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '700',
     color: '#1c1917',
     marginBottom: 4,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#a8a29e',
-    marginBottom: 32,
+    marginBottom: 24,
   },
 
   card: {
     backgroundColor: '#ffffff',
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 18,
     marginBottom: 12,
-    borderWidth: 2,
-    borderColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#f5f5f4',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.03,
     shadowRadius: 4,
     elevation: 1,
   },
-  cardHighlighted: {
+  cardPrimary: {
+    borderWidth: 2,
     borderColor: '#1c1917',
   },
-  cardDone: {
-    opacity: 0.55,
+  cardSecondary: {
+    borderWidth: 1,
+    borderColor: '#e7e5e4',
   },
   cardRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
+    gap: 16,
   },
-  cardEmoji: {
-    fontSize: 28,
+  cardIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
+  cardIconDark: { backgroundColor: '#1c1917' },
+  cardIconAmber: { backgroundColor: '#fffbeb' },
+  cardIconLight: { backgroundColor: '#f5f5f4' },
+  cardIconEmoji: { fontSize: 22 },
   cardTitle: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '700',
     color: '#1c1917',
     marginBottom: 2,
   },
-  cardTitleDone: {
-    color: '#78716c',
-  },
   cardDesc: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#a8a29e',
   },
   cardArrow: {
     fontSize: 20,
     color: '#d6d3d1',
-  },
-
-  helperText: {
-    fontSize: 12,
-    color: '#a8a29e',
-    textAlign: 'center',
-    marginTop: 16,
   },
 });

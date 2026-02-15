@@ -69,6 +69,15 @@ export default function AppLayout() {
       />
       <Tabs.Screen name="meds" options={{ href: null }} />
       <Tabs.Screen
+        name="journal"
+        options={{
+          title: 'Journal',
+          tabBarIcon: ({ color, size, focused }) => (
+            <TabBarIcon name="book-outline" size={22} color={color} focused={focused} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
@@ -92,6 +101,10 @@ export default function AppLayout() {
       <Tabs.Screen name="help-feedback" options={{ href: null }} />
       <Tabs.Screen name="export-data" options={{ href: null }} />
       <Tabs.Screen name="calendar" options={{ href: null }} />
+      <Tabs.Screen name="journal-am" options={{ href: null }} />
+      <Tabs.Screen name="journal-pm" options={{ href: null }} />
+      <Tabs.Screen name="journal-done" options={{ href: null }} />
+      <Tabs.Screen name="journal-week" options={{ href: null }} />
     </Tabs>
   );
 }

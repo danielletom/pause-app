@@ -116,7 +116,7 @@ export default function MedsScreen() {
       }
       const token = await getToken();
       const [medsData, medLogsData, weekLogsData] = await Promise.all([
-        apiRequest('/api/meds', token),
+        apiRequest('/api/meds', token).catch(() => []),
         apiRequest(`/api/meds/logs?date=${today}`, token).catch(() => []),
         apiRequest('/api/meds/logs?range=7', token).catch(() => []),
       ]);
