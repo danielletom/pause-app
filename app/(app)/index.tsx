@@ -102,14 +102,26 @@ function computeReadiness(entries: LogEntry[]): number | null {
   });
   const stressorCount = allStressors.size;
 
-  // Sleep score (0-100): 8h = 100, <4h = 20, quality bonus/penalty
+  // Sleep score (0-100): 7-9h = excellent range, quality bonus/penalty
   let sleepScore = 50; // default if no data
   if (sleepHours !== null) {
-    sleepScore = Math.min(100, Math.max(10, (sleepHours / 8) * 85));
-    if (sleepQuality === 'great') sleepScore = Math.min(100, sleepScore + 15);
-    else if (sleepQuality === 'poor') sleepScore -= 15;
-    else if (sleepQuality === 'terrible') sleepScore -= 25;
-    sleepScore -= Math.min(20, (disruptions ?? 0) * 7);
+    // Better scoring: 7-9h is optimal (score 85-100), <5h is poor, >10h slightly penalized
+    if (sleepHours >= 7 && sleepHours <= 9) {
+      sleepScore = 85 + Math.min(15, (sleepHours - 7) * 7.5); // 7h=85, 8h=92, 9h=100
+    } else if (sleepHours >= 6) {
+      sleepScore = 70 + (sleepHours - 6) * 15; // 6h=70
+    } else if (sleepHours >= 5) {
+      sleepScore = 50 + (sleepHours - 5) * 20; // 5h=50
+    } else {
+      sleepScore = Math.max(10, sleepHours * 12.5); // 4h=50, 3h=37, 0h=10
+    }
+    // Quality adjustments — only when explicitly rated
+    if (sleepQuality === 'amazing') sleepScore = Math.min(100, sleepScore + 10);
+    else if (sleepQuality === 'good') sleepScore = Math.min(100, sleepScore + 5);
+    else if (sleepQuality === 'poor') sleepScore -= 10;
+    else if (sleepQuality === 'terrible') sleepScore -= 20;
+    // Disruptions penalty
+    sleepScore -= Math.min(15, (disruptions ?? 0) * 5);
   }
 
   // Mood score (0-100): mood 5=100, 1=20
@@ -423,12 +435,16 @@ export default function HomeScreen() {
               );
             })()}
             {/* Readiness explanation sub-card */}
-            {recommendation && (
+            {hasLog && (
               <View style={styles.readinessExplain}>
                 <Text style={styles.readinessExplainTitle}>
                   {(readinessScore ?? 0) >= 70 ? 'Good day for activity' : (readinessScore ?? 0) >= 40 ? 'Take it easy' : 'Rest & recover'}
                 </Text>
-                <Text style={styles.readinessExplainText}>{recommendation}</Text>
+                <Text style={styles.readinessExplainText}>
+                  {recommendation || (
+                    `Based on ${sleepLog?.sleepHours ? `${sleepLog.sleepHours}h sleep` : 'sleep data'}${latestMood ? `, ${MOOD_LABEL[latestMood]?.toLowerCase() || ''} mood` : ''}${symptomTrends.length > 0 ? `, and ${symptomTrends.length} symptom${symptomTrends.length > 1 ? 's' : ''}` : ''}.`
+                  )}
+                </Text>
               </View>
             )}
             {/* Readiness stats row */}
@@ -446,7 +462,7 @@ export default function HomeScreen() {
               </View>
             )}
 
-            {/* SOS + Quick check-in — side by side */}
+            {/* SOS card */}
             <View style={styles.actionRow}>
               <AnimatedPressable
                 onPress={() => { hapticMedium(); router.push('/(app)/sos'); }}
@@ -459,104 +475,73 @@ export default function HomeScreen() {
                 <Text style={styles.sosTitle}>SOS</Text>
                 <Text style={styles.sosSubtitle}>Hot flash</Text>
               </AnimatedPressable>
-
-              <AnimatedPressable
-                onPress={() => {
-                  hapticMedium();
-                  if (!isToday) {
-                    router.push({ pathname: '/(app)/quick-log', params: { date: selectedDate, mode: 'morning' } });
-                  } else if (morningDone && eveningDone) {
-                    router.push({ pathname: '/(app)/quick-log', params: { mode: 'evening' } });
-                  } else {
-                    router.push({ pathname: '/(app)/quick-log', params: { mode: suggestEvening ? 'evening' : 'morning' } });
-                  }
-                }}
-                scaleDown={0.97}
-                style={styles.quickLogCard}
-              >
-                <View style={styles.quickLogIcon}>
-                  <Text style={styles.quickLogIconText}>
-                    {isToday ? (suggestEvening && !eveningDone ? '🌙' : morningDone && eveningDone ? '+' : '☀️') : '+'}
-                  </Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.quickLogTitle}>
-                    {!isToday
-                      ? 'Log this day'
-                      : morningDone && eveningDone
-                        ? 'Add another'
-                        : suggestEvening && !eveningDone
-                          ? 'Evening check-in'
-                          : 'Morning check-in'}
-                  </Text>
-                  <Text style={styles.quickLogSub}>
-                    {!isToday
-                      ? hasLog ? `${dayLogs.length} entr${dayLogs.length === 1 ? 'y' : 'ies'}` : 'Add a past entry'
-                      : morningDone && eveningDone
-                        ? 'Both check-ins done ✓'
-                        : '4 steps · under 2 min'}
-                  </Text>
-                </View>
-              </AnimatedPressable>
             </View>
 
-            {/* Daily Journal card */}
-            {isToday && (
-              <AnimatedPressable
-                onPress={() => { hapticMedium(); router.push('/(app)/journal'); }}
-                scaleDown={0.97}
-                style={styles.journalCard}
-              >
-                <View style={styles.journalCardRow}>
-                  <View style={styles.journalMorningIcon}>
-                    <Text style={{ fontSize: 18, color: '#d97706' }}>☀</Text>
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.journalCardTitle}>
-                      {morningDone ? 'Morning ✓' : 'Morning journal'}
-                    </Text>
-                    <Text style={styles.journalCardDesc}>
-                      {morningDone ? 'Completed' : "How'd you sleep? 2 min check-in"}
-                    </Text>
-                  </View>
-                  {!morningDone && hour < 14 && (
-                    <View style={styles.nowBadge}>
-                      <Text style={styles.nowBadgeText}>NOW</Text>
-                    </View>
-                  )}
-                  {morningDone && (
-                    <View style={styles.journalCheckDone}>
-                      <Text style={{ fontSize: 12, color: '#fff', fontWeight: '600' }}>✓</Text>
-                    </View>
-                  )}
+            {/* Daily Journal card — works for today and past days */}
+            <AnimatedPressable
+              onPress={() => {
+                hapticMedium();
+                if (!morningDone) {
+                  router.push({ pathname: '/(app)/quick-log', params: { date: selectedDate, mode: 'morning' } });
+                } else if (!eveningDone) {
+                  router.push({ pathname: '/(app)/quick-log', params: { date: selectedDate, mode: 'evening' } });
+                } else if (isToday) {
+                  router.push('/(app)/journal');
+                }
+              }}
+              scaleDown={0.97}
+              style={styles.journalCard}
+            >
+              <View style={styles.journalCardRow}>
+                <View style={styles.journalMorningIcon}>
+                  <Text style={{ fontSize: 18, color: '#d97706' }}>☀</Text>
                 </View>
-                <View style={[styles.journalCardRow, { marginTop: 12 }]}>
-                  <View style={styles.journalEveningIcon}>
-                    <Text style={{ fontSize: 18, color: '#6366f1' }}>☽</Text>
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.journalCardTitle, !eveningDone && hour < 19 && { color: '#78716c' }]}>
-                      {eveningDone ? 'Evening ✓' : 'Evening reflection'}
-                    </Text>
-                    <Text style={styles.journalCardDesc}>
-                      {eveningDone ? 'Completed' : hour >= 19 ? 'How was today?' : 'Available tonight at 7 PM'}
-                    </Text>
-                  </View>
-                  {eveningDone && (
-                    <View style={styles.journalCheckDone}>
-                      <Text style={{ fontSize: 12, color: '#fff', fontWeight: '600' }}>✓</Text>
-                    </View>
-                  )}
-                  {!eveningDone && <View style={styles.journalEmptyCheck} />}
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.journalCardTitle}>
+                    {morningDone ? 'Morning ✓' : 'Morning journal'}
+                  </Text>
+                  <Text style={styles.journalCardDesc}>
+                    {morningDone ? 'Completed' : isToday ? "How'd you sleep? 2 min check-in" : 'Log morning for this day'}
+                  </Text>
                 </View>
-                {/* Mini streak */}
-                {streak > 0 && (
-                  <View style={styles.journalStreak}>
-                    <Text style={styles.journalStreakText}>{streak} day streak</Text>
+                {!morningDone && isToday && hour < 14 && (
+                  <View style={styles.nowBadge}>
+                    <Text style={styles.nowBadgeText}>NOW</Text>
                   </View>
                 )}
-              </AnimatedPressable>
-            )}
+                {morningDone && (
+                  <View style={styles.journalCheckDone}>
+                    <Text style={{ fontSize: 12, color: '#fff', fontWeight: '600' }}>✓</Text>
+                  </View>
+                )}
+                {!morningDone && (!isToday || hour >= 14) && <View style={styles.journalEmptyCheck} />}
+              </View>
+              <View style={[styles.journalCardRow, { marginTop: 12 }]}>
+                <View style={styles.journalEveningIcon}>
+                  <Text style={{ fontSize: 18, color: '#6366f1' }}>☽</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.journalCardTitle, !eveningDone && isToday && hour < 19 && { color: '#78716c' }]}>
+                    {eveningDone ? 'Evening ✓' : 'Evening reflection'}
+                  </Text>
+                  <Text style={styles.journalCardDesc}>
+                    {eveningDone ? 'Completed' : isToday ? (hour >= 19 ? 'How was today?' : 'Available tonight at 7 PM') : 'Log evening for this day'}
+                  </Text>
+                </View>
+                {eveningDone && (
+                  <View style={styles.journalCheckDone}>
+                    <Text style={{ fontSize: 12, color: '#fff', fontWeight: '600' }}>✓</Text>
+                  </View>
+                )}
+                {!eveningDone && <View style={styles.journalEmptyCheck} />}
+              </View>
+              {/* Mini streak */}
+              {streak > 0 && (
+                <View style={styles.journalStreak}>
+                  <Text style={styles.journalStreakText}>{streak} day streak</Text>
+                </View>
+              )}
+            </AnimatedPressable>
 
             {/* Today's Meds */}
             {meds.length > 0 && isToday && (
@@ -741,7 +726,7 @@ export default function HomeScreen() {
             {/* Morning / Evening summary cards */}
             {dayLogs.length > 0 && (
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Check-ins</Text>
+                <Text style={styles.sectionTitle}>Today's journal</Text>
                 <View style={{ gap: 8 }}>
                   {/* Morning summary */}
                   {(() => {
@@ -934,14 +919,14 @@ export default function HomeScreen() {
                     hapticMedium();
                     router.push({
                       pathname: '/(app)/quick-log',
-                      params: { date: selectedDate, mode: suggestEvening ? 'evening' : 'morning' },
+                      params: { date: selectedDate, mode: 'morning' },
                     });
                   }}
                   scaleDown={0.96}
                   style={styles.emptyButton}
                 >
                   <Text style={styles.emptyButtonText}>
-                    {isToday ? 'Quick check-in' : 'Log this day'}
+                    {isToday ? 'Start morning journal' : 'Log this day'}
                   </Text>
                 </AnimatedPressable>
               </View>
@@ -1363,12 +1348,12 @@ const styles = StyleSheet.create({
   quickLogSub: { fontSize: 11, color: '#a8a29e', marginTop: 1 },
 
   // Sections
-  section: { marginBottom: 16 },
+  section: { marginBottom: 20 },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   sectionTitle: { fontSize: 14, fontWeight: '600', color: '#1c1917' },
   seeAll: { fontSize: 12, color: '#a8a29e', fontWeight: '300' },

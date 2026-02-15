@@ -65,8 +65,8 @@ export default function ArticleScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Back nav */}
+      {/* Sticky back header */}
+      <View style={styles.stickyHeader}>
         <AnimatedPressable
           onPress={() => { hapticLight(); router.back(); }}
           scaleDown={0.95}
@@ -74,7 +74,13 @@ export default function ArticleScreen() {
         >
           <Text style={styles.backText}>← Back</Text>
         </AnimatedPressable>
+        <Text style={styles.stickyTitle} numberOfLines={1}>
+          {article.title}
+        </Text>
+        <View style={{ width: 50 }} />
+      </View>
 
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Hero image placeholder */}
         <View style={styles.heroImage}>
           <Text style={{ fontSize: 32 }}>
@@ -137,7 +143,24 @@ const styles = StyleSheet.create({
   scrollContent: { paddingBottom: 120 },
   loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 80 },
 
-  backButton: { paddingVertical: 12, paddingHorizontal: 24, alignSelf: 'flex-start' },
+  stickyHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f5f5f4',
+    backgroundColor: '#fafaf9',
+  },
+  stickyTitle: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#1c1917',
+    textAlign: 'center',
+  },
+  backButton: { paddingVertical: 6, paddingHorizontal: 16 },
   backText: { fontSize: 13, color: '#a8a29e', fontWeight: '500' },
 
   heroImage: {

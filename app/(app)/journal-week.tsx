@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -54,9 +54,12 @@ export default function JournalWeekScreen() {
   const [error, setError] = useState(false);
   const [days, setDays] = useState<DayEntry[]>([]);
   const [streak, setStreak] = useState(0);
+  const hasLoaded = useRef(false);
 
   useFocusEffect(
     useCallback(() => {
+      if (hasLoaded.current) return; // Prevent reload loop
+      hasLoaded.current = true;
       (async () => {
         try {
           setLoading(true);

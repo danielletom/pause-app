@@ -19,8 +19,8 @@ import { useProfile } from '@/lib/useProfile';
 
 /* ─── Constants ──────────────────────────────────────── */
 
-const MORNING_STEPS = ['Sleep', 'Body', 'Meds', "What's Ahead", 'Gratitude'];
-const EVENING_STEPS = ['Your Day', 'Body', 'Activity', 'Meds', 'Highlight'];
+const MORNING_STEPS = ['Sleep', 'Body', 'Mood', "What's Ahead", 'Gratitude'];
+const EVENING_STEPS = ['Your Day', 'Body', 'Activity', 'Highlight'];
 
 const SLEEP_QUALITY = [
   { val: 'terrible', emoji: '😫', label: 'Terrible', sublabel: 'Could barely sleep' },
@@ -48,6 +48,9 @@ const SYMPTOM_LIST = [
   { key: 'fatigue', label: 'Fatigue', emoji: '😩' },
   { key: 'nausea', label: 'Nausea', emoji: '🤢' },
   { key: 'heart_racing', label: 'Heart racing', emoji: '💓' },
+  { key: 'feeling_good', label: 'Feeling good', emoji: '🌟' },
+  { key: 'headache', label: 'Headache', emoji: '🤕' },
+  { key: 'night_sweats', label: 'Night sweats', emoji: '💦' },
 ];
 
 const SEVERITY_OPTIONS = [
@@ -198,6 +201,9 @@ export default function QuickLogScreen() {
   // What's Ahead
   const [energy, setEnergy] = useState<number | null>(null);
   const [stressors, setStressors] = useState<Set<string>>(new Set());
+  const [customStressorText, setCustomStressorText] = useState('');
+  const [showCustomStressorInput, setShowCustomStressorInput] = useState(false);
+  const [customStressors, setCustomStressors] = useState<{ key: string; label: string; emoji: string }[]>([]);
 
   // Gratitude
   const [gratitudeText, setGratitudeText] = useState('');
@@ -373,11 +379,12 @@ export default function QuickLogScreen() {
       const token = await getToken();
 
       if (isMorning) {
-        // Merge disruptions into contextTags + stressors
+        // Merge disruptions + stressors + mood pills into contextTags
         const contextTags = [
           ...Array.from(sleepDisruptions),
+          ...Array.from(moodPills),
           ...Array.from(stressors).map((s) => {
-            const found = STRESSOR_PILLS.find((p) => p.key === s);
+            const found = [...STRESSOR_PILLS, ...customStressors].find((p) => p.key === s);
             return found ? found.label : s;
           }),
         ];
@@ -393,6 +400,7 @@ export default function QuickLogScreen() {
             date: logDate,
             sleepHours,
             sleepQuality,
+            mood,
             symptomsJson: Object.keys(symptoms).length > 0 ? symptoms : undefined,
             energy,
             contextTags,
@@ -416,7 +424,7 @@ export default function QuickLogScreen() {
           });
         }
 
-        // Context tags: mood pills + activities + substances
+        // Context tags: mood pills + activities + substances + custom stressors
         const contextTags = [
           ...Array.from(moodPills),
           ...Array.from(activities).map((a) => {
@@ -445,27 +453,6 @@ export default function QuickLogScreen() {
             logType: 'evening',
           }),
         });
-      }
-
-      // Log medications that were toggled
-      if (medications.length > 0) {
-        const medPromises = medications.map((med) => {
-          const taken = medsTaken.has(med.id);
-          const wasAlreadyLogged = existingMedLogs.has(med.id);
-          // Only send if status changed or not yet logged
-          if (!wasAlreadyLogged || taken !== existingMedLogs.has(med.id)) {
-            return apiRequest('/api/meds/logs', token, {
-              method: 'POST',
-              body: JSON.stringify({
-                medicationId: med.id,
-                date: logDate,
-                taken,
-              }),
-            }).catch(() => {});
-          }
-          return Promise.resolve();
-        });
-        await Promise.all(medPromises);
       }
 
       hapticSuccess();
@@ -538,7 +525,7 @@ export default function QuickLogScreen() {
               ))}
             </View>
 
-            {/* Hours slider */}
+            {/* Hours selector */}
             <Text style={styles.sectionLabel}>Hours of sleep</Text>
             <Text style={styles.sleepHoursDisplay}>~{sleepHours}h</Text>
             <View style={styles.sleepHoursRow}>
@@ -553,12 +540,15 @@ export default function QuickLogScreen() {
                     h > 0 && h < 12 && h !== sleepHours && { opacity: 0.3 },
                   ]}
                 >
-                  {(h === 0 || h === 6 || h === 12) && (
-                    <Text style={styles.sleepHourLabel}>{h}h</Text>
-                  )}
+                  <Text style={[styles.sleepHourLabel, h !== 0 && h !== 6 && h !== 12 && h !== sleepHours && { opacity: 0 }]}>
+                    {h}h
+                  </Text>
                 </AnimatedPressable>
               ))}
             </View>
+            <Text style={{ fontSize: 11, color: '#a8a29e', textAlign: 'center', marginTop: -8, marginBottom: 16 }}>
+              Tap a number to set your hours
+            </Text>
 
             {/* Sleep disruptions */}
             <Text style={styles.sectionLabel}>Sleep disruptions</Text>
@@ -584,9 +574,49 @@ export default function QuickLogScreen() {
       case 1:
         return renderBodyStep();
 
-      /* Step 2 — Meds */
+      /* Step 2 — Mood (was Meds, now mood tracking in morning) */
       case 2:
-        return renderMedsStep();
+        return (
+          <View>
+            <Text style={styles.stepTitle}>How are you feeling?</Text>
+            <Text style={styles.stepSubtitle}>Your mood right now</Text>
+
+            {/* Day rating */}
+            <View style={styles.moodRow}>
+              {MOODS_5.map((m) => (
+                <AnimatedPressable
+                  key={m.val}
+                  onPress={() => { hapticSelection(); setMood(m.val); }}
+                  scaleDown={0.9}
+                  style={[styles.moodButton, mood === m.val && styles.moodButtonSelected]}
+                >
+                  <Text style={styles.moodEmoji}>{m.emoji}</Text>
+                  <Text style={[styles.moodLabel, mood === m.val && styles.moodLabelSelected]}>
+                    {m.label}
+                  </Text>
+                </AnimatedPressable>
+              ))}
+            </View>
+
+            {/* Mood pills */}
+            <Text style={[styles.sectionLabel, { marginTop: 24 }]}>How would you describe it?</Text>
+            <View style={styles.pillGrid}>
+              {MOOD_PILLS.map((mp) => (
+                <AnimatedPressable
+                  key={mp.key}
+                  onPress={() => toggleSet(moodPills, setMoodPills, mp.key)}
+                  scaleDown={0.95}
+                  style={[styles.emojiPill, moodPills.has(mp.key) && styles.pillSelected]}
+                >
+                  <Text style={styles.emojiPillEmoji}>{mp.emoji}</Text>
+                  <Text style={[styles.emojiPillText, moodPills.has(mp.key) && styles.pillTextSelected]}>
+                    {mp.label}
+                  </Text>
+                </AnimatedPressable>
+              ))}
+            </View>
+          </View>
+        );
 
       /* Step 3 — What's Ahead */
       case 3:
@@ -616,7 +646,7 @@ export default function QuickLogScreen() {
             {/* Stressors */}
             <Text style={[styles.sectionLabel, { marginTop: 24 }]}>What's on your plate</Text>
             <View style={styles.pillGrid}>
-              {STRESSOR_PILLS.map((s) => (
+              {[...STRESSOR_PILLS, ...customStressors].map((s) => (
                 <AnimatedPressable
                   key={s.key}
                   onPress={() => toggleSet(stressors, setStressors, s.key)}
@@ -629,7 +659,56 @@ export default function QuickLogScreen() {
                   </Text>
                 </AnimatedPressable>
               ))}
+              {/* Add custom */}
+              <AnimatedPressable
+                onPress={() => { hapticLight(); setShowCustomStressorInput(true); }}
+                scaleDown={0.95}
+                style={styles.addCustomPill}
+              >
+                <Text style={styles.addCustomPillText}>+ Add your own</Text>
+              </AnimatedPressable>
             </View>
+
+            {/* Custom stressor input */}
+            {showCustomStressorInput && (
+              <View style={styles.customInputRow}>
+                <TextInput
+                  style={styles.customInput}
+                  placeholder="What else is happening..."
+                  placeholderTextColor="#a8a29e"
+                  value={customStressorText}
+                  onChangeText={setCustomStressorText}
+                  autoFocus
+                  onSubmitEditing={() => {
+                    const name = customStressorText.trim();
+                    if (!name) return;
+                    const key = name.toLowerCase().replace(/\s+/g, '_');
+                    setCustomStressors((prev) => [...prev, { key, label: name, emoji: '📌' }]);
+                    setStressors((prev) => new Set(prev).add(key));
+                    setCustomStressorText('');
+                    setShowCustomStressorInput(false);
+                    Keyboard.dismiss();
+                  }}
+                  returnKeyType="done"
+                />
+                <AnimatedPressable
+                  onPress={() => {
+                    const name = customStressorText.trim();
+                    if (!name) return;
+                    const key = name.toLowerCase().replace(/\s+/g, '_');
+                    setCustomStressors((prev) => [...prev, { key, label: name, emoji: '📌' }]);
+                    setStressors((prev) => new Set(prev).add(key));
+                    setCustomStressorText('');
+                    setShowCustomStressorInput(false);
+                    Keyboard.dismiss();
+                  }}
+                  scaleDown={0.95}
+                  style={styles.customInputAdd}
+                >
+                  <Text style={styles.customInputAddText}>Add</Text>
+                </AnimatedPressable>
+              </View>
+            )}
           </View>
         );
 
@@ -854,12 +933,8 @@ export default function QuickLogScreen() {
           </View>
         );
 
-      /* Step 3 — Meds */
+      /* Step 3 — Highlight */
       case 3:
-        return renderMedsStep();
-
-      /* Step 4 — Highlight */
-      case 4:
         return (
           <View>
             <Text style={styles.stepTitle}>End on a high note</Text>
@@ -1025,10 +1100,10 @@ export default function QuickLogScreen() {
     return (
       <View>
         <Text style={styles.stepTitle}>
-          {isMorning ? 'How does your body feel?' : "Anything new show up?"}
+          {isMorning ? 'Body experiencing any symptoms?' : "Anything new show up?"}
         </Text>
         <Text style={styles.stepSubtitle}>
-          {isMorning ? 'Tap symptoms — then rate severity' : 'Tap any new symptoms from today'}
+          {isMorning ? 'Tap what you\'re feeling — or skip if all good' : 'Tap any new symptoms from today'}
         </Text>
 
         {renderSymptomPills()}
