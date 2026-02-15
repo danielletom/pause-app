@@ -34,27 +34,9 @@ const SYMPTOM_LIST = [
 ];
 
 const SEVERITY_OPTIONS = [
-  {
-    key: 'mild' as const,
-    label: 'Mild',
-    desc: 'Noticeable',
-    value: 1,
-    colors: { bg: '#f0fdf4', border: '#86efac', text: '#166534', descText: '#15803d' },
-  },
-  {
-    key: 'moderate' as const,
-    label: 'Moderate',
-    desc: 'Disruptive',
-    value: 2,
-    colors: { bg: '#fffbeb', border: '#fcd34d', text: '#92400e', descText: '#b45309' },
-  },
-  {
-    key: 'severe' as const,
-    label: 'Severe',
-    desc: "Can't function",
-    value: 3,
-    colors: { bg: '#fef2f2', border: '#fca5a5', text: '#991b1b', descText: '#dc2626' },
-  },
+  { val: 1, label: 'Mild' },
+  { val: 2, label: 'Moderate' },
+  { val: 3, label: 'Severe' },
 ];
 
 const MOODS = [
@@ -70,15 +52,19 @@ const TRIGGER_LIST = [
   'Sugar', 'Exercise', 'Weather', 'Skipped meal', 'Late night',
 ];
 
+const STEPS = ['Symptoms', 'Severity', 'Mood', 'Triggers', 'Note'];
+
 // ─── Main Component ─────────────────────────────────────
 
 export default function SymptomLogScreen() {
   const router = useRouter();
   const { getToken } = useAuth();
 
-  // State
-  const [selectedSymptoms, setSelectedSymptoms] = useState<Set<string>>(new Set());
-  const [severity, setSeverity] = useState<string | null>(null);
+  // Step state
+  const [step, setStep] = useState(0);
+
+  // Data state — symptoms stored as Record<key, severity>
+  const [symptoms, setSymptoms] = useState<Record<string, number>>({});
   const [mood, setMood] = useState<number | null>(null);
   const [triggers, setTriggers] = useState<Set<string>>(new Set());
   const [note, setNote] = useState('');
@@ -92,13 +78,21 @@ export default function SymptomLogScreen() {
 
   // Toggle helpers
   const toggleSymptom = useCallback((key: string) => {
-    hapticSelection();
-    setSelectedSymptoms((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
+    hapticLight();
+    setSymptoms((prev) => {
+      const next = { ...prev };
+      if (key in next) {
+        delete next[key];
+      } else {
+        next[key] = 1; // default to Mild
+      }
       return next;
     });
+  }, []);
+
+  const setSeverity = useCallback((key: string, val: number) => {
+    hapticSelection();
+    setSymptoms((prev) => ({ ...prev, [key]: val }));
   }, []);
 
   const toggleTrigger = useCallback((t: string) => {
@@ -116,21 +110,35 @@ export default function SymptomLogScreen() {
     setMood((prev) => (prev === val ? null : val));
   }, []);
 
+  // Navigation
+  const handleNext = () => {
+    hapticMedium();
+    if (step < STEPS.length - 1) {
+      setStep(step + 1);
+    } else {
+      handleSave();
+    }
+  };
+
+  const handleBack = () => {
+    hapticLight();
+    if (step > 0) setStep(step - 1);
+    else router.back();
+  };
+
+  // Can advance from current step?
+  const canAdvance = step === 0
+    ? Object.keys(symptoms).length > 0
+    : true; // severity, mood, triggers, note are all optional/pre-filled
+
   // Save handler
   const handleSave = async () => {
-    if (selectedSymptoms.size === 0 || saving) return;
+    if (Object.keys(symptoms).length === 0 || saving) return;
     try {
       setSaving(true);
       hapticMedium();
       const token = await getToken();
       const today = new Date().toISOString().split('T')[0];
-
-      // Build symptoms JSON with severity values
-      const symptomsJson: Record<string, number> = {};
-      const severityValue = SEVERITY_OPTIONS.find((s) => s.key === severity)?.value ?? 2;
-      selectedSymptoms.forEach((key) => {
-        symptomsJson[key] = severityValue;
-      });
 
       // Build context tags from triggers
       const contextTags = Array.from(triggers).map((t) => t.toLowerCase().replace(/\s+/g, '_'));
@@ -139,7 +147,7 @@ export default function SymptomLogScreen() {
         method: 'POST',
         body: JSON.stringify({
           date: today,
-          symptomsJson,
+          symptomsJson: symptoms,
           mood: mood ?? undefined,
           contextTags: contextTags.length > 0 ? contextTags : undefined,
           notes: note.trim() || undefined,
@@ -168,6 +176,7 @@ export default function SymptomLogScreen() {
 
   // ─── Saved confirmation screen ────────────────────────
   if (saved) {
+    const symptomCount = Object.keys(symptoms).length;
     return (
       <SafeAreaView style={styles.container}>
         <RNAnimated.View
@@ -183,8 +192,7 @@ export default function SymptomLogScreen() {
           </RNAnimated.View>
           <Text style={styles.savedTitle}>Logged</Text>
           <Text style={styles.savedSub}>
-            {selectedSymptoms.size} symptom{selectedSymptoms.size !== 1 ? 's' : ''}
-            {severity ? ` · ${severity}` : ''}
+            {symptomCount} symptom{symptomCount !== 1 ? 's' : ''}
             {mood ? ' · mood tracked' : ''}
           </Text>
           <Text style={styles.savedHint}>This feeds your Readiness Score + Insights</Text>
@@ -200,167 +208,196 @@ export default function SymptomLogScreen() {
     );
   }
 
-  // ─── Main logging UI ─────────────────────────────────
+  // ─── Step content renderers ───────────────────────────
+
+  const renderSymptoms = () => (
+    <>
+      <Text style={styles.stepTitle}>What's bothering you?</Text>
+      <Text style={styles.stepSubtitle}>Select all that apply</Text>
+      <View style={styles.pillWrap}>
+        {SYMPTOM_LIST.map((s) => {
+          const selected = s.key in symptoms;
+          return (
+            <AnimatedPressable
+              key={s.key}
+              onPress={() => toggleSymptom(s.key)}
+              scaleDown={0.95}
+              style={[styles.symptomPill, selected && styles.symptomPillActive]}
+            >
+              <Text style={[styles.symptomPillText, selected && styles.symptomPillTextActive]}>
+                {s.emoji} {s.label}
+              </Text>
+            </AnimatedPressable>
+          );
+        })}
+      </View>
+    </>
+  );
+
+  const renderSeverity = () => (
+    <>
+      <Text style={styles.stepTitle}>How bad?</Text>
+      <Text style={styles.stepSubtitle}>Rate each symptom</Text>
+      <View style={styles.severityList}>
+        {Object.entries(symptoms).map(([key, sev]) => {
+          const found = SYMPTOM_LIST.find((s) => s.key === key);
+          if (!found) return null;
+          return (
+            <View key={key} style={styles.severityRow}>
+              <Text style={styles.severitySymptomLabel}>
+                {found.emoji} {found.label}
+              </Text>
+              <View style={styles.severityButtons}>
+                {SEVERITY_OPTIONS.map((opt) => (
+                  <AnimatedPressable
+                    key={opt.val}
+                    onPress={() => setSeverity(key, opt.val)}
+                    scaleDown={0.95}
+                    style={[
+                      styles.severityButton,
+                      sev === opt.val && styles.severityButtonSelected,
+                    ]}
+                  >
+                    <Text style={[
+                      styles.severityButtonText,
+                      sev === opt.val && styles.severityButtonTextSelected,
+                    ]}>
+                      {opt.label}
+                    </Text>
+                  </AnimatedPressable>
+                ))}
+              </View>
+            </View>
+          );
+        })}
+      </View>
+    </>
+  );
+
+  const renderMood = () => (
+    <>
+      <Text style={styles.stepTitle}>How's your mood?</Text>
+      <Text style={styles.stepSubtitle}>Optional — skip if you prefer</Text>
+      <View style={styles.moodRow}>
+        {MOODS.map((m) => {
+          const active = mood === m.val;
+          return (
+            <AnimatedPressable
+              key={m.val}
+              onPress={() => toggleMood(m.val)}
+              scaleDown={0.95}
+              style={[styles.moodItem, active && styles.moodItemActive]}
+            >
+              <Text style={styles.moodEmoji}>{m.emoji}</Text>
+              <Text style={[styles.moodLabel, active && styles.moodLabelActive]}>
+                {m.label}
+              </Text>
+            </AnimatedPressable>
+          );
+        })}
+      </View>
+    </>
+  );
+
+  const renderTriggers = () => (
+    <>
+      <Text style={styles.stepTitle}>Any triggers?</Text>
+      <Text style={styles.stepSubtitle}>Optional — helps find patterns</Text>
+      <View style={styles.pillWrap}>
+        {TRIGGER_LIST.map((t) => {
+          const selected = triggers.has(t);
+          return (
+            <AnimatedPressable
+              key={t}
+              onPress={() => toggleTrigger(t)}
+              scaleDown={0.95}
+              style={[styles.triggerPill, selected && styles.triggerPillActive]}
+            >
+              <Text style={[styles.triggerPillText, selected && styles.triggerPillTextActive]}>
+                {t}
+              </Text>
+            </AnimatedPressable>
+          );
+        })}
+      </View>
+    </>
+  );
+
+  const renderNote = () => (
+    <>
+      <Text style={styles.stepTitle}>Anything else?</Text>
+      <Text style={styles.stepSubtitle}>Optional — add a quick note</Text>
+      <TextInput
+        value={note}
+        onChangeText={setNote}
+        placeholder="How you're feeling, what helped..."
+        placeholderTextColor="#a8a29e"
+        style={styles.noteInput}
+        multiline
+        numberOfLines={4}
+        textAlignVertical="top"
+      />
+    </>
+  );
+
+  const stepContent = [renderSymptoms, renderSeverity, renderMood, renderTriggers, renderNote];
+
+  // ─── Main wizard UI ───────────────────────────────────
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <AnimatedPressable
-            onPress={() => { hapticLight(); router.back(); }}
-            scaleDown={0.95}
-            style={styles.closeButton}
-          >
-            <Text style={styles.closeText}>✕ Close</Text>
-          </AnimatedPressable>
-          <Text style={styles.headerTitle}>Log a symptom</Text>
-          <View style={{ width: 60 }} />
+        {/* Progress bars */}
+        <View style={styles.progressRow}>
+          {STEPS.map((_, i) => (
+            <View
+              key={i}
+              style={[
+                styles.progressBar,
+                i <= step ? styles.progressBarActive : styles.progressBarInactive,
+              ]}
+            />
+          ))}
         </View>
 
+        {/* Navigation header */}
+        <View style={styles.nav}>
+          <AnimatedPressable onPress={handleBack} scaleDown={0.9} style={styles.navSide}>
+            <Text style={styles.navBackText}>← Back</Text>
+          </AnimatedPressable>
+          <Text style={styles.navStep}>
+            Step {step + 1} of {STEPS.length}
+          </Text>
+          <AnimatedPressable onPress={() => { hapticLight(); router.back(); }} scaleDown={0.9} style={styles.navSide}>
+            <Text style={styles.navSkipText}>Skip</Text>
+          </AnimatedPressable>
+        </View>
+
+        {/* Step content */}
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* ─── Symptoms (required) ────────────── */}
-          <Text style={styles.sectionLabel}>What's bothering you?</Text>
-          <View style={styles.pillWrap}>
-            {SYMPTOM_LIST.map((s) => {
-              const selected = selectedSymptoms.has(s.key);
-              return (
-                <AnimatedPressable
-                  key={s.key}
-                  onPress={() => toggleSymptom(s.key)}
-                  scaleDown={0.95}
-                  style={[styles.symptomPill, selected && styles.symptomPillActive]}
-                >
-                  <Text style={[styles.symptomPillText, selected && styles.symptomPillTextActive]}>
-                    {s.label}
-                  </Text>
-                </AnimatedPressable>
-              );
-            })}
-          </View>
-
-          {/* ─── Severity (appears when symptoms selected) ─ */}
-          {selectedSymptoms.size > 0 && (
-            <>
-              <Text style={styles.sectionLabel}>How bad?</Text>
-              <View style={styles.severityRow}>
-                {SEVERITY_OPTIONS.map((sev) => {
-                  const active = severity === sev.key;
-                  return (
-                    <AnimatedPressable
-                      key={sev.key}
-                      onPress={() => { hapticSelection(); setSeverity(sev.key); }}
-                      scaleDown={0.97}
-                      style={[
-                        styles.severityCard,
-                        active
-                          ? { backgroundColor: sev.colors.bg, borderColor: sev.colors.border }
-                          : { backgroundColor: '#f5f5f4', borderColor: '#f5f5f4' },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.severityLabel,
-                          { color: active ? sev.colors.text : '#1c1917' },
-                        ]}
-                      >
-                        {sev.label}
-                      </Text>
-                      <Text
-                        style={[
-                          styles.severityDesc,
-                          { color: active ? sev.colors.descText : '#a8a29e' },
-                        ]}
-                      >
-                        {sev.desc}
-                      </Text>
-                    </AnimatedPressable>
-                  );
-                })}
-              </View>
-
-              {/* Divider */}
-              <View style={styles.divider} />
-            </>
-          )}
-
-          {/* ─── Mood (optional) ────────────────── */}
-          <Text style={styles.sectionLabel}>
-            Mood <Text style={styles.optionalTag}>· optional</Text>
-          </Text>
-          <View style={styles.moodRow}>
-            {MOODS.map((m) => {
-              const active = mood === m.val;
-              return (
-                <AnimatedPressable
-                  key={m.val}
-                  onPress={() => toggleMood(m.val)}
-                  scaleDown={0.95}
-                  style={[styles.moodItem, active && styles.moodItemActive]}
-                >
-                  <Text style={styles.moodEmoji}>{m.emoji}</Text>
-                  <Text style={[styles.moodLabel, active && styles.moodLabelActive]}>
-                    {m.label}
-                  </Text>
-                </AnimatedPressable>
-              );
-            })}
-          </View>
-
-          {/* ─── Triggers (optional) ────────────── */}
-          <Text style={styles.sectionLabel}>
-            Triggers <Text style={styles.optionalTag}>· optional</Text>
-          </Text>
-          <View style={styles.pillWrap}>
-            {TRIGGER_LIST.map((t) => {
-              const selected = triggers.has(t);
-              return (
-                <AnimatedPressable
-                  key={t}
-                  onPress={() => toggleTrigger(t)}
-                  scaleDown={0.95}
-                  style={[styles.triggerPill, selected && styles.triggerPillActive]}
-                >
-                  <Text style={[styles.triggerPillText, selected && styles.triggerPillTextActive]}>
-                    {t}
-                  </Text>
-                </AnimatedPressable>
-              );
-            })}
-          </View>
-
-          {/* ─── Note (optional) ────────────────── */}
-          <TextInput
-            value={note}
-            onChangeText={setNote}
-            placeholder="Anything else? (optional)"
-            placeholderTextColor="#a8a29e"
-            style={styles.noteInput}
-            multiline={false}
-            returnKeyType="done"
-          />
+          {stepContent[step]()}
         </ScrollView>
 
-        {/* ─── Save button ────────────────────── */}
-        <View style={styles.saveBar}>
+        {/* Footer button */}
+        <View style={styles.footer}>
           <AnimatedPressable
-            onPress={handleSave}
-            scaleDown={0.97}
-            style={[
-              styles.saveButton,
-              selectedSymptoms.size === 0 && styles.saveButtonDisabled,
-            ]}
+            onPress={handleNext}
+            scaleDown={0.96}
+            style={[styles.nextButton, !canAdvance && styles.nextButtonDisabled]}
+            disabled={!canAdvance || saving}
           >
-            <Text style={[styles.saveButtonText, selectedSymptoms.size === 0 && styles.saveButtonTextDisabled]}>
-              {selectedSymptoms.size === 0
-                ? 'Select a symptom'
-                : `Save · ${selectedSymptoms.size} symptom${selectedSymptoms.size !== 1 ? 's' : ''}`}
+            <Text style={[styles.nextButtonText, !canAdvance && styles.nextButtonTextDisabled]}>
+              {saving
+                ? 'Saving...'
+                : step < STEPS.length - 1
+                  ? 'Next'
+                  : `Save · ${Object.keys(symptoms).length} symptom${Object.keys(symptoms).length !== 1 ? 's' : ''} ✓`}
             </Text>
           </AnimatedPressable>
         </View>
@@ -374,24 +411,37 @@ export default function SymptomLogScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#ffffff' },
 
-  // Header
-  header: {
+  // Progress bar
+  progressRow: {
+    flexDirection: 'row',
+    gap: 6,
+    paddingHorizontal: 24,
+    paddingTop: 8,
+    marginBottom: 4,
+  },
+  progressBar: { flex: 1, height: 4, borderRadius: 2 },
+  progressBarActive: { backgroundColor: '#1c1917' },
+  progressBarInactive: { backgroundColor: '#e7e5e4' },
+
+  // Navigation
+  nav: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
     paddingVertical: 12,
   },
-  closeButton: { paddingVertical: 4 },
-  closeText: { fontSize: 13, color: '#a8a29e' },
-  headerTitle: { fontSize: 15, fontWeight: '600', color: '#1c1917' },
+  navSide: { width: 60 },
+  navBackText: { fontSize: 13, color: '#a8a29e' },
+  navStep: { fontSize: 13, fontWeight: '500', color: '#78716c' },
+  navSkipText: { fontSize: 13, color: '#a8a29e', textAlign: 'right' },
 
   // Scroll content
-  scrollContent: { paddingHorizontal: 24, paddingBottom: 20 },
+  scrollContent: { paddingHorizontal: 24, paddingBottom: 20, paddingTop: 8 },
 
-  // Section labels
-  sectionLabel: { fontSize: 13, fontWeight: '500', color: '#44403c', marginBottom: 8, marginTop: 4 },
-  optionalTag: { fontWeight: '400', color: '#d6d3d1' },
+  // Step titles
+  stepTitle: { fontSize: 22, fontWeight: '700', color: '#1c1917', marginBottom: 4 },
+  stepSubtitle: { fontSize: 13, color: '#a8a29e', marginBottom: 24 },
 
   // Symptom pills
   pillWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 },
@@ -405,20 +455,27 @@ const styles = StyleSheet.create({
   symptomPillText: { fontSize: 13, fontWeight: '500', color: '#78716c' },
   symptomPillTextActive: { color: '#ffffff' },
 
-  // Severity cards
-  severityRow: { flexDirection: 'row', gap: 8, marginBottom: 8 },
-  severityCard: {
-    flex: 1,
-    borderRadius: 16,
-    padding: 14,
-    borderWidth: 2,
+  // Severity — per-symptom rows matching morning check-in
+  severityList: { gap: 4 },
+  severityRow: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f5f5f4',
   },
-  severityLabel: { fontSize: 14, fontWeight: '600' },
-  severityDesc: { fontSize: 11, marginTop: 2 },
-
-  // Divider
-  divider: { height: 1, backgroundColor: '#f5f5f4', marginVertical: 12 },
+  severitySymptomLabel: { fontSize: 13, color: '#1c1917', flex: 1 },
+  severityButtons: { flexDirection: 'row', gap: 6 },
+  severityButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    backgroundColor: '#f5f5f4',
+  },
+  severityButtonSelected: { backgroundColor: '#1c1917' },
+  severityButtonText: { fontSize: 12, color: '#78716c', fontWeight: '500' },
+  severityButtonTextSelected: { color: '#ffffff' },
 
   // Mood
   moodRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 },
@@ -454,27 +511,26 @@ const styles = StyleSheet.create({
     color: '#1c1917',
     borderWidth: 1,
     borderColor: '#f5f5f4',
-    marginTop: 4,
-    marginBottom: 8,
+    minHeight: 100,
   },
 
-  // Save bar
-  saveBar: {
+  // Footer
+  footer: {
     paddingHorizontal: 24,
     paddingTop: 12,
     paddingBottom: 16,
     borderTopWidth: 1,
     borderTopColor: '#f5f5f4',
   },
-  saveButton: {
+  nextButton: {
     backgroundColor: '#1c1917',
     borderRadius: 16,
     paddingVertical: 14,
     alignItems: 'center',
   },
-  saveButtonDisabled: { backgroundColor: '#e7e5e4' },
-  saveButtonText: { fontSize: 14, fontWeight: '600', color: '#ffffff' },
-  saveButtonTextDisabled: { color: '#a8a29e' },
+  nextButtonDisabled: { backgroundColor: '#e7e5e4' },
+  nextButtonText: { fontSize: 14, fontWeight: '600', color: '#ffffff' },
+  nextButtonTextDisabled: { color: '#a8a29e' },
 
   // Saved confirmation
   savedContainer: {

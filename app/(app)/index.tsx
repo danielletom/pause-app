@@ -388,26 +388,45 @@ export default function HomeScreen() {
           </View>
         ) : (
           <>
-            {/* Readiness Score Card — dark */}
+            {/* Readiness Score Card — dark, with activity recommendation inside */}
             {(() => {
               const score = readinessScore;
               const scoreNum = score ?? 0;
               const circumference = 163.4;
               const arcLength = (scoreNum / 100) * circumference;
+              const activityLabel = (score ?? 0) >= 70 ? 'Good day for activity' : (score ?? 0) >= 40 ? 'Take it easy' : 'Rest & recover';
+              const activityColor = (score ?? 0) >= 70 ? '#34d399' : (score ?? 0) >= 40 ? '#fbbf24' : '#fca5a5';
               return (
                 <View style={styles.readinessCard}>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.readinessLabel}>READINESS SCORE</Text>
                     <Text style={styles.readinessValue}>{score ?? '—'}</Text>
                     {hasLog && (
-                      <Text style={styles.readinessHint}>
-                        {sleepLog?.sleepHours ? `${sleepLog.sleepHours}h sleep` : 'No sleep data'} · {latestMood ? MOOD_LABEL[latestMood] : 'No mood'}
-                      </Text>
+                      <>
+                        <Text style={[styles.readinessActivity, { color: activityColor }]}>{activityLabel}</Text>
+                        <Text style={styles.readinessHint}>
+                          {recommendation || (
+                            `${sleepLog?.sleepHours ? `${sleepLog.sleepHours}h sleep` : 'Sleep data'}${latestMood ? ` + ${MOOD_LABEL[latestMood]?.toLowerCase() || ''} mood` : ''}${symptomTrends.length > 0 ? ` + ${symptomTrends.length <= 2 ? 'low' : 'moderate'} symptoms` : ''}`
+                          )}
+                        </Text>
+                      </>
                     )}
                     {!hasLog && (
                       <Text style={styles.readinessHint}>
                         {isToday ? 'Log today to see your score' : 'No data for this day'}
                       </Text>
+                    )}
+                    {/* Stats row inside card */}
+                    {hasLog && (
+                      <View style={styles.readinessStatsInline}>
+                        <Text style={styles.readinessStatText}>
+                          Sleep: {sleepLog?.sleepHours ? `${sleepLog.sleepHours}h ✓` : '—'}
+                        </Text>
+                        <Text style={styles.readinessStatDot}>·</Text>
+                        <Text style={styles.readinessStatText}>
+                          Symptoms: {symptomTrends.length > 0 ? (symptomTrends.length <= 2 ? 'Low ✓' : 'Moderate') : 'None ✓'}
+                        </Text>
+                      </View>
                     )}
                   </View>
                   <View style={styles.readinessRingOuter}>
@@ -434,35 +453,8 @@ export default function HomeScreen() {
                 </View>
               );
             })()}
-            {/* Readiness explanation sub-card */}
-            {hasLog && (
-              <View style={styles.readinessExplain}>
-                <Text style={styles.readinessExplainTitle}>
-                  {(readinessScore ?? 0) >= 70 ? 'Good day for activity' : (readinessScore ?? 0) >= 40 ? 'Take it easy' : 'Rest & recover'}
-                </Text>
-                <Text style={styles.readinessExplainText}>
-                  {recommendation || (
-                    `Based on ${sleepLog?.sleepHours ? `${sleepLog.sleepHours}h sleep` : 'sleep data'}${latestMood ? `, ${MOOD_LABEL[latestMood]?.toLowerCase() || ''} mood` : ''}${symptomTrends.length > 0 ? `, and ${symptomTrends.length} symptom${symptomTrends.length > 1 ? 's' : ''}` : ''}.`
-                  )}
-                </Text>
-              </View>
-            )}
-            {/* Readiness stats row */}
-            {hasLog && (
-              <View style={styles.readinessStats}>
-                <Text style={styles.readinessStatText}>
-                  Sleep: {sleepLog?.sleepHours ? `${sleepLog.sleepHours}h ✓` : '—'}
-                </Text>
-                <Text style={styles.readinessStatText}>
-                  Symptoms: {symptomTrends.length > 0 ? (symptomTrends.length <= 2 ? 'Low ✓' : 'Moderate') : 'None ✓'}
-                </Text>
-                <Text style={styles.readinessStatText}>
-                  Stress: {latestMood && latestMood >= 3 ? 'Low' : 'Moderate'}
-                </Text>
-              </View>
-            )}
 
-            {/* SOS card */}
+            {/* Quick actions — SOS + Check-in / Log */}
             <View style={styles.actionRow}>
               <AnimatedPressable
                 onPress={() => { hapticMedium(); router.push('/(app)/sos'); }}
@@ -474,6 +466,34 @@ export default function HomeScreen() {
                 </View>
                 <Text style={styles.sosTitle}>SOS</Text>
                 <Text style={styles.sosSubtitle}>Hot flash</Text>
+              </AnimatedPressable>
+              <AnimatedPressable
+                onPress={() => {
+                  hapticMedium();
+                  if (!morningDone) {
+                    router.push({ pathname: '/(app)/quick-log', params: { date: selectedDate, mode: 'morning' } });
+                  } else if (!eveningDone) {
+                    router.push({ pathname: '/(app)/quick-log', params: { date: selectedDate, mode: 'evening' } });
+                  } else {
+                    router.push('/(app)/log');
+                  }
+                }}
+                scaleDown={0.97}
+                style={styles.checkinCard}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.checkinTitle}>
+                    {!morningDone ? '☀ Morning check-in' : !eveningDone ? '☽ Evening check-in' : '+ Log symptoms'}
+                  </Text>
+                  <Text style={styles.checkinSub}>
+                    {!morningDone || !eveningDone
+                      ? `2 min${lastLoggedHoursAgo ? ` · Last logged ${lastLoggedHoursAgo}h ago` : ''}`
+                      : 'Quick symptom log'}
+                  </Text>
+                </View>
+                <View style={styles.checkinArrow}>
+                  <Text style={{ fontSize: 14, color: '#ffffff' }}>→</Text>
+                </View>
               </AnimatedPressable>
             </View>
 
@@ -668,9 +688,16 @@ export default function HomeScreen() {
                   </View>
                 )}
 
-                {/* Sleep score row */}
+                {/* Sleep score row — tappable to edit */}
                 {sleepLog?.sleepHours && (
-                  <View style={[styles.card, { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 8 }]}>
+                  <AnimatedPressable
+                    onPress={() => {
+                      hapticLight();
+                      router.push({ pathname: '/(app)/quick-log', params: { date: selectedDate, mode: 'morning' } });
+                    }}
+                    scaleDown={0.97}
+                    style={[styles.card, { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 8 }]}
+                  >
                     <View style={styles.trendBarsRow}>
                       {[1, 2, 3].map((i) => (
                         <View
@@ -694,7 +721,8 @@ export default function HomeScreen() {
                         {sleepLog.sleepQuality ? ` · ${sleepLog.sleepQuality}` : ''}
                       </Text>
                     </View>
-                  </View>
+                    <Text style={{ fontSize: 11, color: '#a8a29e' }}>Edit →</Text>
+                  </AnimatedPressable>
                 )}
               </View>
             )}
@@ -1130,30 +1158,23 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 
-  readinessExplain: {
-    backgroundColor: '#292524',
-    borderRadius: 14,
-    padding: 14,
-    marginTop: 10,
-  },
-  readinessExplainTitle: {
-    fontSize: 12,
+  readinessActivity: {
+    fontSize: 13,
     fontWeight: '600',
-    color: '#34d399',
-    marginBottom: 4,
+    marginTop: 8,
   },
-  readinessExplainText: {
-    fontSize: 12,
-    color: '#78716c',
-    lineHeight: 18,
-  },
-  readinessStats: {
+  readinessStatsInline: {
     flexDirection: 'row',
-    gap: 12,
-    marginTop: 10,
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 6,
   },
   readinessStatText: {
-    fontSize: 11,
+    fontSize: 10,
+    color: '#78716c',
+  },
+  readinessStatDot: {
+    fontSize: 10,
     color: '#78716c',
   },
 
@@ -1300,11 +1321,12 @@ const styles = StyleSheet.create({
     color: '#a8a29e',
   },
 
-  // SOS + Quick log row
+  // SOS + Check-in row
   actionRow: {
     flexDirection: 'row',
     gap: 8,
     marginBottom: 16,
+    marginTop: 4,
   },
   sosCard: {
     backgroundColor: '#ecfdf5',
@@ -1316,6 +1338,33 @@ const styles = StyleSheet.create({
     gap: 8,
     width: 90,
   },
+  checkinCard: {
+    flex: 1,
+    backgroundColor: '#1c1917',
+    borderRadius: 16,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  checkinTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#ffffff',
+  },
+  checkinSub: {
+    fontSize: 11,
+    color: '#78716c',
+    marginTop: 2,
+  },
+  checkinArrow: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#44403c',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   sosIcon: {
     width: 40,
     height: 40,
@@ -1326,26 +1375,6 @@ const styles = StyleSheet.create({
   },
   sosTitle: { fontSize: 12, fontWeight: '600', color: '#115e59' },
   sosSubtitle: { fontSize: 11, color: '#5eead4' },
-  quickLogCard: {
-    flex: 1,
-    backgroundColor: '#f5f5f4',
-    borderRadius: 16,
-    padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  quickLogIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: '#1c1917',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  quickLogIconText: { fontSize: 20, fontWeight: '300', color: '#ffffff' },
-  quickLogTitle: { fontSize: 14, fontWeight: '600', color: '#1c1917' },
-  quickLogSub: { fontSize: 11, color: '#a8a29e', marginTop: 1 },
 
   // Sections
   section: { marginBottom: 20 },
@@ -1355,7 +1384,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
-  sectionTitle: { fontSize: 14, fontWeight: '600', color: '#1c1917' },
+  sectionTitle: { fontSize: 14, fontWeight: '600', color: '#1c1917', marginBottom: 2 },
   seeAll: { fontSize: 12, color: '#a8a29e', fontWeight: '300' },
 
   // Trend grid
