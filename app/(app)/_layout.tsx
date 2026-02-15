@@ -88,7 +88,6 @@ export default function AppLayout() {
       />
       {/* Hidden screens — accessible via router.push but not shown in tab bar */}
       <Tabs.Screen name="quick-log" options={{ href: null }} />
-      <Tabs.Screen name="detailed-log" options={{ href: null }} />
       <Tabs.Screen name="learn" options={{ href: null }} />
       <Tabs.Screen name="article" options={{ href: null }} />
       <Tabs.Screen name="sos" options={{ href: null }} />

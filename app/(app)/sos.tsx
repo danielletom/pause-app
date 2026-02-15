@@ -359,7 +359,7 @@ export default function SOSScreen() {
           <AnimatedPressable
             onPress={() => {
               hapticLight();
-              router.replace('/(app)/quick-log');
+              router.replace('/(app)/log');
             }}
             scaleDown={0.96}
             style={styles.ghostButton}

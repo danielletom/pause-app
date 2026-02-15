@@ -471,7 +471,7 @@ export default function InsightsScreen() {
               Log your symptoms for a few days and insights will start appearing here.
             </Text>
             <AnimatedPressable
-              onPress={() => { hapticLight(); router.push('/(app)/quick-log'); }}
+              onPress={() => { hapticLight(); router.push('/(app)/log'); }}
               scaleDown={0.97}
               style={styles.emptyCta}
             >
@@ -881,7 +881,7 @@ export default function InsightsScreen() {
 
             {/* ─── CTA ─── */}
             <AnimatedPressable
-              onPress={() => { hapticLight(); router.push('/(app)/quick-log'); }}
+              onPress={() => { hapticLight(); router.push('/(app)/log'); }}
               scaleDown={0.97}
               style={ls.bigCta}
             >
