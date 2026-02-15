@@ -33,17 +33,40 @@ const SYMPTOM_EMOJI: Record<string, string> = {
   night_sweats: '🌊', headache: '🤕', mood_swings: '🎭', insomnia: '😴',
 };
 
-const POPULATION_BENCHMARKS: Record<string, { pct: number; label: string; detail: string }> = {
-  hot_flash: { pct: 79, label: 'Very common', detail: '79% of women in perimenopause experience hot flashes' },
-  brain_fog: { pct: 60, label: 'Very common', detail: '60% report cognitive difficulties during hormonal changes' },
-  irritability: { pct: 70, label: 'Very common', detail: '70% of perimenopausal women report increased irritability' },
-  joint_pain: { pct: 50, label: 'Common', detail: 'About half of women experience joint pain during perimenopause' },
-  anxiety: { pct: 51, label: 'Common', detail: '51% of women report new or worsening anxiety' },
-  fatigue: { pct: 85, label: 'Very common', detail: '85% of perimenopausal women report persistent fatigue' },
-  nausea: { pct: 28, label: 'Less common', detail: '28% report nausea — often linked to hormonal fluctuations' },
-  heart_racing: { pct: 42, label: 'Common', detail: '42% experience heart palpitations — it\'s hormonal, not dangerous' },
-  night_sweats: { pct: 75, label: 'Very common', detail: '75% of women experience night sweats during perimenopause' },
-};
+// ─── API response types ─────────────────────────────────
+interface CorrelationItem {
+  factor: string;
+  symptom: string;
+  direction: 'positive' | 'negative';
+  confidence: number;
+  effectSizePct: number;
+  occurrences: number;
+  lagDays: number;
+  humanLabel: string;
+}
+
+interface CorrelationsResponse {
+  correlations: CorrelationItem[];
+  lastComputed: string | null;
+  dataQuality: 'building' | 'moderate' | 'strong';
+  totalFound: number;
+}
+
+interface BenchmarkSymptom {
+  name: string;
+  userFrequencyDays: number;
+  userAvgSeverity: number;
+  cohortPrevalencePct: number;
+  cohortAvgFrequency: number;
+  percentilePosition: number;
+  label: 'Very common' | 'Common' | 'Less common';
+}
+
+interface BenchmarksResponse {
+  cohort: { key: string; label: string; sampleSize: number };
+  symptoms: BenchmarkSymptom[];
+  message?: string;
+}
 
 const NORMALIZATION_FACTS = [
   { emoji: '🧠', title: 'Brain fog is hormonal', desc: 'Estrogen fluctuations directly affect memory and focus. It\'s not "just stress" — your brain is adapting.' },
@@ -72,122 +95,7 @@ function formatSymptomName(name: string): string {
   return name.replace(/_/g, ' ').replace(/([A-Z])/g, ' $1').replace(/^./, (c) => c.toUpperCase());
 }
 
-function computeCorrelations(logs: LogEntry[]) {
-  const results: { factor: string; symptom: string; direction: 'positive' | 'negative'; pct: number; confidence: string; days: number }[] = [];
-  if (logs.length < 7) return results;
-
-  // Sleep → symptom correlation
-  const logsWithSleep = logs.filter((l) => l.sleepHours != null);
-  const goodSleepLogs = logsWithSleep.filter((l) => (l.sleepHours ?? 0) >= 7);
-  const poorSleepLogs = logsWithSleep.filter((l) => (l.sleepHours ?? 0) < 6);
-
-  // Collect all symptoms
-  const allSymptoms = new Set<string>();
-  logs.forEach((l) => {
-    if (l.symptomsJson) Object.keys(l.symptomsJson).forEach((s) => allSymptoms.add(s));
-  });
-
-  allSymptoms.forEach((symptom) => {
-    // Check sleep correlation
-    if (goodSleepLogs.length >= 3 && poorSleepLogs.length >= 3) {
-      const goodSleepSymptomRate = goodSleepLogs.filter((l) => l.symptomsJson?.[symptom]).length / goodSleepLogs.length;
-      const poorSleepSymptomRate = poorSleepLogs.filter((l) => l.symptomsJson?.[symptom]).length / poorSleepLogs.length;
-      const diff = Math.round((poorSleepSymptomRate - goodSleepSymptomRate) * 100);
-      if (Math.abs(diff) > 15) {
-        results.push({
-          factor: 'Good sleep (7h+)',
-          symptom: formatSymptomName(symptom),
-          direction: diff > 0 ? 'positive' : 'negative',
-          pct: Math.abs(diff),
-          confidence: logsWithSleep.length > 20 ? 'High confidence' : 'Building confidence',
-          days: logsWithSleep.length,
-        });
-      }
-    }
-
-    // Check exercise correlation
-    const exerciseLogs = logs.filter((l) => (l.contextTags || []).some((t) => t.toLowerCase().includes('exercise') || t.toLowerCase().includes('workout')));
-    const noExerciseLogs = logs.filter((l) => !(l.contextTags || []).some((t) => t.toLowerCase().includes('exercise') || t.toLowerCase().includes('workout')));
-    if (exerciseLogs.length >= 3 && noExerciseLogs.length >= 3) {
-      const exRate = exerciseLogs.filter((l) => l.symptomsJson?.[symptom]).length / exerciseLogs.length;
-      const noExRate = noExerciseLogs.filter((l) => l.symptomsJson?.[symptom]).length / noExerciseLogs.length;
-      const diff = Math.round((noExRate - exRate) * 100);
-      if (diff > 15) {
-        results.push({
-          factor: 'Exercise',
-          symptom: formatSymptomName(symptom),
-          direction: 'positive',
-          pct: diff,
-          confidence: exerciseLogs.length > 10 ? 'High confidence' : 'Building confidence',
-          days: exerciseLogs.length + noExerciseLogs.length,
-        });
-      }
-    }
-
-    // Check alcohol correlation
-    const alcoholLogs = logs.filter((l) => (l.contextTags || []).some((t) => t.toLowerCase().includes('alcohol')));
-    const noAlcoholLogs = logs.filter((l) => !(l.contextTags || []).some((t) => t.toLowerCase().includes('alcohol')));
-    if (alcoholLogs.length >= 2 && noAlcoholLogs.length >= 3) {
-      const alcRate = alcoholLogs.filter((l) => l.symptomsJson?.[symptom]).length / alcoholLogs.length;
-      const noAlcRate = noAlcoholLogs.filter((l) => l.symptomsJson?.[symptom]).length / noAlcoholLogs.length;
-      const diff = Math.round((alcRate - noAlcRate) * 100);
-      if (diff > 15) {
-        results.push({
-          factor: 'Alcohol',
-          symptom: formatSymptomName(symptom),
-          direction: 'negative',
-          pct: diff,
-          confidence: alcoholLogs.length > 8 ? 'High confidence' : 'Investigating',
-          days: alcoholLogs.length + noAlcoholLogs.length,
-        });
-      }
-    }
-  });
-
-  // Sort by pct descending, limit to top 4
-  return results.sort((a, b) => b.pct - a.pct).slice(0, 4);
-}
-
-function computeHelpsHurts(logs: LogEntry[]) {
-  if (logs.length < 5) return { helps: [], hurts: [] };
-
-  const tagSymptomEffect: Record<string, { better: number; worse: number; total: number }> = {};
-  const activities = ['exercise', 'meditated', 'time outdoors', 'hydrated', 'alcohol', 'caffeine', 'sugar', 'spicy'];
-
-  logs.forEach((l) => {
-    const tags = (l.contextTags || []).map((t) => t.toLowerCase());
-    const symptomCount = l.symptomsJson ? Object.keys(l.symptomsJson).length : 0;
-    const avgSeverity = l.symptomsJson
-      ? Object.values(l.symptomsJson).reduce((a, b) => a + b, 0) / Math.max(1, symptomCount)
-      : 0;
-
-    activities.forEach((act) => {
-      if (tags.some((t) => t.includes(act))) {
-        if (!tagSymptomEffect[act]) tagSymptomEffect[act] = { better: 0, worse: 0, total: 0 };
-        tagSymptomEffect[act].total += 1;
-        if (avgSeverity < 1.5) tagSymptomEffect[act].better += 1;
-        else if (avgSeverity > 2) tagSymptomEffect[act].worse += 1;
-      }
-    });
-  });
-
-  const helps: { label: string; pct: number }[] = [];
-  const hurts: { label: string; pct: number }[] = [];
-
-  Object.entries(tagSymptomEffect).forEach(([tag, data]) => {
-    if (data.total < 2) return;
-    const betterRate = Math.round((data.better / data.total) * 100);
-    const worseRate = Math.round((data.worse / data.total) * 100);
-    const name = tag.charAt(0).toUpperCase() + tag.slice(1);
-    if (betterRate > worseRate && betterRate > 30) helps.push({ label: name, pct: betterRate });
-    if (worseRate > betterRate && worseRate > 30) hurts.push({ label: name, pct: worseRate });
-  });
-
-  return {
-    helps: helps.sort((a, b) => b.pct - a.pct).slice(0, 4),
-    hurts: hurts.sort((a, b) => b.pct - a.pct).slice(0, 4),
-  };
-}
+// (correlations and benchmarks now fetched from API — mock functions removed)
 
 function computeSleepScore(logs: LogEntry[]) {
   const sleepLogs = logs.filter((l) => l.sleepHours != null);
@@ -305,13 +213,41 @@ export default function InsightsScreen() {
   const [loading, setLoading] = useState(true);
   const hasLoadedOnce = useRef(false);
 
+  // API-backed state for correlations
+  const [correlations, setCorrelations] = useState<CorrelationItem[]>([]);
+  const [dataQuality, setDataQuality] = useState<string>('building');
+
+  // API-backed state for benchmarks
+  const [benchmarkData, setBenchmarkData] = useState<BenchmarksResponse | null>(null);
+
   const fetchData = useCallback(async () => {
     try {
       if (!hasLoadedOnce.current) setLoading(true);
       const token = await getToken();
       const range = period === '1w' ? '7d' : period === '4w' ? '28d' : period === '3m' ? '90d' : '365d';
-      const data = await apiRequest(`/api/logs?range=${range}`, token).catch(() => []);
-      setLogs(Array.isArray(data) ? data : []);
+
+      // Fetch logs + correlations + benchmarks in parallel
+      const [logsData, correlationsData, benchmarksData] = await Promise.all([
+        apiRequest(`/api/logs?range=${range}`, token).catch(() => []),
+        apiRequest('/api/insights/correlations', token).catch(() => null),
+        apiRequest('/api/insights/benchmarks', token).catch(() => null),
+      ]);
+
+      setLogs(Array.isArray(logsData) ? logsData : []);
+
+      // Set correlations from API
+      if (correlationsData?.correlations) {
+        setCorrelations(correlationsData.correlations);
+        setDataQuality(correlationsData.dataQuality || 'building');
+      } else {
+        setCorrelations([]);
+      }
+
+      // Set benchmark data from API
+      if (benchmarksData?.symptoms || benchmarksData?.cohort) {
+        setBenchmarkData(benchmarksData);
+      }
+
       hasLoadedOnce.current = true;
     } catch {
       hasLoadedOnce.current = true;
@@ -354,8 +290,25 @@ export default function InsightsScreen() {
       .slice(0, 6);
   }, [logs]);
 
-  const correlations = useMemo(() => computeCorrelations(logs), [logs]);
-  const helpsHurts = useMemo(() => computeHelpsHurts(logs), [logs]);
+  // Derive helps/hurts from API correlations (positive direction = helps, negative = hurts)
+  const helpsHurts = useMemo(() => {
+    const helps: { label: string; pct: number }[] = [];
+    const hurts: { label: string; pct: number }[] = [];
+    for (const c of correlations) {
+      const pct = Math.round(Math.abs(c.effectSizePct));
+      if (pct < 10) continue;
+      const label = formatSymptomName(c.factor);
+      if (c.direction === 'negative') {
+        helps.push({ label, pct });
+      } else {
+        hurts.push({ label, pct });
+      }
+    }
+    return {
+      helps: helps.sort((a, b) => b.pct - a.pct).slice(0, 4),
+      hurts: hurts.sort((a, b) => b.pct - a.pct).slice(0, 4),
+    };
+  }, [correlations]);
   const sleepData = useMemo(() => computeSleepScore(logs), [logs]);
   const weeklyStory = useMemo(() => computeWeeklyStory(logs), [logs]);
 
@@ -462,28 +415,42 @@ export default function InsightsScreen() {
             {/* ─── What we've connected (correlations) ─ */}
             {correlations.length > 0 && (
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>What we've connected</Text>
-                <View style={{ gap: 8 }}>
-                  {correlations.map((c, i) => (
-                    <View
-                      key={i}
-                      style={[
-                        styles.correlationCard,
-                        c.direction === 'positive' ? styles.correlationPositive : styles.correlationNegative,
-                      ]}
-                    >
-                      <Text style={styles.correlationFactor}>{c.factor}</Text>
-                      <Text style={styles.correlationArrow}>
-                        {c.direction === 'positive' ? '→' : '→'} {c.symptom}{' '}
-                        <Text style={{ color: c.direction === 'positive' ? '#059669' : '#dc2626' }}>
-                          {c.direction === 'positive' ? `↓${c.pct}%` : `↑${c.pct}%`}
-                        </Text>
-                      </Text>
-                      <Text style={styles.correlationConfidence}>
-                        Seen in {c.days} days · {c.confidence}
+                <View style={styles.sectionHeaderRow}>
+                  <Text style={styles.sectionTitle}>What we've connected</Text>
+                  {dataQuality !== 'strong' && (
+                    <View style={styles.qualityBadge}>
+                      <Text style={styles.qualityBadgeText}>
+                        {dataQuality === 'building' ? '📊 Building' : '📈 Moderate'}
                       </Text>
                     </View>
-                  ))}
+                  )}
+                </View>
+                <View style={{ gap: 8 }}>
+                  {correlations.slice(0, 4).map((c, i) => {
+                    const pct = Math.round(Math.abs(c.effectSizePct));
+                    const lagLabel = c.lagDays > 0 ? ` (${c.lagDays}d lag)` : '';
+                    return (
+                      <View
+                        key={i}
+                        style={[
+                          styles.correlationCard,
+                          c.direction === 'negative' ? styles.correlationPositive : styles.correlationNegative,
+                        ]}
+                      >
+                        <Text style={styles.correlationFactor}>{c.humanLabel}</Text>
+                        <Text style={styles.correlationArrow}>
+                          {formatSymptomName(c.factor)} → {formatSymptomName(c.symptom)}{' '}
+                          <Text style={{ color: c.direction === 'negative' ? '#059669' : '#dc2626' }}>
+                            {c.direction === 'negative' ? `↓${pct}%` : `↑${pct}%`}
+                          </Text>
+                          {lagLabel}
+                        </Text>
+                        <Text style={styles.correlationConfidence}>
+                          Seen {c.occurrences} times · {Math.round(c.confidence * 100)}% confidence
+                        </Text>
+                      </View>
+                    );
+                  })}
                 </View>
               </View>
             )}
@@ -646,51 +613,65 @@ export default function InsightsScreen() {
             {/* ─── Comparison group ────────────────── */}
             <View style={styles.storyCard}>
               <Text style={styles.storyLabel}>Your comparison group</Text>
-              <Text style={styles.compGroupTitle}>Early perimenopause · 40-49</Text>
-              <Text style={styles.compGroupSub}>12,847 women like you</Text>
-              <View style={styles.compTraits}>
-                {['Perimenopause', '40s', 'Active', 'Working'].map((t) => (
-                  <View key={t} style={styles.compTraitPill}>
-                    <Text style={styles.compTraitText}>{t}</Text>
-                  </View>
-                ))}
-              </View>
+              <Text style={styles.compGroupTitle}>
+                {benchmarkData?.cohort?.label || 'All stages'}
+              </Text>
+              <Text style={styles.compGroupSub}>
+                {benchmarkData?.cohort?.sampleSize
+                  ? `${benchmarkData.cohort.sampleSize.toLocaleString()} women like you`
+                  : 'General population benchmarks'}
+              </Text>
+              {benchmarkData?.message && (
+                <Text style={[styles.compGroupSub, { marginTop: 6, fontStyle: 'italic' }]}>
+                  {benchmarkData.message}
+                </Text>
+              )}
+              {benchmarkData?.cohort?.key && (
+                <View style={styles.compTraits}>
+                  {benchmarkData.cohort.key.split('_').filter(p => p !== 'unknown').map((t) => (
+                    <View key={t} style={styles.compTraitPill}>
+                      <Text style={styles.compTraitText}>
+                        {t.charAt(0).toUpperCase() + t.slice(1)}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              )}
             </View>
 
             {/* ─── Your symptoms vs others ─────────── */}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Your symptoms vs. others</Text>
               <View style={{ gap: 12 }}>
-                {symptomTrends.map((s) => {
-                  const benchmark = POPULATION_BENCHMARKS[s.name];
-                  if (!benchmark) return null;
-                  const userPct = Math.round((s.count / Math.max(1, s.daysTotal)) * 100);
-                  const badgeColor = benchmark.label === 'Very common' ? '#059669' : benchmark.label === 'Common' ? '#d97706' : '#a8a29e';
+                {(benchmarkData?.symptoms || []).map((bm) => {
+                  const badgeColor = bm.label === 'Very common' ? '#059669' : bm.label === 'Common' ? '#d97706' : '#a8a29e';
+                  const userPct = bm.percentilePosition;
+                  const emoji = SYMPTOM_EMOJI[bm.name.toLowerCase().replace(/\s+/g, '_')] || '•';
                   return (
                     <AnimatedPressable
-                      key={s.name}
+                      key={bm.name}
                       onPress={() => {
                         hapticLight();
-                        router.push({ pathname: '/(app)/symptom-detail', params: { symptom: s.name } });
+                        router.push({ pathname: '/(app)/symptom-detail', params: { symptom: bm.name } });
                       }}
                       scaleDown={0.98}
                       style={styles.benchmarkCard}
                     >
                       <View style={styles.benchmarkHeader}>
                         <Text style={styles.benchmarkName}>
-                          {SYMPTOM_EMOJI[s.name] || '•'} {formatSymptomName(s.name)}
+                          {emoji} {formatSymptomName(bm.name)}
                         </Text>
                         <View style={[styles.benchmarkBadge, { backgroundColor: badgeColor + '20' }]}>
-                          <Text style={[styles.benchmarkBadgeText, { color: badgeColor }]}>{benchmark.label}</Text>
+                          <Text style={[styles.benchmarkBadgeText, { color: badgeColor }]}>{bm.label}</Text>
                         </View>
                       </View>
                       <Text style={styles.benchmarkUserStat}>
-                        You logged this on {s.count} of {s.daysTotal} days ({userPct}%)
+                        You logged this {bm.userFrequencyDays} days (avg severity {bm.userAvgSeverity.toFixed(1)})
                       </Text>
                       {/* Population bar with "You" dot */}
                       <View style={styles.populationBarContainer}>
                         <View style={styles.populationBar}>
-                          <View style={[styles.populationFill, { width: `${benchmark.pct}%` }]} />
+                          <View style={[styles.populationFill, { width: `${bm.cohortPrevalencePct}%` }]} />
                           {/* "You" marker */}
                           <View style={[styles.youMarker, { left: `${Math.min(95, userPct)}%` }]}>
                             <View style={styles.youDot} />
@@ -699,14 +680,23 @@ export default function InsightsScreen() {
                         </View>
                         <View style={styles.populationLabels}>
                           <Text style={styles.populationLabelText}>0%</Text>
-                          <Text style={styles.populationLabelText}>{benchmark.pct}% of women</Text>
+                          <Text style={styles.populationLabelText}>{bm.cohortPrevalencePct}% of cohort</Text>
                           <Text style={styles.populationLabelText}>100%</Text>
                         </View>
                       </View>
-                      <Text style={styles.benchmarkDetail}>{benchmark.detail}</Text>
+                      <Text style={styles.benchmarkDetail}>
+                        Avg frequency in your cohort: {bm.cohortAvgFrequency} days/month
+                      </Text>
                     </AnimatedPressable>
                   );
                 })}
+                {(!benchmarkData?.symptoms || benchmarkData.symptoms.length === 0) && (
+                  <View style={styles.card}>
+                    <Text style={styles.cardHint}>
+                      Log symptoms for at least 2 weeks to see how you compare with others
+                    </Text>
+                  </View>
+                )}
               </View>
             </View>
 
@@ -837,6 +827,19 @@ const styles = StyleSheet.create({
   // Sections
   section: { marginBottom: 20 },
   sectionTitle: { fontSize: 14, fontWeight: '600', color: '#1c1917', marginBottom: 10 },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  qualityBadge: {
+    backgroundColor: '#fef3c7',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  qualityBadgeText: { fontSize: 10, fontWeight: '600', color: '#d97706' },
 
   // Weekly story card (dark)
   storyCard: {
