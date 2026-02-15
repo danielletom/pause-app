@@ -267,7 +267,7 @@ export default function JournalScreen() {
         <AnimatedPressable
           onPress={() => {
             hapticLight();
-            // Could go to custom tracking when implemented
+            router.push('/(app)/log');
           }}
           scaleDown={0.97}
           style={[styles.linkCard, { borderWidth: 1, borderColor: '#f5f5f4' }]}

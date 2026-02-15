@@ -220,20 +220,32 @@ export default function InsightsScreen() {
   // API-backed state for benchmarks
   const [benchmarkData, setBenchmarkData] = useState<BenchmarksResponse | null>(null);
 
+  // Today's check-in status (for "While we're learning" section)
+  const [morningDone, setMorningDone] = useState(false);
+  const [eveningDone, setEveningDone] = useState(false);
+
   const fetchData = useCallback(async () => {
     try {
       if (!hasLoadedOnce.current) setLoading(true);
       const token = await getToken();
       const range = period === '1w' ? '7d' : period === '4w' ? '28d' : period === '3m' ? '90d' : '365d';
 
-      // Fetch logs + correlations + benchmarks in parallel
-      const [logsData, correlationsData, benchmarksData] = await Promise.all([
+      const todayDate = new Date().toISOString().split('T')[0];
+
+      // Fetch logs + correlations + benchmarks + today's logs in parallel
+      const [logsData, correlationsData, benchmarksData, todayLogs] = await Promise.all([
         apiRequest(`/api/logs?range=${range}`, token).catch(() => []),
         apiRequest('/api/insights/correlations', token).catch(() => null),
         apiRequest('/api/insights/benchmarks', token).catch(() => null),
+        apiRequest(`/api/logs?date=${todayDate}`, token).catch(() => []),
       ]);
 
       setLogs(Array.isArray(logsData) ? logsData : []);
+
+      // Check today's morning/evening status
+      const todayEntries = Array.isArray(todayLogs) ? todayLogs : [];
+      setMorningDone(todayEntries.some((e: any) => e.logType === 'morning'));
+      setEveningDone(todayEntries.some((e: any) => e.logType === 'evening'));
 
       // Set correlations from API
       if (correlationsData?.correlations) {
@@ -409,13 +421,6 @@ export default function InsightsScreen() {
             <Text style={styles.headerTitle}>Why you feel this way</Text>
             <Text style={styles.headerSub}>{headerSub}</Text>
           </View>
-          <AnimatedPressable
-            onPress={() => { hapticLight(); }}
-            scaleDown={0.95}
-            style={styles.reportButton}
-          >
-            <Text style={styles.reportButtonText}>Report →</Text>
-          </AnimatedPressable>
         </View>
 
         {/* Tab switcher */}
@@ -587,35 +592,65 @@ export default function InsightsScreen() {
               </Text>
 
               <AnimatedPressable
-                onPress={() => { hapticLight(); router.push('/(app)/quick-log'); }}
+                onPress={() => {
+                  hapticLight();
+                  if (!morningDone) {
+                    router.push({ pathname: '/(app)/quick-log', params: { mode: 'morning' } });
+                  }
+                }}
                 scaleDown={0.97}
-                style={ls.ctaCard}
+                style={[ls.ctaCard, morningDone && { opacity: 0.6 }]}
               >
                 <View style={[ls.ctaIcon, { backgroundColor: '#fef3c7' }]}>
                   <Text style={{ fontSize: 18 }}>☀️</Text>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={ls.ctaTitle}>Log your morning check-in</Text>
-                  <Text style={ls.ctaDesc}>2 min · Sleep, symptoms, mood</Text>
+                  <Text style={ls.ctaTitle}>
+                    {morningDone ? 'Morning check-in ✓' : 'Log your morning check-in'}
+                  </Text>
+                  <Text style={ls.ctaDesc}>
+                    {morningDone ? 'Completed today' : '2 min · Sleep, symptoms, mood'}
+                  </Text>
                 </View>
-                <View style={ls.ctaBadge}>
-                  <Text style={ls.ctaBadgeText}>NOW</Text>
-                </View>
+                {!morningDone && (
+                  <View style={ls.ctaBadge}>
+                    <Text style={ls.ctaBadgeText}>NOW</Text>
+                  </View>
+                )}
+                {morningDone && (
+                  <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: '#22c55e', alignItems: 'center', justifyContent: 'center' }}>
+                    <Text style={{ fontSize: 12, color: '#fff', fontWeight: '600' }}>✓</Text>
+                  </View>
+                )}
               </AnimatedPressable>
 
               <AnimatedPressable
-                onPress={() => { hapticLight(); router.push({ pathname: '/(app)/quick-log', params: { type: 'evening' } }); }}
+                onPress={() => {
+                  hapticLight();
+                  if (!eveningDone) {
+                    router.push({ pathname: '/(app)/quick-log', params: { mode: 'evening' } });
+                  }
+                }}
                 scaleDown={0.97}
-                style={[ls.ctaCard, { marginTop: 8 }]}
+                style={[ls.ctaCard, { marginTop: 8 }, eveningDone && { opacity: 0.6 }]}
               >
                 <View style={[ls.ctaIcon, { backgroundColor: '#e0e7ff' }]}>
                   <Text style={{ fontSize: 18 }}>🌙</Text>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={ls.ctaTitle}>Tonight's evening reflection</Text>
-                  <Text style={ls.ctaDesc}>2 min · Mood, energy, activities</Text>
+                  <Text style={ls.ctaTitle}>
+                    {eveningDone ? 'Evening reflection ✓' : 'Tonight\'s evening reflection'}
+                  </Text>
+                  <Text style={ls.ctaDesc}>
+                    {eveningDone ? 'Completed today' : '2 min · Mood, energy, activities'}
+                  </Text>
                 </View>
-                <Text style={{ fontSize: 12, color: '#d6d3d1' }}>7 PM</Text>
+                {!eveningDone && <Text style={{ fontSize: 12, color: '#d6d3d1' }}>7 PM</Text>}
+                {eveningDone && (
+                  <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: '#22c55e', alignItems: 'center', justifyContent: 'center' }}>
+                    <Text style={{ fontSize: 12, color: '#fff', fontWeight: '600' }}>✓</Text>
+                  </View>
+                )}
               </AnimatedPressable>
             </View>
 
@@ -668,7 +703,7 @@ export default function InsightsScreen() {
                           <Text style={ls.symptomRawName}>{s.emoji} {s.displayName}</Text>
                           <Text style={ls.symptomRawDays}>{s.daysLogged} days logged</Text>
                         </View>
-                        <Text style={{ fontSize: 11, color: '#d6d3d1' }}>Analyzing...</Text>
+                        <Text style={{ fontSize: 11, color: '#d6d3d1' }}>Building data...</Text>
                       </View>
                     );
                   })}
@@ -1241,20 +1276,6 @@ export default function InsightsScreen() {
               </View>
             </View>
 
-            {/* ─── Doctor CTA ──────────────────────── */}
-            <View style={styles.doctorCard}>
-              <Text style={styles.doctorTitle}>📋 Bring this to your doctor</Text>
-              <Text style={styles.doctorDesc}>
-                Generate a report with your symptom history, patterns, and severity data to share at your next appointment.
-              </Text>
-              <AnimatedPressable
-                onPress={() => hapticLight()}
-                scaleDown={0.97}
-                style={styles.doctorButton}
-              >
-                <Text style={styles.doctorButtonText}>Generate report →</Text>
-              </AnimatedPressable>
-            </View>
           </>
         )}
       </ScrollView>
@@ -1607,23 +1628,6 @@ const styles = StyleSheet.create({
   milestoneLabel: { fontSize: 13, color: '#a8a29e' },
   milestoneLabelDone: { color: '#1c1917', fontWeight: '500' },
   milestoneSub: { fontSize: 11, color: '#d6d3d1', marginTop: 1 },
-
-  // Doctor CTA
-  doctorCard: {
-    backgroundColor: '#1c1917',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 20,
-  },
-  doctorTitle: { fontSize: 14, fontWeight: '600', color: '#ffffff', marginBottom: 6 },
-  doctorDesc: { fontSize: 12, color: '#a8a29e', lineHeight: 18, marginBottom: 14 },
-  doctorButton: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  doctorButtonText: { fontSize: 13, fontWeight: '600', color: '#1c1917' },
 
   // Generic card
   card: {

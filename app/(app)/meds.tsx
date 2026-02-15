@@ -42,14 +42,14 @@ interface MedLog {
 type TabKey = 'supplements' | 'current' | 'hrt' | 'labs';
 
 const TABS: { key: TabKey; label: string }[] = [
-  { key: 'supplements', label: 'Supplements' },
   { key: 'current', label: 'Current' },
+  { key: 'supplements', label: 'Supplements' },
   { key: 'hrt', label: 'HRT' },
   { key: 'labs', label: 'Labs' },
 ];
 
-const TIME_OPTIONS = ['Morning', 'Afternoon', 'Evening', 'Bedtime'];
-const FREQUENCY_OPTIONS = ['Daily', 'Twice daily', 'Weekly', 'Every 2 weeks', 'Monthly', 'As needed'];
+const TIME_OPTIONS = ['Morning', 'Afternoon', 'Evening', 'Bedtime', 'Custom'];
+const FREQUENCY_OPTIONS = ['Daily', 'Twice daily', 'Weekly', 'Every 2 weeks', 'Monthly', 'As needed', 'Custom'];
 const TYPE_OPTIONS = [
   { key: 'hrt', label: 'HRT' },
   { key: 'supplement', label: 'Supplement' },
@@ -89,7 +89,7 @@ const POPULAR_MEDS: { name: string; dose: string; type: string; time: string }[]
 
 export default function MedsScreen() {
   const { getToken } = useAuth();
-  const [activeTab, setActiveTab] = useState<TabKey>('supplements');
+  const [activeTab, setActiveTab] = useState<TabKey>('current');
   const [meds, setMeds] = useState<Medication[]>([]);
   const [todayLogs, setTodayLogs] = useState<MedLog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -100,8 +100,12 @@ export default function MedsScreen() {
   const [newDose, setNewDose] = useState('');
   const [newTime, setNewTime] = useState('Morning');
   const [newFrequency, setNewFrequency] = useState('Daily');
-  const [newType, setNewType] = useState('hrt');
+  const [newType, setNewType] = useState<string | null>(null);
   const [smsReminder, setSmsReminder] = useState(false);
+  const [smsPhone, setSmsPhone] = useState('');
+  const [customTime, setCustomTime] = useState('');
+  const [customFrequency, setCustomFrequency] = useState('');
+  const [customDays, setCustomDays] = useState<string[]>([]);
   const [addSaving, setAddSaving] = useState(false);
   const hasLoadedOnce = useRef(false);
 
@@ -166,13 +170,17 @@ export default function MedsScreen() {
     try {
       setAddSaving(true);
       const token = await getToken();
+      const finalTime = newTime === 'Custom' ? customTime.trim() || 'Custom' : newTime;
+      const finalFrequency = newFrequency === 'Custom'
+        ? (customDays.length > 0 ? customDays.join(',') : customFrequency.trim() || 'custom')
+        : newFrequency.toLowerCase().replace(/ /g, '_');
       await apiRequest('/api/meds', token, {
         method: 'POST',
         body: JSON.stringify({
           name: newName.trim(),
           dose: newDose.trim() || null,
-          time: newTime,
-          frequency: newFrequency.toLowerCase().replace(/ /g, '_'),
+          time: finalTime,
+          frequency: finalFrequency,
           type: newType,
         }),
       });
@@ -192,8 +200,12 @@ export default function MedsScreen() {
     setNewDose('');
     setNewTime('Morning');
     setNewFrequency('Daily');
-    setNewType('hrt');
+    setNewType(null);
     setSmsReminder(false);
+    setSmsPhone('');
+    setCustomTime('');
+    setCustomFrequency('');
+    setCustomDays([]);
   };
 
   // Split meds by type
@@ -457,33 +469,6 @@ export default function MedsScreen() {
               <View style={styles.tabContent}>
                 {hrtMeds.length > 0 ? (
                   <>
-                    {/* HRT Timeline */}
-                    <View style={[styles.card, { borderWidth: 1, borderColor: '#e7e5e4' }]}>
-                      <Text style={styles.cardTitle}>Your HRT timeline</Text>
-                      <View style={styles.timeline}>
-                        {hrtMeds.map((med, i) => (
-                          <View key={med.id} style={styles.timelineItem}>
-                            <View style={styles.timelineDot} />
-                            {i < hrtMeds.length - 1 && <View style={styles.timelineLine} />}
-                            <View style={styles.timelineContent}>
-                              <Text style={styles.timelineDate}>
-                                {med.createdAt ? new Date(med.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'Recently'}
-                              </Text>
-                              <Text style={styles.timelineEvent}>{med.name} started</Text>
-                            </View>
-                          </View>
-                        ))}
-                      </View>
-                    </View>
-
-                    {/* Symptom response chart placeholder */}
-                    <View style={styles.card}>
-                      <Text style={styles.cardTitle}>How your symptoms responded</Text>
-                      <View style={styles.chartPlaceholder}>
-                        <Text style={styles.chartPlaceholderText}>[ Before vs. after chart ]</Text>
-                      </View>
-                    </View>
-
                     {/* HRT meds list with adherence */}
                     <View style={styles.medsList}>
                       {hrtMeds.map((med) => {
@@ -609,7 +594,7 @@ export default function MedsScreen() {
               {TYPE_OPTIONS.map((opt) => (
                 <AnimatedPressable
                   key={opt.key}
-                  onPress={() => { hapticSelection(); setNewType(opt.key); }}
+                  onPress={() => { hapticSelection(); setNewType(newType === opt.key ? null : opt.key); }}
                   scaleDown={0.93}
                   style={[styles.typePill, newType === opt.key && styles.typePillActive]}
                 >
@@ -627,7 +612,7 @@ export default function MedsScreen() {
               <>
                 <Text style={[styles.formLabel, { marginTop: 20 }]}>Popular for menopause</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.suggestScroll} contentContainerStyle={styles.suggestRow}>
-                  {POPULAR_MEDS.filter((m) => m.type === newType).map((med) => (
+                  {POPULAR_MEDS.filter((m) => !newType || m.type === newType).map((med) => (
                     <AnimatedPressable
                       key={med.name}
                       onPress={() => {
@@ -716,6 +701,37 @@ export default function MedsScreen() {
                 </AnimatedPressable>
               ))}
             </View>
+            {newFrequency === 'Custom' && (
+              <View style={{ marginTop: 8, gap: 8 }}>
+                <Text style={[styles.formLabel, { marginTop: 0 }]}>Choose days</Text>
+                <View style={styles.typeRow}>
+                  {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
+                    <AnimatedPressable
+                      key={day}
+                      onPress={() => {
+                        hapticSelection();
+                        setCustomDays((prev) =>
+                          prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
+                        );
+                      }}
+                      scaleDown={0.93}
+                      style={[styles.dayPill, customDays.includes(day) && styles.typePillActive]}
+                    >
+                      <Text style={[styles.typePillText, customDays.includes(day) && styles.typePillTextActive]}>
+                        {day}
+                      </Text>
+                    </AnimatedPressable>
+                  ))}
+                </View>
+                <TextInput
+                  style={styles.formInput}
+                  placeholder="Or describe: e.g. Every 3 days"
+                  placeholderTextColor="#d6d3d1"
+                  value={customFrequency}
+                  onChangeText={setCustomFrequency}
+                />
+              </View>
+            )}
 
             {/* Best time */}
             <Text style={styles.formLabel}>Best time</Text>
@@ -733,6 +749,15 @@ export default function MedsScreen() {
                 </AnimatedPressable>
               ))}
             </View>
+            {newTime === 'Custom' && (
+              <TextInput
+                style={[styles.formInput, { marginTop: 8 }]}
+                placeholder="e.g. 8:30 AM, 2:00 PM"
+                placeholderTextColor="#d6d3d1"
+                value={customTime}
+                onChangeText={setCustomTime}
+              />
+            )}
 
             {/* SMS Reminder toggle */}
             <View style={styles.smsToggleRow}>
@@ -748,6 +773,16 @@ export default function MedsScreen() {
                 <View style={[styles.toggleThumb, smsReminder && styles.toggleThumbActive]} />
               </AnimatedPressable>
             </View>
+            {smsReminder && (
+              <TextInput
+                style={[styles.formInput, { marginTop: 10 }]}
+                placeholder="Phone number for SMS reminders"
+                placeholderTextColor="#d6d3d1"
+                value={smsPhone}
+                onChangeText={setSmsPhone}
+                keyboardType="phone-pad"
+              />
+            )}
           </ScrollView>
 
           <View style={styles.modalFooter}>
@@ -1082,6 +1117,11 @@ const styles = StyleSheet.create({
   typePillActive: { backgroundColor: '#1c1917' },
   typePillText: { fontSize: 13, fontWeight: '500', color: '#78716c' },
   typePillTextActive: { color: '#ffffff' },
+  dayPill: {
+    paddingHorizontal: 12, paddingVertical: 10, borderRadius: 20,
+    backgroundColor: '#ffffff',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.03, shadowRadius: 4, elevation: 1,
+  },
 
   // SMS toggle
   smsToggleRow: {

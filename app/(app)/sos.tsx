@@ -350,21 +350,49 @@ export default function SOSScreen() {
         {/* Bottom actions */}
         <View style={styles.bottomActions}>
           <AnimatedPressable
-            onPress={() => { hapticLight(); router.back(); }}
+            onPress={() => {
+              hapticLight();
+              // Reset state so SOS can be used again
+              setStep('intro');
+              setCycle(1);
+              setPhase('inhale');
+              setRating(null);
+              router.back();
+            }}
             scaleDown={0.96}
             style={styles.doneButton}
           >
             <Text style={styles.doneButtonText}>Back to home</Text>
           </AnimatedPressable>
           <AnimatedPressable
-            onPress={() => {
-              hapticLight();
-              router.replace('/(app)/log');
+            onPress={async () => {
+              hapticMedium();
+              // Log the hot flash directly with severity prompt
+              try {
+                const token = await getToken();
+                const today = new Date().toISOString().split('T')[0];
+                await apiRequest('/api/logs', token, {
+                  method: 'POST',
+                  body: JSON.stringify({
+                    date: today,
+                    symptomsJson: { hot_flash: 2 },
+                    logType: 'symptom',
+                  }),
+                });
+                // Reset SOS state for reuse
+                setStep('intro');
+                setCycle(1);
+                setPhase('inhale');
+                setRating(null);
+                router.back();
+              } catch {
+                router.back();
+              }
             }}
             scaleDown={0.96}
             style={styles.ghostButton}
           >
-            <Text style={styles.ghostButtonText}>Log this hot flash</Text>
+            <Text style={styles.ghostButtonText}>Log this hot flash →</Text>
           </AnimatedPressable>
         </View>
       </SafeAreaView>
