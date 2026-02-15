@@ -296,8 +296,12 @@ export default function HomeScreen() {
       .slice(0, 4);
     const colors = ['#fbbf24', '#818cf8', '#34d399', '#fda4af'];
     return entries.map(([name, sev], i) => ({
-      name: name.replace(/([A-Z])/g, ' $1').replace(/^./, (s) => s.toUpperCase()),
-      sev: Math.min(Math.ceil(sev / 3.3), 3),
+      name: name
+        .replace(/_/g, ' ')                           // snake_case → spaces
+        .replace(/([A-Z])/g, ' $1')                   // camelCase → spaces
+        .replace(/\b\w/g, (s) => s.toUpperCase())     // capitalize each word
+        .trim(),
+      sev: Math.min(sev, 3),                          // severity is already 1-3
       color: colors[i % colors.length],
     }));
   }, [dayLogs]);

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -61,17 +61,20 @@ export default function CalendarScreen() {
   const [selectedDay, setSelectedDay] = useState<number | null>(new Date().getDate());
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const hasLoadedOnce = useRef(false);
 
   /* ── Fetch logs for the visible month ── */
   const fetchLogs = useCallback(async () => {
     try {
-      setLoading(true);
+      if (!hasLoadedOnce.current) setLoading(true);
       const token = await getToken();
       // Fetch ~45 days to cover the month even if we're mid-month
       const data = await apiRequest('/api/logs?range=45d', token).catch(() => []);
       setLogs(Array.isArray(data) ? data : []);
+      hasLoadedOnce.current = true;
     } catch {
       setLogs([]);
+      hasLoadedOnce.current = true;
     } finally {
       setLoading(false);
     }
