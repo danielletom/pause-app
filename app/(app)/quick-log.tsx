@@ -9,6 +9,7 @@ import {
   TextInput,
   Animated as RNAnimated,
   Keyboard,
+  Alert,
 } from 'react-native';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
@@ -180,6 +181,7 @@ export default function QuickLogScreen() {
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
+  const savingRef = useRef(false); // double-submit guard
 
   // Celebration animations
   const celebOpacity = useRef(new RNAnimated.Value(0)).current;
@@ -374,14 +376,15 @@ export default function QuickLogScreen() {
 
   /* ── Submit ─────────────────────── */
   const handleSubmit = async () => {
+    if (savingRef.current) return;
+    savingRef.current = true;
     try {
       setSaving(true);
       const token = await getToken();
 
       if (isMorning) {
-        // Merge disruptions + stressors + mood pills into contextTags
+        // Merge stressors + mood pills into contextTags (disruptions tracked separately)
         const contextTags = [
-          ...Array.from(sleepDisruptions),
           ...Array.from(moodPills),
           ...Array.from(stressors).map((s) => {
             const found = [...STRESSOR_PILLS, ...customStressors].find((p) => p.key === s);
@@ -403,7 +406,8 @@ export default function QuickLogScreen() {
             mood,
             symptomsJson: Object.keys(symptoms).length > 0 ? symptoms : undefined,
             energy,
-            contextTags,
+            disruptions: sleepDisruptions.size > 0 ? sleepDisruptions.size : undefined,
+            contextTags: [...contextTags, ...Array.from(sleepDisruptions)],
             notes: Object.keys(notesObj).length > 0 ? JSON.stringify(notesObj) : undefined,
             logType: 'morning',
             cycleData: periodStatus !== 'none' ? { status: periodStatus, flow: flowIntensity } : undefined,
@@ -411,20 +415,11 @@ export default function QuickLogScreen() {
         });
       } else {
         // Evening mode
-        // Build symptom data: merge comparison info + new symptoms
-        const symptomsJson: Record<string, any> = { ...symptoms };
-        // Add comparison data if morning log had symptoms
-        if (morningLog?.symptomsJson) {
-          Object.keys(symptomComparison).forEach((key) => {
-            if (!symptomsJson[key]) {
-              symptomsJson[key] = { comparison: symptomComparison[key] };
-            } else if (typeof symptomsJson[key] === 'number') {
-              symptomsJson[key] = { severity: symptomsJson[key], comparison: symptomComparison[key] };
-            }
-          });
-        }
+        // Build symptom data: keep as plain numbers for consistency
+        // Store comparison data in a separate field to avoid mixed types
+        const symptomsJson: Record<string, number> = { ...symptoms };
 
-        // Context tags: mood pills + activities + substances + custom stressors
+        // Context tags: mood pills + activities + substances + comparisons as tags
         const contextTags = [
           ...Array.from(moodPills),
           ...Array.from(activities).map((a) => {
@@ -437,10 +432,14 @@ export default function QuickLogScreen() {
           }),
         ];
 
-        // Notes: { highlight, learned }
+        // Notes: { highlight, learned, comparisons }
         const notesObj: any = {};
         if (highlightText.trim()) notesObj.highlight = highlightText.trim();
         if (learnedText.trim()) notesObj.learned = learnedText.trim();
+        // Store symptom comparisons in notes so symptomsJson stays as Record<string, number>
+        if (Object.keys(symptomComparison).length > 0) {
+          notesObj.symptomComparisons = symptomComparison;
+        }
 
         await apiRequest('/api/logs', token, {
           method: 'POST',
@@ -482,7 +481,9 @@ export default function QuickLogScreen() {
       }, 4500);
     } catch (err: any) {
       setSaving(false);
+      savingRef.current = false;
       hapticMedium();
+      Alert.alert('Save failed', 'Something went wrong saving your check-in. Please try again.');
     }
   };
 

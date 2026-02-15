@@ -82,11 +82,13 @@ function computeReadiness(entries: LogEntry[]): number | null {
   const disruptions = latestSleep?.disruptions ?? 0;
 
   // Aggregate all symptoms across entries
+  // Handle both plain numbers and legacy object values {severity, comparison}
   const allSymptoms: Record<string, number> = {};
   entries.forEach((e) => {
     if (e.symptomsJson) {
       Object.entries(e.symptomsJson).forEach(([k, v]) => {
-        allSymptoms[k] = Math.max(allSymptoms[k] || 0, v as number);
+        const numVal = typeof v === 'number' ? v : (typeof v === 'object' && v !== null ? ((v as any).severity ?? 1) : 1);
+        allSymptoms[k] = Math.max(allSymptoms[k] || 0, numVal);
       });
     }
   });
@@ -212,27 +214,32 @@ export default function HomeScreen() {
       if (Array.isArray(medLogsData)) setTodayMedLogs(medLogsData);
       if (Array.isArray(articlesData)) setArticles(articlesData.slice(0, 3));
 
-      // Calculate streak
+      // Calculate streak — deduplicate by date first
       if (Array.isArray(recentLogs) && recentLogs.length > 0) {
+        // Get unique dates that have logs
+        const uniqueDates = [...new Set(recentLogs.map((l: any) => l.date))]
+          .sort((a, b) => b.localeCompare(a)); // newest first
+
         let count = 0;
-        const sorted = recentLogs.sort(
-          (a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()
-        );
         const checkDate = new Date();
-        for (const log of sorted) {
-          const logDate = log.date;
+        // If today has no log yet, start checking from yesterday
+        if (uniqueDates[0] !== todayDate) {
+          checkDate.setDate(checkDate.getDate() - 1);
+        }
+        for (const logDate of uniqueDates) {
           const expected = checkDate.toISOString().split('T')[0];
           if (logDate === expected) {
             count++;
             checkDate.setDate(checkDate.getDate() - 1);
-          } else {
-            break;
+          } else if (logDate < expected) {
+            break; // gap found
           }
+          // Skip duplicates (logDate > expected shouldn't happen with sorted unique dates)
         }
         setStreak(count);
         // Hours since last log
-        if (sorted.length > 0) {
-          const lastDate = new Date(sorted[0].date + 'T12:00:00');
+        if (uniqueDates.length > 0) {
+          const lastDate = new Date(uniqueDates[0] + 'T12:00:00');
           const hrs = Math.round((Date.now() - lastDate.getTime()) / 3600000);
           setLastLoggedHoursAgo(hrs);
         }
@@ -281,12 +288,14 @@ export default function HomeScreen() {
   const readinessScore = useMemo(() => computeReadiness(dayLogs), [dayLogs]);
 
   // Symptom trends — aggregate across all entries for the day
+  // Handle both plain numbers and legacy object values {severity, comparison}
   const symptomTrends = useMemo(() => {
     const merged: Record<string, number> = {};
     dayLogs.forEach((log) => {
       if (log.symptomsJson) {
         Object.entries(log.symptomsJson).forEach(([k, v]) => {
-          merged[k] = Math.max(merged[k] || 0, v as number);
+          const numVal = typeof v === 'number' ? v : (typeof v === 'object' && v !== null ? ((v as any).severity ?? 1) : 1);
+          merged[k] = Math.max(merged[k] || 0, numVal);
         });
       }
     });

@@ -256,7 +256,7 @@ export default function CalendarScreen() {
                         {morningLog.sleepHours && morningLog.mood ? ' · ' : ''}
                         {morningLog.mood ? `Mood ${morningLog.mood}/5` : ''}
                         {(morningLog.sleepHours || morningLog.mood) && morningLog.symptomsJson ? ' · ' : ''}
-                        {morningLog.symptomsJson ? `${Array.isArray(morningLog.symptomsJson) ? morningLog.symptomsJson.length : 0} symptoms` : ''}
+                        {morningLog.symptomsJson ? `${typeof morningLog.symptomsJson === 'object' ? Object.keys(morningLog.symptomsJson).length : 0} symptoms` : ''}
                       </Text>
                     </View>
                   </View>

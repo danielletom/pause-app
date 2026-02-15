@@ -9,8 +9,9 @@ import {
   Animated as RNAnimated,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
 import AnimatedPressable from '@/components/AnimatedPressable';
 import { hapticLight, hapticMedium, hapticSelection, hapticSuccess } from '@/lib/haptics';
@@ -70,11 +71,29 @@ export default function SymptomLogScreen() {
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const savingRef = useRef(false); // double-submit guard
 
   // Animations
   const celebOpacity = useRef(new RNAnimated.Value(0)).current;
   const celebScale = useRef(new RNAnimated.Value(0.8)).current;
   const checkScale = useRef(new RNAnimated.Value(0)).current;
+
+  // Reset state when screen is revisited
+  useFocusEffect(
+    useCallback(() => {
+      setStep(0);
+      setSymptoms({});
+      setMood(null);
+      setTriggers(new Set());
+      setNote('');
+      setSaving(false);
+      setSaved(false);
+      savingRef.current = false;
+      celebOpacity.setValue(0);
+      celebScale.setValue(0.8);
+      checkScale.setValue(0);
+    }, [])
+  );
 
   // Toggle helpers
   const toggleSymptom = useCallback((key: string) => {
@@ -133,7 +152,8 @@ export default function SymptomLogScreen() {
 
   // Save handler
   const handleSave = async () => {
-    if (Object.keys(symptoms).length === 0 || saving) return;
+    if (Object.keys(symptoms).length === 0 || savingRef.current) return;
+    savingRef.current = true;
     try {
       setSaving(true);
       hapticMedium();
@@ -171,6 +191,8 @@ export default function SymptomLogScreen() {
       }, 200);
     } catch {
       setSaving(false);
+      savingRef.current = false;
+      Alert.alert('Save failed', 'Something went wrong saving your log. Please try again.');
     }
   };
 

@@ -26,15 +26,14 @@ export default function JournalScreen() {
   const [morningDone, setMorningDone] = useState(false);
   const [eveningDone, setEveningDone] = useState(false);
   const [weeklyInsight, setWeeklyInsight] = useState<string | null>(null);
-
-  const hour = new Date().getHours();
-  const eveningAvailable = hour >= 19;
+  const [eveningAvailable, setEveningAvailable] = useState(new Date().getHours() >= 19);
 
   useFocusEffect(
     useCallback(() => {
       (async () => {
         try {
           setLoading(true);
+          setEveningAvailable(new Date().getHours() >= 19);
           const token = await getToken();
           const today = new Date().toISOString().split('T')[0];
 
@@ -68,13 +67,13 @@ export default function JournalScreen() {
           });
           setWeekData(newWeekData);
 
-          // Calculate streak from consecutive AM+PM days
+          // Calculate streak — count consecutive days with any log (AM or PM)
           let streakCount = 0;
           for (let i = newWeekData.length - 1; i >= 0; i--) {
             const d = new Date(monday);
             d.setDate(monday.getDate() + i);
             if (d > now) continue;
-            if (newWeekData[i].am) {
+            if (newWeekData[i].am || newWeekData[i].pm) {
               streakCount++;
             } else {
               break;
