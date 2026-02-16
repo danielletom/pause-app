@@ -907,17 +907,58 @@ export default function HomeScreen() {
             {/* Tonight's plan */}
             {isToday && (
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Tonight's plan</Text>
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionTitle}>Tonight's plan ☽</Text>
+                  <Text style={styles.tonightWeekLabel}>Week 2, Day 3</Text>
+                </View>
                 <View style={{ gap: 8 }}>
-                  <View style={[styles.card, { flexDirection: 'row', alignItems: 'center', gap: 12 }]}>
+                  {/* 1. Program lesson — always first, from 8-week plan */}
+                  <AnimatedPressable
+                    onPress={() => { hapticLight(); router.push('/(app)/wellness'); }}
+                    scaleDown={0.97}
+                    style={styles.programLessonCard}
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                      <View style={styles.programLessonIcon}>
+                        <Text style={styles.programLessonIconText}>✦</Text>
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.programLessonTitle}>Building a Wind-Down Routine</Text>
+                        <Text style={styles.programLessonDur}>Audio lesson · 10 min</Text>
+                        <Text style={styles.programLessonWeek}>Week 2 · Your program</Text>
+                      </View>
+                      <View style={styles.tonightPlayBtn}>
+                        <Text style={{ fontSize: 10, color: '#ffffff' }}>▶</Text>
+                      </View>
+                    </View>
+                  </AnimatedPressable>
+
+                  {/* 2. Suggested evening audio — with tag pills */}
+                  <AnimatedPressable
+                    onPress={() => { hapticLight(); router.push('/(app)/wellness'); }}
+                    scaleDown={0.97}
+                    style={[styles.card, { flexDirection: 'row', alignItems: 'center', gap: 12 }]}
+                  >
                     <View style={[styles.planIcon, { backgroundColor: '#e0e7ff' }]}>
-                      <Text style={{ fontSize: 14 }}>☽</Text>
+                      <Text style={{ fontSize: 14 }}>🧘</Text>
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.planTitle}>Sleep wind-down</Text>
-                      <Text style={styles.planSubtitle}>Relaxation exercise · 10 min · 9:30 PM</Text>
+                      <Text style={styles.planTitle}>Body Scan for Sleep</Text>
+                      <Text style={styles.planSubtitle}>Meditation · 15 min</Text>
+                      <View style={styles.tonightTagRow}>
+                        {['evening', 'sleep', 'calm'].map((t) => (
+                          <View key={t} style={styles.tonightTag}>
+                            <Text style={styles.tonightTagText}>{t}</Text>
+                          </View>
+                        ))}
+                      </View>
                     </View>
-                  </View>
+                    <View style={styles.tonightPlayBtnLight}>
+                      <Text style={{ fontSize: 10, color: '#a8a29e' }}>▶</Text>
+                    </View>
+                  </AnimatedPressable>
+
+                  {/* 3. Evening journal — when not done */}
                   {!eveningDone && (
                     <AnimatedPressable
                       onPress={() => {
@@ -928,7 +969,7 @@ export default function HomeScreen() {
                       style={[styles.card, { flexDirection: 'row', alignItems: 'center', gap: 12 }]}
                     >
                       <View style={[styles.planIcon, { backgroundColor: '#e0e7ff' }]}>
-                        <Text style={{ fontSize: 14 }}>📖</Text>
+                        <Text style={{ fontSize: 14, color: '#6366f1' }}>☽</Text>
                       </View>
                       <View style={{ flex: 1 }}>
                         <Text style={styles.planTitle}>Evening journal</Text>
@@ -937,8 +978,41 @@ export default function HomeScreen() {
                       <View style={styles.planCheckbox} />
                     </AnimatedPressable>
                   )}
+
+                  {/* Tomorrow's forecast insight */}
+                  <View style={styles.tonightInsight}>
+                    <Text style={{ fontSize: 12, color: '#059669', marginTop: 2 }}>💡</Text>
+                    <Text style={styles.tonightInsightText}>
+                      <Text style={{ fontWeight: '500', color: '#44403c' }}>Tomorrow's forecast: </Text>
+                      Sleep 7+ hours tonight and your readiness could hit 78. Your body responds well to early wind-downs.
+                    </Text>
+                  </View>
                 </View>
               </View>
+            )}
+
+            {/* Wellness Centre entry card */}
+            {isToday && (
+              <AnimatedPressable
+                onPress={() => { hapticMedium(); router.push('/(app)/wellness'); }}
+                scaleDown={0.97}
+                style={styles.wellnessEntryCard}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                  <View style={styles.wellnessEntryIcon}>
+                    <Text style={{ fontSize: 14, fontWeight: '700', color: '#d97706' }}>✦</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.wellnessEntryTitle}>Wellness Centre</Text>
+                    <Text style={styles.wellnessEntrySubtitle}>Your program, meditations, podcasts & guides</Text>
+                  </View>
+                  <Text style={{ fontSize: 18, color: '#d6d3d1' }}>›</Text>
+                </View>
+                <View style={styles.wellnessProgressBg}>
+                  <View style={[styles.wellnessProgressFill, { width: '18%' }]} />
+                </View>
+                <Text style={styles.wellnessProgressText}>Day 10 of 56 · Week 2: Sleep & Night Sweats</Text>
+              </AnimatedPressable>
             )}
 
             {/* Empty state — no log for selected day */}
@@ -1612,4 +1686,112 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   medsEmptyButtonText: { fontSize: 13, fontWeight: '600', color: '#1c1917' },
+
+  // Tonight's Plan — enhanced
+  tonightWeekLabel: { fontSize: 11, color: '#d97706', fontWeight: '500' },
+  programLessonCard: {
+    backgroundColor: '#fffbeb',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#fef3c7',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  programLessonIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: '#fbbf24',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  programLessonIconText: { fontSize: 14, fontWeight: '700', color: '#ffffff' },
+  programLessonTitle: { fontSize: 12, fontWeight: '500', color: '#1c1917' },
+  programLessonDur: { fontSize: 11, color: '#a8a29e', marginTop: 1 },
+  programLessonWeek: { fontSize: 11, color: '#d97706', marginTop: 2 },
+  tonightPlayBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#1c1917',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  tonightPlayBtnLight: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#f5f5f4',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  tonightTagRow: {
+    flexDirection: 'row',
+    gap: 4,
+    marginTop: 4,
+  },
+  tonightTag: {
+    backgroundColor: '#f5f5f4',
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  tonightTagText: { fontSize: 10, color: '#a8a29e' },
+  tonightInsight: {
+    backgroundColor: '#f5f5f4',
+    borderRadius: 16,
+    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+  },
+  tonightInsightText: {
+    fontSize: 11,
+    color: '#78716c',
+    lineHeight: 16,
+    flex: 1,
+  },
+
+  // Wellness Centre entry card
+  wellnessEntryCard: {
+    backgroundColor: '#fffbeb',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#fef3c7',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  wellnessEntryIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#fef3c7',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  wellnessEntryTitle: { fontSize: 14, fontWeight: '500', color: '#1c1917' },
+  wellnessEntrySubtitle: { fontSize: 11, color: '#a8a29e', marginTop: 1 },
+  wellnessProgressBg: {
+    height: 4,
+    backgroundColor: '#f5f5f4',
+    borderRadius: 2,
+    marginTop: 12,
+  },
+  wellnessProgressFill: {
+    height: 4,
+    backgroundColor: '#fbbf24',
+    borderRadius: 2,
+  },
+  wellnessProgressText: { fontSize: 10, color: '#d6d3d1', marginTop: 4 },
 });

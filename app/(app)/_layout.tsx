@@ -78,15 +78,16 @@ export default function AppLayout() {
         }}
       />
       <Tabs.Screen
-        name="profile"
+        name="wellness"
         options={{
-          title: 'Profile',
+          title: 'Wellness',
           tabBarIcon: ({ color, size, focused }) => (
-            <TabBarIcon name="person-outline" size={22} color={color} focused={focused} />
+            <TabBarIcon name="heart-outline" size={22} color={color} focused={focused} />
           ),
         }}
       />
       {/* Hidden screens — accessible via router.push but not shown in tab bar */}
+      <Tabs.Screen name="profile" options={{ href: null }} />
       <Tabs.Screen name="quick-log" options={{ href: null }} />
       <Tabs.Screen name="learn" options={{ href: null }} />
       <Tabs.Screen name="article" options={{ href: null }} />
