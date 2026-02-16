@@ -114,6 +114,11 @@ export default function AppLayout() {
       <Tabs.Screen name="period-history" options={{ href: null }} />
       <Tabs.Screen name="period-insights" options={{ href: null }} />
       <Tabs.Screen name="period-settings" options={{ href: null }} />
+      {/* Gratitude journal screens */}
+      <Tabs.Screen name="gratitude-journal" options={{ href: null }} />
+      <Tabs.Screen name="gratitude-garden" options={{ href: null }} />
+      <Tabs.Screen name="gratitude-themes" options={{ href: null }} />
+      <Tabs.Screen name="gratitude-reflect" options={{ href: null }} />
     </Tabs>
   );
 }

@@ -539,6 +539,19 @@ export default function QuickLogScreen() {
             cycleData: periodStatus !== 'none' ? { status: periodStatus, flow: flowIntensity } : undefined,
           }),
         });
+
+        // Also save gratitude to dedicated gratitude journal
+        if (gratitudeText.trim()) {
+          apiRequest('/api/gratitude', token, {
+            method: 'POST',
+            body: JSON.stringify({
+              date: logDate,
+              text: gratitudeText.trim(),
+              mood,
+              time: 'morning',
+            }),
+          }).catch(() => {}); // fire-and-forget, don't block the flow
+        }
       } else {
         // Evening mode
         // Build symptom data: keep as plain numbers for consistency
