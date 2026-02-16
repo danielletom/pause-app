@@ -464,15 +464,38 @@ export default function HomeScreen() {
                         {/* Activity recommendation pill with AI explanation */}
                         <View style={[styles.readinessActivityPill, { backgroundColor: activityBg }]}>
                           <Text style={[styles.readinessActivity, { color: activityColor }]}>{activityLabel}</Text>
-                          {aiNarrative ? (
-                            <Text style={styles.readinessNarrative}>{aiNarrative}</Text>
-                          ) : (
-                            <Text style={styles.readinessNarrative}>
-                              {sleepLog?.sleepHours ? `${sleepLog.sleepHours}h sleep` : 'Sleep data'}
-                              {latestMood ? ` + ${MOOD_LABEL[latestMood]?.toLowerCase() || ''} mood` : ''}
-                              {symptomTrends.length > 0 ? ` means ${symptomTrends.length <= 2 ? 'low' : 'moderate'} symptom load today.` : '.'}
-                            </Text>
-                          )}
+                          {(() => {
+                            // Use AI narrative if available, otherwise build a proper client-side one
+                            if (aiNarrative) {
+                              return <Text style={styles.readinessNarrative}>{aiNarrative}</Text>;
+                            }
+                            // Smart client-side fallback using actual log data
+                            const parts: string[] = [];
+                            if (sleepLog?.sleepHours != null) {
+                              const sq = sleepLog.sleepHours >= 7 ? 'Good' : sleepLog.sleepHours >= 5 ? 'Okay' : 'Low';
+                              parts.push(`${sq} sleep (${sleepLog.sleepHours}h)`);
+                            }
+                            if (latestMood) {
+                              parts.push(`${MOOD_LABEL[latestMood]?.toLowerCase() || 'neutral'} mood`);
+                            }
+                            const symLevel = symptomTrends.length === 0 ? 'no' : symptomTrends.length <= 2 ? 'low' : 'moderate';
+                            parts.push(`${symLevel} symptom load`);
+                            const allStress = new Set<string>();
+                            dayLogs.forEach((e) => (e.contextTags || []).forEach((t: string) => allStress.add(t)));
+                            if (allStress.size > 2) parts.push('high stress');
+                            else if (allStress.size > 0) parts.push('moderate stress');
+
+                            const prefix = parts.join(' + ');
+                            let msg = '';
+                            if (scoreNum >= 70) {
+                              msg = `${prefix} means your body is ready for more today. Consider some gentle movement or an activity you enjoy.`;
+                            } else if (scoreNum >= 40) {
+                              msg = `${prefix} — a mixed picture today. Listen to your body and take things at your own pace.`;
+                            } else {
+                              msg = `${prefix} suggests today might feel harder. Be extra gentle with yourself and prioritize rest.`;
+                            }
+                            return <Text style={styles.readinessNarrative}>{msg}</Text>;
+                          })()}
                         </View>
                         {/* Stats row — Sleep, Symptoms, Stress */}
                         <View style={styles.readinessStatsInline}>
