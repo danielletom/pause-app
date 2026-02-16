@@ -6,7 +6,7 @@ import {
   StyleSheet,
   Dimensions,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
@@ -41,6 +41,36 @@ export default function SOSScreen() {
   const [saving, setSaving] = useState(false);
   const [sosCount, setSosCount] = useState(0);
   const startTime = useRef(Date.now());
+  const [countdown, setCountdown] = useState(0); // seconds remaining
+
+  // Reset state when screen is revisited
+  useFocusEffect(
+    useCallback(() => {
+      setStep('intro');
+      setCycle(1);
+      setPhase('inhale');
+      setRating(null);
+      setSaving(false);
+      setSosCount(0);
+      setCountdown(0);
+      outerScale.value = 0.65;
+      middleScale.value = 0.55;
+      innerScale.value = 0.45;
+    }, [])
+  );
+
+  // ─── Countdown timer ──────────────────
+  useEffect(() => {
+    if (step !== 'breathing') return;
+    const totalSeconds = TOTAL_CYCLES * (INHALE_MS + HOLD_MS + EXHALE_MS) / 1000;
+    const elapsed = (cycle - 1) * (INHALE_MS + HOLD_MS + EXHALE_MS) / 1000
+      + (phase === 'hold' ? INHALE_MS / 1000 : phase === 'exhale' ? (INHALE_MS + HOLD_MS) / 1000 : 0);
+    setCountdown(Math.max(0, Math.ceil(totalSeconds - elapsed)));
+    const interval = setInterval(() => {
+      setCountdown((prev) => Math.max(0, prev - 1));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [step, cycle, phase]);
 
   // ─── Concentric circle scales ──────────────────
   const outerScale = useSharedValue(0.65);
@@ -259,6 +289,11 @@ export default function SOSScreen() {
 
           {/* Phase hint */}
           <Text style={styles.phaseHint}>{phaseHint}</Text>
+
+          {/* Countdown timer */}
+          <Text style={styles.countdownText}>
+            {Math.floor(countdown / 60)}:{String(countdown % 60).padStart(2, '0')}
+          </Text>
         </View>
 
         {/* Bottom: cycle dots + finish */}
@@ -488,6 +523,13 @@ const styles = StyleSheet.create({
     color: '#57534e',
     letterSpacing: 1,
     textTransform: 'uppercase',
+  },
+  countdownText: {
+    fontSize: 28,
+    fontWeight: '300',
+    color: '#44403c',
+    marginTop: 20,
+    fontVariant: ['tabular-nums'],
   },
 
   breathingBottom: {

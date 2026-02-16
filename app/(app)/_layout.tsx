@@ -65,6 +65,7 @@ export default function AppLayout() {
           title: '',
           tabBarIcon: ({ focused }) => <TabBarLogIcon focused={focused} />,
           tabBarLabel: () => null,
+          tabBarStyle: { display: 'none' },
         }}
       />
       <Tabs.Screen name="meds" options={{ href: null }} />
@@ -88,10 +89,10 @@ export default function AppLayout() {
       />
       {/* Hidden screens — accessible via router.push but not shown in tab bar */}
       <Tabs.Screen name="profile" options={{ href: null }} />
-      <Tabs.Screen name="quick-log" options={{ href: null }} />
+      <Tabs.Screen name="quick-log" options={{ href: null, tabBarStyle: { display: 'none' } }} />
       <Tabs.Screen name="learn" options={{ href: null }} />
       <Tabs.Screen name="article" options={{ href: null }} />
-      <Tabs.Screen name="sos" options={{ href: null }} />
+      <Tabs.Screen name="sos" options={{ href: null, tabBarStyle: { display: 'none' } }} />
       <Tabs.Screen name="symptom-detail" options={{ href: null }} />
       <Tabs.Screen name="edit-profile" options={{ href: null }} />
       <Tabs.Screen name="about-me" options={{ href: null }} />

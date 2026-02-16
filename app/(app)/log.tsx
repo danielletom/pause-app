@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  Keyboard,
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
@@ -51,6 +52,7 @@ const MOODS = [
 const TRIGGER_LIST = [
   'Stress', 'Poor sleep', 'Alcohol', 'Caffeine', 'Spicy food',
   'Sugar', 'Exercise', 'Weather', 'Skipped meal', 'Late night',
+  'Hormonal', 'Dehydration',
 ];
 
 const STEPS = ['Symptoms', 'Severity', 'Mood', 'Triggers', 'Note'];
@@ -72,6 +74,9 @@ export default function SymptomLogScreen() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const savingRef = useRef(false); // double-submit guard
+  const [customTriggerText, setCustomTriggerText] = useState('');
+  const [showCustomTriggerInput, setShowCustomTriggerInput] = useState(false);
+  const [customTriggers, setCustomTriggers] = useState<string[]>([]);
 
   // Animations
   const celebOpacity = useRef(new RNAnimated.Value(0)).current;
@@ -89,6 +94,9 @@ export default function SymptomLogScreen() {
       setSaving(false);
       setSaved(false);
       savingRef.current = false;
+      setCustomTriggerText('');
+      setShowCustomTriggerInput(false);
+      setCustomTriggers([]);
       celebOpacity.setValue(0);
       celebScale.setValue(0.8);
       checkScale.setValue(0);
@@ -326,7 +334,7 @@ export default function SymptomLogScreen() {
       <Text style={styles.stepTitle}>Any triggers?</Text>
       <Text style={styles.stepSubtitle}>Optional — helps find patterns</Text>
       <View style={styles.pillWrap}>
-        {TRIGGER_LIST.map((t) => {
+        {[...TRIGGER_LIST, ...customTriggers].map((t) => {
           const selected = triggers.has(t);
           return (
             <AnimatedPressable
@@ -341,7 +349,51 @@ export default function SymptomLogScreen() {
             </AnimatedPressable>
           );
         })}
+        <AnimatedPressable
+          onPress={() => { hapticLight(); setShowCustomTriggerInput(true); }}
+          scaleDown={0.95}
+          style={styles.addCustomTriggerPill}
+        >
+          <Text style={styles.addCustomTriggerText}>+ Add your own</Text>
+        </AnimatedPressable>
       </View>
+      {showCustomTriggerInput && (
+        <View style={styles.customTriggerRow}>
+          <TextInput
+            style={styles.customTriggerInput}
+            placeholder="Type a trigger..."
+            placeholderTextColor="#78716c"
+            value={customTriggerText}
+            onChangeText={setCustomTriggerText}
+            autoFocus
+            onSubmitEditing={() => {
+              const name = customTriggerText.trim();
+              if (!name) return;
+              if (!customTriggers.includes(name)) setCustomTriggers((p) => [...p, name]);
+              setTriggers((prev) => new Set(prev).add(name));
+              setCustomTriggerText('');
+              setShowCustomTriggerInput(false);
+              Keyboard.dismiss();
+            }}
+            returnKeyType="done"
+          />
+          <AnimatedPressable
+            onPress={() => {
+              const name = customTriggerText.trim();
+              if (!name) return;
+              if (!customTriggers.includes(name)) setCustomTriggers((p) => [...p, name]);
+              setTriggers((prev) => new Set(prev).add(name));
+              setCustomTriggerText('');
+              setShowCustomTriggerInput(false);
+              Keyboard.dismiss();
+            }}
+            scaleDown={0.95}
+            style={styles.customTriggerAdd}
+          >
+            <Text style={styles.customTriggerAddText}>Add</Text>
+          </AnimatedPressable>
+        </View>
+      )}
     </>
   );
 
@@ -463,7 +515,7 @@ const styles = StyleSheet.create({
 
   // Step titles
   stepTitle: { fontSize: 22, fontWeight: '700', color: '#1c1917', marginBottom: 4 },
-  stepSubtitle: { fontSize: 13, color: '#a8a29e', marginBottom: 24 },
+  stepSubtitle: { fontSize: 14, color: '#57534e', marginBottom: 24 },
 
   // Symptom pills
   pillWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 },
@@ -474,7 +526,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f4',
   },
   symptomPillActive: { backgroundColor: '#1c1917' },
-  symptomPillText: { fontSize: 13, fontWeight: '500', color: '#78716c' },
+  symptomPillText: { fontSize: 13, fontWeight: '500', color: '#44403c' },
   symptomPillTextActive: { color: '#ffffff' },
 
   // Severity — per-symptom rows matching morning check-in
@@ -496,7 +548,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f4',
   },
   severityButtonSelected: { backgroundColor: '#1c1917' },
-  severityButtonText: { fontSize: 12, color: '#78716c', fontWeight: '500' },
+  severityButtonText: { fontSize: 12, color: '#44403c', fontWeight: '500' },
   severityButtonTextSelected: { color: '#ffffff' },
 
   // Mood
@@ -510,30 +562,65 @@ const styles = StyleSheet.create({
   },
   moodItemActive: { backgroundColor: '#1c1917', transform: [{ scale: 1.05 }] },
   moodEmoji: { fontSize: 26 },
-  moodLabel: { fontSize: 11, color: '#a8a29e' },
+  moodLabel: { fontSize: 12, color: '#57534e' },
   moodLabelActive: { color: '#ffffff', fontWeight: '500' },
 
-  // Trigger pills
+  // Trigger pills — improved contrast
   triggerPill: {
     borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
     backgroundColor: '#f5f5f4',
-  },
-  triggerPillActive: { backgroundColor: '#1c1917' },
-  triggerPillText: { fontSize: 12, fontWeight: '500', color: '#a8a29e' },
-  triggerPillTextActive: { color: '#ffffff' },
-
-  // Note input
-  noteInput: {
-    backgroundColor: '#fafaf9',
-    borderRadius: 14,
-    padding: 14,
-    fontSize: 13,
-    color: '#1c1917',
     borderWidth: 1,
-    borderColor: '#f5f5f4',
-    minHeight: 100,
+    borderColor: '#e7e5e4',
+  },
+  triggerPillActive: { backgroundColor: '#1c1917', borderColor: '#1c1917' },
+  triggerPillText: { fontSize: 13, fontWeight: '500', color: '#44403c' },
+  triggerPillTextActive: { color: '#ffffff' },
+  addCustomTriggerPill: {
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderWidth: 1,
+    borderColor: '#d6d3d1',
+    borderStyle: 'dashed',
+  },
+  addCustomTriggerText: { fontSize: 13, fontWeight: '500', color: '#78716c' },
+  customTriggerRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 12,
+  },
+  customTriggerInput: {
+    flex: 1,
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: '#1c1917',
+    borderWidth: 1.5,
+    borderColor: '#1c1917',
+  },
+  customTriggerAdd: {
+    backgroundColor: '#1c1917',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    justifyContent: 'center',
+  },
+  customTriggerAddText: { color: '#ffffff', fontSize: 13, fontWeight: '600' },
+
+  // Note input — improved clarity
+  noteInput: {
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
+    padding: 16,
+    fontSize: 15,
+    color: '#1c1917',
+    borderWidth: 1.5,
+    borderColor: '#d6d3d1',
+    minHeight: 120,
+    lineHeight: 22,
   },
 
   // Footer

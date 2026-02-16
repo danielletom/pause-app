@@ -468,23 +468,7 @@ export default function InsightsScreen() {
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#1c1917" />
           </View>
-        ) : !hasData ? (
-          <View style={styles.emptyContainer}>
-            <Text style={{ fontSize: 36, marginBottom: 12 }}>📊</Text>
-            <Text style={styles.emptyTitle}>Not enough data yet</Text>
-            <Text style={styles.emptyDesc}>
-              Log your symptoms for a few days and insights will start appearing here.
-            </Text>
-            <AnimatedPressable
-              onPress={() => { hapticLight(); router.push('/(app)/log'); }}
-              scaleDown={0.97}
-              style={styles.emptyCta}
-            >
-              <Text style={styles.emptyCtaText}>Start logging →</Text>
-            </AnimatedPressable>
-          </View>
-
-        ) : activeTab === 'patterns' && patternsLearning ? (
+        ) : !hasData || (activeTab === 'patterns' && patternsLearning) ? (
           /* ═══════════════ MY PATTERNS — LEARNING STATE ═══════════════ */
           <>
             {/* ─── Learning mode hero ────────────── */}
@@ -515,21 +499,24 @@ export default function InsightsScreen() {
                 {7 - totalDays} more day{7 - totalDays > 1 ? 's' : ''} of logging and we can start showing you what affects your symptoms, sleep, and mood.
               </Text>
 
-              {/* Day progress dots */}
+              {/* Day progress dots — Day 1 starts at first circle */}
               <View style={ls.dayDotsRow}>
-                {loggedDayFlags.map((day, i) => (
-                  <View key={i} style={ls.dayDotCol}>
-                    <View style={[
-                      ls.dayDot,
-                      day.logged ? ls.dayDotFilled : ls.dayDotEmpty,
-                    ]}>
-                      <Text style={[ls.dayDotText, day.logged && ls.dayDotTextFilled]}>
-                        {day.logged ? '✓' : i + 1}
-                      </Text>
+                {[1, 2, 3, 4, 5, 6, 7].map((dayNum) => {
+                  const isCompleted = dayNum <= totalDays;
+                  return (
+                    <View key={dayNum} style={ls.dayDotCol}>
+                      <View style={[
+                        ls.dayDot,
+                        isCompleted ? ls.dayDotFilled : ls.dayDotEmpty,
+                      ]}>
+                        <Text style={[ls.dayDotText, isCompleted && ls.dayDotTextFilled]}>
+                          {isCompleted ? '✓' : dayNum}
+                        </Text>
+                      </View>
+                      <Text style={ls.dayDotLetter}>Day {dayNum}</Text>
                     </View>
-                    <Text style={ls.dayDotLetter}>{day.dayLetter}</Text>
-                  </View>
-                ))}
+                  );
+                })}
               </View>
 
               {totalDays >= 4 && (
