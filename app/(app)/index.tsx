@@ -409,7 +409,7 @@ export default function HomeScreen() {
           </View>
         ) : (
           <>
-            {/* Readiness Score Card — dark, with activity recommendation inside */}
+            {/* Readiness Score Card — dark, with AI activity recommendation */}
             {(() => {
               // Prefer server-computed score, fall back to client-side
               const score = serverReadiness ?? readinessScore;
@@ -418,19 +418,83 @@ export default function HomeScreen() {
               const arcLength = (scoreNum / 100) * circumference;
               const activityLabel = (score ?? 0) >= 70 ? 'Good day for activity' : (score ?? 0) >= 40 ? 'Take it easy' : 'Rest & recover';
               const activityColor = (score ?? 0) >= 70 ? '#34d399' : (score ?? 0) >= 40 ? '#fbbf24' : '#fca5a5';
+              const activityBg = (score ?? 0) >= 70 ? 'rgba(52,211,153,0.12)' : (score ?? 0) >= 40 ? 'rgba(251,191,36,0.12)' : 'rgba(252,165,165,0.12)';
+
+              // Stressor level from contextTags or aggregate
+              const allStressors = new Set<string>();
+              dayLogs.forEach((e) => (e.contextTags || []).forEach((t) => allStressors.add(t)));
+              const stressorCount = allStressors.size;
+              const stressLabel = stressorCount === 0 ? 'Low ✓' : stressorCount <= 2 ? 'Moderate' : 'High';
+
+              // AI narrative: prefer recommendation, then narrative, then smart fallback
+              const aiNarrative = recommendation || narrative || null;
+
               return (
                 <View style={styles.readinessCard}>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.readinessLabel}>READINESS SCORE</Text>
-                    <Text style={styles.readinessValue}>{score ?? '—'}</Text>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.readinessLabel}>READINESS SCORE</Text>
+                        <Text style={styles.readinessValue}>{score ?? '—'}</Text>
+                      </View>
+                      <View style={styles.readinessRingOuter}>
+                        <View style={styles.readinessRing}>
+                          {score !== null && (
+                            <View style={styles.readinessArcWrap}>
+                              <Svg width={64} height={64} viewBox="0 0 64 64">
+                                <Circle
+                                  cx={32} cy={32} r={26}
+                                  fill="none"
+                                  stroke="#a8a29e"
+                                  strokeWidth={3}
+                                  strokeDasharray={`${arcLength} ${circumference - arcLength}`}
+                                  strokeLinecap="round"
+                                  transform="rotate(-90 32 32)"
+                                />
+                              </Svg>
+                            </View>
+                          )}
+                          <Text style={styles.readinessRingScore}>{score ?? '—'}</Text>
+                        </View>
+                        <Text style={styles.readinessRingLabel}>/100</Text>
+                      </View>
+                    </View>
                     {hasLog && (
                       <>
-                        <Text style={[styles.readinessActivity, { color: activityColor }]}>{activityLabel}</Text>
-                        <Text style={styles.readinessHint}>
-                          {recommendation || narrative || (
-                            `${sleepLog?.sleepHours ? `${sleepLog.sleepHours}h sleep` : 'Sleep data'}${latestMood ? ` + ${MOOD_LABEL[latestMood]?.toLowerCase() || ''} mood` : ''}${symptomTrends.length > 0 ? ` + ${symptomTrends.length <= 2 ? 'low' : 'moderate'} symptoms` : ''}`
+                        {/* Activity recommendation pill with AI explanation */}
+                        <View style={[styles.readinessActivityPill, { backgroundColor: activityBg }]}>
+                          <Text style={[styles.readinessActivity, { color: activityColor }]}>{activityLabel}</Text>
+                          {aiNarrative ? (
+                            <Text style={styles.readinessNarrative}>{aiNarrative}</Text>
+                          ) : (
+                            <Text style={styles.readinessNarrative}>
+                              {sleepLog?.sleepHours ? `${sleepLog.sleepHours}h sleep` : 'Sleep data'}
+                              {latestMood ? ` + ${MOOD_LABEL[latestMood]?.toLowerCase() || ''} mood` : ''}
+                              {symptomTrends.length > 0 ? ` means ${symptomTrends.length <= 2 ? 'low' : 'moderate'} symptom load today.` : '.'}
+                            </Text>
                           )}
-                        </Text>
+                        </View>
+                        {/* Stats row — Sleep, Symptoms, Stress */}
+                        <View style={styles.readinessStatsInline}>
+                          <View style={styles.readinessStatItem}>
+                            <Text style={styles.readinessStatText}>
+                              Sleep: {sleepLog?.sleepHours ? `${sleepLog.sleepHours}h` : '—'}
+                            </Text>
+                            {sleepLog?.sleepHours && sleepLog.sleepHours >= 6 && <Text style={styles.readinessStatCheck}> ✓</Text>}
+                          </View>
+                          <View style={styles.readinessStatItem}>
+                            <Text style={styles.readinessStatText}>
+                              Symptoms: {symptomTrends.length > 0 ? (symptomTrends.length <= 2 ? 'Low' : 'Moderate') : 'None'}
+                            </Text>
+                            {symptomTrends.length <= 2 && <Text style={styles.readinessStatCheck}> ✓</Text>}
+                          </View>
+                          <View style={styles.readinessStatItem}>
+                            <Text style={styles.readinessStatText}>
+                              Stress: {stressLabel.replace(' ✓', '')}
+                            </Text>
+                            {stressorCount <= 0 && <Text style={styles.readinessStatCheck}> ✓</Text>}
+                          </View>
+                        </View>
                       </>
                     )}
                     {!hasLog && (
@@ -438,39 +502,6 @@ export default function HomeScreen() {
                         {isToday ? 'Log today to see your score' : 'No data for this day'}
                       </Text>
                     )}
-                    {/* Stats row inside card */}
-                    {hasLog && (
-                      <View style={styles.readinessStatsInline}>
-                        <Text style={styles.readinessStatText}>
-                          Sleep: {sleepLog?.sleepHours ? `${sleepLog.sleepHours}h ✓` : '—'}
-                        </Text>
-                        <Text style={styles.readinessStatDot}>·</Text>
-                        <Text style={styles.readinessStatText}>
-                          Symptoms: {symptomTrends.length > 0 ? (symptomTrends.length <= 2 ? 'Low ✓' : 'Moderate') : 'None ✓'}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                  <View style={styles.readinessRingOuter}>
-                    <View style={styles.readinessRing}>
-                      {score !== null && (
-                        <View style={styles.readinessArcWrap}>
-                          <Svg width={64} height={64} viewBox="0 0 64 64">
-                            <Circle
-                              cx={32} cy={32} r={26}
-                              fill="none"
-                              stroke="#a8a29e"
-                              strokeWidth={3}
-                              strokeDasharray={`${arcLength} ${circumference - arcLength}`}
-                              strokeLinecap="round"
-                              transform="rotate(-90 32 32)"
-                            />
-                          </Svg>
-                        </View>
-                      )}
-                      <Text style={styles.readinessRingScore}>{score ?? '—'}</Text>
-                    </View>
-                    <Text style={styles.readinessRingLabel}>/100</Text>
                   </View>
                 </View>
               );
@@ -1208,8 +1239,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#1c1917',
     borderRadius: 16,
     padding: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
     marginBottom: 12,
   },
   readinessLabel: {
@@ -1258,24 +1287,38 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 
+  readinessActivityPill: {
+    borderRadius: 12,
+    padding: 12,
+    marginTop: 12,
+  },
   readinessActivity: {
     fontSize: 13,
     fontWeight: '600',
-    marginTop: 8,
+  },
+  readinessNarrative: {
+    fontSize: 12,
+    color: '#d6d3d1',
+    marginTop: 6,
+    lineHeight: 18,
   },
   readinessStatsInline: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginTop: 12,
+  },
+  readinessStatItem: {
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    marginTop: 6,
   },
   readinessStatText: {
-    fontSize: 10,
+    fontSize: 11,
     color: '#78716c',
   },
-  readinessStatDot: {
-    fontSize: 10,
-    color: '#78716c',
+  readinessStatCheck: {
+    fontSize: 11,
+    color: '#34d399',
   },
 
   // Journal card
