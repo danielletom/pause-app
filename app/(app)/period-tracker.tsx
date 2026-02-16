@@ -63,7 +63,7 @@ interface Analytics {
   cycleRangeMax: number | null;
   cycleRangeLabel: string | null;
   stage: string | null;
-  stageConfidence: string | null;
+  stageConfidence: number | null;
   predictedNextStart: string | null;
   predictionConfidence: string | null;
 }

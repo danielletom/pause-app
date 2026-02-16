@@ -21,7 +21,7 @@ interface Analytics {
   cycleRangeMax: number | null;
   cycleRangeLabel: string | null;
   stage: string | null;
-  stageConfidence: string | null;
+  stageConfidence: number | null;
   variabilityTrend: string | null;
   flowTrend: string | null;
   predictedNextStart: string | null;
@@ -29,7 +29,6 @@ interface Analytics {
   predictionConfidence: string | null;
   spotsBeforePeriodPct: number | null;
   avgSpottingLeadDays: number | null;
-  totalCycles: number | null;
 }
 
 interface Cycle {
