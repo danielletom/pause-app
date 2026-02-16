@@ -186,6 +186,8 @@ export default function HomeScreen() {
   const [serverReadiness, setServerReadiness] = useState<number | null>(null);
   const [insightNudge, setInsightNudge] = useState<{ title: string; body: string } | null>(null);
   const [narrative, setNarrative] = useState<string | null>(null);
+  const [periodEnabled, setPeriodEnabled] = useState(false);
+  const [periodCycle, setPeriodCycle] = useState<any>(null);
   const hasLoadedOnce = useRef(false);
 
   const todayStr = useMemo(() => toDateStr(new Date()), []);
@@ -205,13 +207,15 @@ export default function HomeScreen() {
       }
       const token = await getTokenRef.current();
       const todayDate = toDateStr(new Date());
-      const [logData, medsData, medLogsData, recentLogs, articlesData, homeData] = await Promise.all([
+      const [logData, medsData, medLogsData, recentLogs, articlesData, homeData, periodSettings, periodCurrent] = await Promise.all([
         apiRequest(`/api/logs?date=${selectedDate}`, token).catch(() => []),
         apiRequest('/api/meds', token).catch(() => []),
         apiRequest(`/api/meds/logs?date=${todayDate}`, token).catch(() => []),
         apiRequest('/api/logs?range=28d', token).catch(() => []),
         apiRequest('/api/articles', token).catch(() => []),
         apiRequest(`/api/insights/home?date=${todayDate}`, token).catch(() => null),
+        apiRequest('/api/period/settings', token).catch(() => null),
+        apiRequest('/api/period/cycles/current', token).catch(() => null),
       ]);
       // API now returns array of entries per day
       setDayLogs(Array.isArray(logData) ? logData : logData ? [logData] : []);
@@ -266,6 +270,17 @@ export default function HomeScreen() {
           if (log.logType === 'evening') statusMap[log.date].pm = true;
         }
         setWeekLogStatus(statusMap);
+      }
+
+      // Period tracker state
+      if (periodSettings && periodSettings.enabled) {
+        setPeriodEnabled(true);
+        if (periodSettings.homeWidget !== false) {
+          setPeriodCycle(periodCurrent || null);
+        }
+      } else {
+        setPeriodEnabled(false);
+        setPeriodCycle(null);
       }
 
       hasLoadedOnce.current = true;
@@ -1082,6 +1097,96 @@ export default function HomeScreen() {
               </AnimatedPressable>
             )}
 
+            {/* Period Tracker Widget — 3 states */}
+            {isToday && periodEnabled && (() => {
+              const hasCycleData = periodCycle && periodCycle.cycle;
+              const isActive = hasCycleData && periodCycle.cycle.status === 'active' && periodCycle.daysSinceStart != null && periodCycle.daysSinceStart <= 10;
+
+              // Helper: human-friendly time since last period
+              const timeAgo = (dateStr: string) => {
+                const days = Math.round((Date.now() - new Date(dateStr).getTime()) / 86400000);
+                if (days === 0) return 'Today';
+                if (days === 1) return 'Yesterday';
+                if (days < 7) return `${days} days ago`;
+                const weeks = Math.round(days / 7);
+                if (weeks <= 8) return `${weeks} week${weeks > 1 ? 's' : ''} ago`;
+                const months = Math.round(days / 30);
+                return `${months} month${months > 1 ? 's' : ''} ago`;
+              };
+
+              // State 3: Active period (promoted, rose card)
+              if (isActive) {
+                return (
+                  <AnimatedPressable
+                    onPress={() => { hapticMedium(); router.push('/(app)/period-tracker'); }}
+                    scaleDown={0.97}
+                    style={styles.periodWidgetActive}
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                      <View style={styles.periodWidgetActiveIcon}>
+                        <Text style={{ fontSize: 14 }}>🩸</Text>
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.periodWidgetActiveTitle}>Period — Day {periodCycle.daysSinceStart}</Text>
+                        <Text style={styles.periodWidgetActiveSub}>Tap to log today's flow</Text>
+                      </View>
+                      <AnimatedPressable
+                        onPress={() => { hapticLight(); router.push('/(app)/period-daily'); }}
+                        scaleDown={0.95}
+                        style={styles.periodWidgetLogBtn}
+                      >
+                        <Text style={styles.periodWidgetLogBtnText}>Log</Text>
+                      </AnimatedPressable>
+                    </View>
+                  </AnimatedPressable>
+                );
+              }
+
+              // State 2: Waiting (has cycle data, not currently active)
+              if (hasCycleData) {
+                return (
+                  <AnimatedPressable
+                    onPress={() => { hapticLight(); router.push('/(app)/period-tracker'); }}
+                    scaleDown={0.97}
+                    style={styles.periodWidgetWaiting}
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                      <View style={styles.periodWidgetWaitingIcon}>
+                        <Text style={{ fontSize: 14 }}>◯</Text>
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.periodWidgetWaitingTitle}>Period Tracker</Text>
+                        <Text style={styles.periodWidgetWaitingSub}>
+                          Last period: {timeAgo(periodCycle.cycle.startDate)}
+                        </Text>
+                      </View>
+                      <Text style={{ fontSize: 18, color: '#d6d3d1' }}>›</Text>
+                    </View>
+                  </AnimatedPressable>
+                );
+              }
+
+              // State 1: Empty (enabled but no data yet)
+              return (
+                <AnimatedPressable
+                  onPress={() => { hapticLight(); router.push('/(app)/period-tracker'); }}
+                  scaleDown={0.97}
+                  style={styles.periodWidgetEmpty}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                    <View style={styles.periodWidgetEmptyIcon}>
+                      <Text style={{ fontSize: 14, color: '#f43f5e' }}>✦</Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.periodWidgetEmptyTitle}>Period Tracker</Text>
+                      <Text style={styles.periodWidgetEmptySub}>Tap to start tracking your cycle</Text>
+                    </View>
+                    <Text style={{ fontSize: 18, color: '#d6d3d1' }}>›</Text>
+                  </View>
+                </AnimatedPressable>
+              );
+            })()}
+
             {/* Empty state — no log for selected day */}
             {!hasLog && (
               <View style={styles.emptyCard}>
@@ -1873,4 +1978,82 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   wellnessProgressText: { fontSize: 10, color: '#d6d3d1', marginTop: 4 },
+
+  // Period widget — Active (rose, promoted)
+  periodWidgetActive: {
+    backgroundColor: '#fff1f2',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 2,
+    borderColor: '#fecdd3',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  periodWidgetActiveIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#fecdd3',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  periodWidgetActiveTitle: { fontSize: 14, fontWeight: '600', color: '#1c1917' },
+  periodWidgetActiveSub: { fontSize: 11, color: '#a8a29e', marginTop: 1 },
+  periodWidgetLogBtn: {
+    backgroundColor: '#f43f5e',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  periodWidgetLogBtnText: { fontSize: 12, fontWeight: '600', color: '#ffffff' },
+
+  // Period widget — Waiting (has data)
+  periodWidgetWaiting: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#f5f5f4',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  periodWidgetWaitingIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#ffe4e6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  periodWidgetWaitingTitle: { fontSize: 14, fontWeight: '500', color: '#1c1917' },
+  periodWidgetWaitingSub: { fontSize: 11, color: '#a8a29e', marginTop: 1 },
+
+  // Period widget — Empty (no data yet)
+  periodWidgetEmpty: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#f5f5f4',
+    borderStyle: 'dashed',
+  },
+  periodWidgetEmptyIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#fff1f2',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  periodWidgetEmptyTitle: { fontSize: 14, fontWeight: '500', color: '#1c1917' },
+  periodWidgetEmptySub: { fontSize: 11, color: '#a8a29e', marginTop: 1 },
 });

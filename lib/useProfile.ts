@@ -11,6 +11,13 @@ export interface Profile {
   goals: string[];
   onboardingComplete: boolean;
   createdAt: string;
+  // Period tracking
+  periodTrackingEnabled: boolean;
+  periodHomeWidget: boolean;
+  periodPredictions: boolean;
+  periodReminders: boolean;
+  periodCrossInsights: boolean;
+  menopauseDeclaredAt: string | null;
 }
 
 export function useProfile() {

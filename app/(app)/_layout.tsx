@@ -106,6 +106,14 @@ export default function AppLayout() {
       <Tabs.Screen name="journal-pm" options={{ href: null }} />
       <Tabs.Screen name="journal-done" options={{ href: null }} />
       <Tabs.Screen name="journal-week" options={{ href: null }} />
+      {/* Period tracker screens */}
+      <Tabs.Screen name="period-tracker" options={{ href: null }} />
+      <Tabs.Screen name="period-log" options={{ href: null }} />
+      <Tabs.Screen name="period-bleeding" options={{ href: null }} />
+      <Tabs.Screen name="period-daily" options={{ href: null }} />
+      <Tabs.Screen name="period-history" options={{ href: null }} />
+      <Tabs.Screen name="period-insights" options={{ href: null }} />
+      <Tabs.Screen name="period-settings" options={{ href: null }} />
     </Tabs>
   );
 }
