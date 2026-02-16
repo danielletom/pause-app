@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -170,6 +170,8 @@ interface ArticleSummary {
 export default function HomeScreen() {
   const { user } = useUser();
   const { getToken } = useAuth();
+  const getTokenRef = useRef(getToken);
+  getTokenRef.current = getToken;
   const { profile } = useProfile();
   const router = useRouter();
   const [dayLogs, setDayLogs] = useState<LogEntry[]>([]);
@@ -181,6 +183,9 @@ export default function HomeScreen() {
   const [lastLoggedHoursAgo, setLastLoggedHoursAgo] = useState<number | null>(null);
   const [weekLogStatus, setWeekLogStatus] = useState<Record<string, { am: boolean; pm: boolean }>>({});
   const [recommendation, setRecommendation] = useState<string | null>(null);
+  const [serverReadiness, setServerReadiness] = useState<number | null>(null);
+  const [insightNudge, setInsightNudge] = useState<{ title: string; body: string } | null>(null);
+  const [narrative, setNarrative] = useState<string | null>(null);
   const hasLoadedOnce = useRef(false);
 
   const todayStr = useMemo(() => toDateStr(new Date()), []);
@@ -198,7 +203,7 @@ export default function HomeScreen() {
       if (!hasLoadedOnce.current) {
         setLoading(true);
       }
-      const token = await getToken();
+      const token = await getTokenRef.current();
       const todayDate = toDateStr(new Date());
       const [logData, medsData, medLogsData, recentLogs, articlesData, homeData] = await Promise.all([
         apiRequest(`/api/logs?date=${selectedDate}`, token).catch(() => []),
@@ -244,9 +249,12 @@ export default function HomeScreen() {
           setLastLoggedHoursAgo(hrs);
         }
       }
-      // Set recommendation from home API
-      if (homeData?.recommendation) {
-        setRecommendation(homeData.recommendation);
+      // Set recommendation + AI data from home API
+      if (homeData) {
+        if (homeData.recommendation) setRecommendation(homeData.recommendation);
+        if (homeData.readiness != null) setServerReadiness(homeData.readiness);
+        if (homeData.insightNudge) setInsightNudge(homeData.insightNudge);
+        if (homeData.narrative) setNarrative(homeData.narrative);
       }
 
       // Build week log status for AM/PM dots
@@ -267,7 +275,7 @@ export default function HomeScreen() {
     } finally {
       setLoading(false);
     }
-  }, [getToken, selectedDate]);
+  }, [selectedDate]);
 
   useFocusEffect(
     useCallback(() => {
@@ -403,7 +411,8 @@ export default function HomeScreen() {
           <>
             {/* Readiness Score Card — dark, with activity recommendation inside */}
             {(() => {
-              const score = readinessScore;
+              // Prefer server-computed score, fall back to client-side
+              const score = serverReadiness ?? readinessScore;
               const scoreNum = score ?? 0;
               const circumference = 163.4;
               const arcLength = (scoreNum / 100) * circumference;
@@ -418,7 +427,7 @@ export default function HomeScreen() {
                       <>
                         <Text style={[styles.readinessActivity, { color: activityColor }]}>{activityLabel}</Text>
                         <Text style={styles.readinessHint}>
-                          {recommendation || (
+                          {recommendation || narrative || (
                             `${sleepLog?.sleepHours ? `${sleepLog.sleepHours}h sleep` : 'Sleep data'}${latestMood ? ` + ${MOOD_LABEL[latestMood]?.toLowerCase() || ''} mood` : ''}${symptomTrends.length > 0 ? ` + ${symptomTrends.length <= 2 ? 'low' : 'moderate'} symptoms` : ''}`
                           )}
                         </Text>
@@ -594,7 +603,7 @@ export default function HomeScreen() {
                         onPress={async () => {
                           hapticLight();
                           try {
-                            const token = await getToken();
+                            const token = await getTokenRef.current();
                             await apiRequest('/api/meds/logs', token, {
                               method: 'POST',
                               body: JSON.stringify({ medicationId: med.id, date: todayStr, taken: !taken }),
@@ -740,8 +749,8 @@ export default function HomeScreen() {
               </View>
             )}
 
-            {/* Insight nudge — pattern detection */}
-            {hasLog && symptomTrends.length > 0 && (
+            {/* Insight nudge — pattern detection (from AI or fallback) */}
+            {(insightNudge || (hasLog && symptomTrends.length > 0)) && (
               <AnimatedPressable
                 onPress={() => { hapticLight(); router.push('/(app)/insights'); }}
                 scaleDown={0.98}
@@ -750,14 +759,18 @@ export default function HomeScreen() {
                 <Text style={styles.insightStar}>✦</Text>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.insightTitle}>
-                    {streak >= 14
-                      ? `Overall ${symptomTrends.length > 0 ? 'improving' : 'stable'}. ${symptomTrends[0]?.name || 'Your patterns'} trending.`
-                      : 'We spotted a pattern'}
+                    {insightNudge?.title || (
+                      streak >= 14
+                        ? `Overall ${symptomTrends.length > 0 ? 'improving' : 'stable'}. ${symptomTrends[0]?.name || 'Your patterns'} trending.`
+                        : 'We spotted a pattern'
+                    )}
                   </Text>
                   <Text style={styles.insightDesc}>
-                    {streak >= 14
-                      ? `Your ${symptomTrends[0]?.name?.toLowerCase() || 'top symptom'} tends to worsen after poor sleep.`
-                      : 'Keep logging daily so we can identify triggers and trends in your symptoms.'}
+                    {insightNudge?.body || (
+                      streak >= 14
+                        ? `Your ${symptomTrends[0]?.name?.toLowerCase() || 'top symptom'} tends to worsen after poor sleep.`
+                        : 'Keep logging daily so we can identify triggers and trends in your symptoms.'
+                    )}
                   </Text>
                   <Text style={[styles.seeAll, { marginTop: 6 }]}>See why →</Text>
                 </View>
@@ -789,7 +802,7 @@ export default function HomeScreen() {
                       <AnimatedPressable
                         onPress={() => {
                           hapticLight();
-                          router.push({ pathname: '/(app)/quick-log', params: { date: selectedDate, mode: 'morning' } });
+                          router.push({ pathname: '/(app)/quick-log', params: { date: selectedDate, mode: 'morning', logId: String(amLog.id) } });
                         }}
                         scaleDown={0.97}
                         style={styles.summaryCard}
@@ -846,7 +859,7 @@ export default function HomeScreen() {
                         <AnimatedPressable
                           onPress={() => {
                             hapticLight();
-                            router.push({ pathname: '/(app)/quick-log', params: { date: selectedDate, mode: 'evening' } });
+                            router.push({ pathname: '/(app)/quick-log', params: { date: selectedDate, mode: 'evening', logId: String(pmLog.id) } });
                           }}
                           scaleDown={0.97}
                           style={styles.summaryCard}

@@ -64,10 +64,13 @@ export default function CalendarScreen() {
   const hasLoadedOnce = useRef(false);
 
   /* ── Fetch logs for the visible month ── */
+  const getTokenRef = useRef(getToken);
+  getTokenRef.current = getToken;
+
   const fetchLogs = useCallback(async () => {
     try {
       if (!hasLoadedOnce.current) setLoading(true);
-      const token = await getToken();
+      const token = await getTokenRef.current();
       // Fetch ~45 days to cover the month even if we're mid-month
       const data = await apiRequest('/api/logs?range=45d', token).catch(() => []);
       setLogs(Array.isArray(data) ? data : []);
@@ -78,7 +81,7 @@ export default function CalendarScreen() {
     } finally {
       setLoading(false);
     }
-  }, [getToken]);
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -247,7 +250,17 @@ export default function CalendarScreen() {
                 </Text>
 
                 {morningLog ? (
-                  <View style={[styles.detailCard, styles.detailCardAM]}>
+                  <AnimatedPressable
+                    onPress={() => {
+                      hapticLight();
+                      router.push({
+                        pathname: '/(app)/quick-log',
+                        params: { date: selectedDateStr!, mode: 'morning', logId: String(morningLog.id) },
+                      });
+                    }}
+                    scaleDown={0.97}
+                    style={[styles.detailCard, styles.detailCardAM]}
+                  >
                     <Text style={styles.detailCardIcon}>☀️</Text>
                     <View style={{ flex: 1 }}>
                       <Text style={styles.detailCardTitle}>Morning check-in</Text>
@@ -259,11 +272,22 @@ export default function CalendarScreen() {
                         {morningLog.symptomsJson ? `${typeof morningLog.symptomsJson === 'object' ? Object.keys(morningLog.symptomsJson).length : 0} symptoms` : ''}
                       </Text>
                     </View>
-                  </View>
+                    <Text style={{ fontSize: 11, color: '#a8a29e' }}>View →</Text>
+                  </AnimatedPressable>
                 ) : null}
 
                 {eveningLog ? (
-                  <View style={[styles.detailCard, styles.detailCardPM]}>
+                  <AnimatedPressable
+                    onPress={() => {
+                      hapticLight();
+                      router.push({
+                        pathname: '/(app)/quick-log',
+                        params: { date: selectedDateStr!, mode: 'evening', logId: String(eveningLog.id) },
+                      });
+                    }}
+                    scaleDown={0.97}
+                    style={[styles.detailCard, styles.detailCardPM]}
+                  >
                     <Text style={styles.detailCardIcon}>🌙</Text>
                     <View style={{ flex: 1 }}>
                       <Text style={styles.detailCardTitle}>Evening reflection</Text>
@@ -272,7 +296,8 @@ export default function CalendarScreen() {
                         {eveningLog.notes ? ' · Has notes' : ''}
                       </Text>
                     </View>
-                  </View>
+                    <Text style={{ fontSize: 11, color: '#a8a29e' }}>View →</Text>
+                  </AnimatedPressable>
                 ) : null}
 
                 {periodLog ? (

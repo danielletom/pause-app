@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -18,6 +18,9 @@ const WEEK_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 export default function JournalScreen() {
   const router = useRouter();
   const { getToken } = useAuth();
+  const getTokenRef = useRef(getToken);
+  getTokenRef.current = getToken;
+  const hasLoadedOnce = useRef(false);
   const [loading, setLoading] = useState(true);
   const [streak, setStreak] = useState(0);
   const [weekData, setWeekData] = useState<{ am: boolean; pm: boolean }[]>(
@@ -32,9 +35,9 @@ export default function JournalScreen() {
     useCallback(() => {
       (async () => {
         try {
-          setLoading(true);
+          if (!hasLoadedOnce.current) setLoading(true);
           setEveningAvailable(new Date().getHours() >= 19);
-          const token = await getToken();
+          const token = await getTokenRef.current();
           const today = new Date().toISOString().split('T')[0];
 
           // Check today's logs
@@ -94,6 +97,7 @@ export default function JournalScreen() {
           // Non-critical
         } finally {
           setLoading(false);
+          hasLoadedOnce.current = true;
         }
       })();
     }, [])

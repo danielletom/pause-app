@@ -171,12 +171,15 @@ function getQuoteOfDay(): { text: string; author: string } {
 export default function QuickLogScreen() {
   const router = useRouter();
   const { getToken } = useAuth();
-  const { date: dateParam, mode: modeParam } = useLocalSearchParams<{ date?: string; mode?: string }>();
+  const { date: dateParam, mode: modeParam, logId: logIdParam } = useLocalSearchParams<{ date?: string; mode?: string; logId?: string }>();
   const logDate = dateParam || new Date().toISOString().split('T')[0];
   const isToday = logDate === new Date().toISOString().split('T')[0];
   const mode = (modeParam === 'morning' || modeParam === 'evening') ? modeParam : 'morning';
   const isMorning = mode === 'morning';
   const STEPS = isMorning ? MORNING_STEPS : EVENING_STEPS;
+  const editingLogId = logIdParam ? parseInt(logIdParam) : null;
+  const [isViewMode, setIsViewMode] = useState(!!editingLogId);
+  const [loadingExisting, setLoadingExisting] = useState(!!editingLogId);
 
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
@@ -199,6 +202,11 @@ export default function QuickLogScreen() {
   const [customSymptomText, setCustomSymptomText] = useState('');
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [customSymptoms, setCustomSymptoms] = useState<string[]>([]); // from profile
+
+  // Custom disruptions
+  const [customDisruptionText, setCustomDisruptionText] = useState('');
+  const [showCustomDisruptionInput, setShowCustomDisruptionInput] = useState(false);
+  const [customDisruptions, setCustomDisruptions] = useState<{ key: string; label: string; emoji: string }[]>([]);
 
   // What's Ahead
   const [energy, setEnergy] = useState<number | null>(null);
@@ -290,6 +298,124 @@ export default function QuickLogScreen() {
       })();
     }, [])
   );
+
+  /* ── Load existing log for view/edit mode ── */
+  useEffect(() => {
+    if (!editingLogId) return;
+    (async () => {
+      try {
+        const token = await getToken();
+        const logs = await apiRequest(`/api/logs?date=${logDate}`, token).catch(() => []);
+        const entries = Array.isArray(logs) ? logs : [];
+        const existingLog = entries.find((e: any) => e.id === editingLogId);
+        if (!existingLog) {
+          setLoadingExisting(false);
+          return;
+        }
+
+        // Pre-fill common fields
+        if (existingLog.mood != null) setMood(existingLog.mood);
+        if (existingLog.symptomsJson && typeof existingLog.symptomsJson === 'object') {
+          const syms: Record<string, number> = {};
+          Object.entries(existingLog.symptomsJson).forEach(([k, v]: [string, any]) => {
+            syms[k] = typeof v === 'number' ? v : 1;
+          });
+          setSymptoms(syms);
+        }
+
+        if (isMorning) {
+          // Pre-fill morning fields
+          if (existingLog.sleepHours != null) setSleepHours(existingLog.sleepHours);
+          if (existingLog.sleepQuality) setSleepQuality(existingLog.sleepQuality);
+          if (existingLog.energy != null) setEnergy(existingLog.energy);
+
+          // Extract disruptions from contextTags
+          const tags = existingLog.contextTags || [];
+          const knownDisruptions = SLEEP_DISRUPTIONS.map(d => d.key);
+          const disruptions = new Set<string>();
+          tags.forEach((t: string) => {
+            if (knownDisruptions.includes(t)) disruptions.add(t);
+          });
+          if (disruptions.size > 0) setSleepDisruptions(disruptions);
+
+          // Extract stressors from contextTags
+          const knownStressors = STRESSOR_PILLS.map(s => s.key);
+          const stressorSet = new Set<string>();
+          tags.forEach((t: string) => {
+            const stressorPill = STRESSOR_PILLS.find(s => s.label === t);
+            if (stressorPill) stressorSet.add(stressorPill.key);
+            else if (knownStressors.includes(t)) stressorSet.add(t);
+          });
+          if (stressorSet.size > 0) setStressors(stressorSet);
+
+          // Extract mood pills from contextTags
+          const knownMoodPills = MOOD_PILLS.map(m => m.key);
+          const moodSet = new Set<string>();
+          tags.forEach((t: string) => {
+            if (knownMoodPills.includes(t)) moodSet.add(t);
+          });
+          if (moodSet.size > 0) setMoodPills(moodSet);
+
+          // Parse notes for gratitude/intention
+          if (existingLog.notes) {
+            try {
+              const parsed = JSON.parse(existingLog.notes);
+              if (parsed.grateful) setGratitudeText(parsed.grateful);
+              if (parsed.intention) setIntentionText(parsed.intention);
+            } catch { /* not JSON */ }
+          }
+
+          // Period data
+          if (existingLog.cycleDataJson) {
+            const cycle = existingLog.cycleDataJson as any;
+            if (cycle.status) setPeriodStatus(cycle.status);
+            if (cycle.flow) setFlowIntensity(cycle.flow);
+          }
+        } else {
+          // Pre-fill evening fields
+          const tags = existingLog.contextTags || [];
+
+          // Extract mood pills
+          const knownMoodPills = MOOD_PILLS.map(m => m.key);
+          const moodSet = new Set<string>();
+          tags.forEach((t: string) => {
+            if (knownMoodPills.includes(t)) moodSet.add(t);
+          });
+          if (moodSet.size > 0) setMoodPills(moodSet);
+
+          // Extract activities
+          const actSet = new Set<string>();
+          tags.forEach((t: string) => {
+            const actPill = ACTIVITY_PILLS.find(a => a.label === t);
+            if (actPill) actSet.add(actPill.key);
+          });
+          if (actSet.size > 0) setActivities(actSet);
+
+          // Extract substances
+          const subSet = new Set<string>();
+          tags.forEach((t: string) => {
+            const subPill = SUBSTANCE_PILLS.find(s => s.label === t);
+            if (subPill) subSet.add(subPill.key);
+          });
+          if (subSet.size > 0) setSubstances(subSet);
+
+          // Parse notes for highlight/learned
+          if (existingLog.notes) {
+            try {
+              const parsed = JSON.parse(existingLog.notes);
+              if (parsed.highlight) setHighlightText(parsed.highlight);
+              if (parsed.learned) setLearnedText(parsed.learned);
+              if (parsed.symptomComparisons) setSymptomComparison(parsed.symptomComparisons);
+            } catch { /* not JSON */ }
+          }
+        }
+      } catch {
+        // Non-critical
+      } finally {
+        setLoadingExisting(false);
+      }
+    })();
+  }, [editingLogId]);
 
   /* ── Helpers ────────────────────── */
   const toggleSet = (
@@ -534,27 +660,43 @@ export default function QuickLogScreen() {
                 <AnimatedPressable
                   key={h}
                   onPress={() => { hapticSelection(); setSleepHours(h); }}
-                  scaleDown={0.95}
+                  scaleDown={0.9}
                   style={[
-                    styles.sleepHourDot,
-                    h === sleepHours && styles.sleepHourDotActive,
-                    h > 0 && h < 12 && h !== sleepHours && { opacity: 0.3 },
+                    styles.sleepHourButton,
+                    h === sleepHours && styles.sleepHourButtonActive,
                   ]}
                 >
-                  <Text style={[styles.sleepHourLabel, h !== 0 && h !== 6 && h !== 12 && h !== sleepHours && { opacity: 0 }]}>
-                    {h}h
+                  <Text style={[
+                    styles.sleepHourLabel,
+                    h === sleepHours && styles.sleepHourLabelActive,
+                  ]}>
+                    {h}
                   </Text>
                 </AnimatedPressable>
               ))}
             </View>
-            <Text style={{ fontSize: 11, color: '#a8a29e', textAlign: 'center', marginTop: -8, marginBottom: 16 }}>
-              Tap a number to set your hours
-            </Text>
+            <View style={styles.sleepHoursAdjust}>
+              <AnimatedPressable
+                onPress={() => { if (sleepHours > 0) { hapticSelection(); setSleepHours(sleepHours - 1); } }}
+                scaleDown={0.9}
+                style={styles.sleepAdjustBtn}
+              >
+                <Text style={styles.sleepAdjustBtnText}>−</Text>
+              </AnimatedPressable>
+              <Text style={styles.sleepAdjustLabel}>{sleepHours} hours</Text>
+              <AnimatedPressable
+                onPress={() => { if (sleepHours < 12) { hapticSelection(); setSleepHours(sleepHours + 1); } }}
+                scaleDown={0.9}
+                style={styles.sleepAdjustBtn}
+              >
+                <Text style={styles.sleepAdjustBtnText}>+</Text>
+              </AnimatedPressable>
+            </View>
 
             {/* Sleep disruptions */}
             <Text style={styles.sectionLabel}>Sleep disruptions</Text>
             <View style={styles.pillGrid}>
-              {SLEEP_DISRUPTIONS.map((d) => (
+              {[...SLEEP_DISRUPTIONS, ...customDisruptions].map((d) => (
                 <AnimatedPressable
                   key={d.key}
                   onPress={() => toggleSet(sleepDisruptions, setSleepDisruptions, d.key)}
@@ -567,7 +709,56 @@ export default function QuickLogScreen() {
                   </Text>
                 </AnimatedPressable>
               ))}
+              {/* Add custom disruption */}
+              <AnimatedPressable
+                onPress={() => { hapticLight(); setShowCustomDisruptionInput(true); }}
+                scaleDown={0.95}
+                style={styles.addCustomPill}
+              >
+                <Text style={styles.addCustomPillText}>+ Add your own</Text>
+              </AnimatedPressable>
             </View>
+
+            {/* Custom disruption input */}
+            {showCustomDisruptionInput && (
+              <View style={styles.customInputRow}>
+                <TextInput
+                  style={styles.customInput}
+                  placeholder="What disrupted your sleep..."
+                  placeholderTextColor="#a8a29e"
+                  value={customDisruptionText}
+                  onChangeText={setCustomDisruptionText}
+                  autoFocus
+                  onSubmitEditing={() => {
+                    const name = customDisruptionText.trim();
+                    if (!name) return;
+                    const key = name.toLowerCase().replace(/\s+/g, '_');
+                    setCustomDisruptions((prev) => [...prev, { key, label: name, emoji: '😴' }]);
+                    setSleepDisruptions((prev) => new Set(prev).add(key));
+                    setCustomDisruptionText('');
+                    setShowCustomDisruptionInput(false);
+                    Keyboard.dismiss();
+                  }}
+                  returnKeyType="done"
+                />
+                <AnimatedPressable
+                  onPress={() => {
+                    const name = customDisruptionText.trim();
+                    if (!name) return;
+                    const key = name.toLowerCase().replace(/\s+/g, '_');
+                    setCustomDisruptions((prev) => [...prev, { key, label: name, emoji: '😴' }]);
+                    setSleepDisruptions((prev) => new Set(prev).add(key));
+                    setCustomDisruptionText('');
+                    setShowCustomDisruptionInput(false);
+                    Keyboard.dismiss();
+                  }}
+                  scaleDown={0.95}
+                  style={styles.customInputAdd}
+                >
+                  <Text style={styles.customInputAddText}>Add</Text>
+                </AnimatedPressable>
+              </View>
+            )}
           </View>
         );
 
@@ -1335,6 +1526,17 @@ export default function QuickLogScreen() {
 
   const headerEmoji = isMorning ? '☀️' : '🌙';
 
+  if (loadingExisting) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color="#1c1917" />
+          <Text style={{ fontSize: 13, color: '#a8a29e', marginTop: 12 }}>Loading your entry...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
@@ -1343,11 +1545,17 @@ export default function QuickLogScreen() {
           <Text style={styles.navBackText}>← Back</Text>
         </AnimatedPressable>
         <Text style={styles.navStep}>
-          {headerEmoji} Step {step + 1} of {STEPS.length}
+          {isViewMode ? `${headerEmoji} Viewing ${isMorning ? 'morning' : 'evening'}` : `${headerEmoji} Step ${step + 1} of ${STEPS.length}`}
         </Text>
-        <AnimatedPressable onPress={() => router.back()} scaleDown={0.9} style={styles.navSide}>
-          <Text style={styles.navSkipText}>Skip</Text>
-        </AnimatedPressable>
+        {isViewMode ? (
+          <AnimatedPressable onPress={() => { hapticLight(); setIsViewMode(false); }} scaleDown={0.9} style={styles.navSide}>
+            <Text style={[styles.navSkipText, { color: '#1c1917', fontWeight: '600' }]}>Edit</Text>
+          </AnimatedPressable>
+        ) : (
+          <AnimatedPressable onPress={() => router.back()} scaleDown={0.9} style={styles.navSide}>
+            <Text style={styles.navSkipText}>Skip</Text>
+          </AnimatedPressable>
+        )}
       </View>
 
       {/* Progress bars */}
@@ -1373,22 +1581,34 @@ export default function QuickLogScreen() {
 
       {/* Footer button */}
       <View style={styles.footer}>
-        <AnimatedPressable
-          onPress={handleNext}
-          scaleDown={0.96}
-          style={styles.nextButton}
-          disabled={saving}
-        >
-          {saving ? (
-            <ActivityIndicator color="#ffffff" />
-          ) : (
-            <Text style={styles.nextButtonText}>
-              {step < STEPS.length - 1
-                ? 'Next'
-                : isMorning ? 'Save morning ✓' : 'Save evening ✓'}
-            </Text>
-          )}
-        </AnimatedPressable>
+        {isViewMode ? (
+          <AnimatedPressable
+            onPress={() => router.back()}
+            scaleDown={0.96}
+            style={[styles.nextButton, { backgroundColor: '#44403c' }]}
+          >
+            <Text style={styles.nextButtonText}>Done</Text>
+          </AnimatedPressable>
+        ) : (
+          <AnimatedPressable
+            onPress={handleNext}
+            scaleDown={0.96}
+            style={styles.nextButton}
+            disabled={saving}
+          >
+            {saving ? (
+              <ActivityIndicator color="#ffffff" />
+            ) : (
+              <Text style={styles.nextButtonText}>
+                {step < STEPS.length - 1
+                  ? 'Next'
+                  : editingLogId
+                    ? (isMorning ? 'Update morning ✓' : 'Update evening ✓')
+                    : (isMorning ? 'Save morning ✓' : 'Save evening ✓')}
+              </Text>
+            )}
+          </AnimatedPressable>
+        )}
       </View>
     </SafeAreaView>
   );
@@ -1482,14 +1702,43 @@ const styles = StyleSheet.create({
   },
   sleepHoursRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 24,
+    gap: 6,
+    marginBottom: 12,
     paddingHorizontal: 4,
   },
-  sleepHourDot: { alignItems: 'center', paddingVertical: 4 },
-  sleepHourDotActive: { opacity: 1 },
-  sleepHourLabel: { fontSize: 11, color: '#a8a29e' },
+  sleepHourButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#f5f5f4',
+  },
+  sleepHourButtonActive: {
+    backgroundColor: '#1c1917',
+  },
+  sleepHourLabel: { fontSize: 13, fontWeight: '500', color: '#78716c' },
+  sleepHourLabelActive: { color: '#ffffff', fontWeight: '700' },
+  sleepHoursAdjust: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 20,
+    marginBottom: 20,
+  },
+  sleepAdjustBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f5f5f4',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sleepAdjustBtnText: { fontSize: 20, fontWeight: '500', color: '#1c1917' },
+  sleepAdjustLabel: { fontSize: 15, fontWeight: '600', color: '#1c1917', minWidth: 70, textAlign: 'center' },
 
   /* Pill grid */
   pillGrid: {
