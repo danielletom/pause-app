@@ -289,7 +289,7 @@ export default function JournalScreen() {
         <AnimatedPressable
           onPress={() => {
             hapticLight();
-            router.push('/(app)/log');
+            router.navigate('/(app)/log');
           }}
           scaleDown={0.97}
           style={[styles.linkCard, { borderWidth: 1, borderColor: '#f5f5f4' }]}

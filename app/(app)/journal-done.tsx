@@ -237,7 +237,7 @@ export default function JournalDoneScreen() {
             <AnimatedPressable
               onPress={() => {
                 hapticMedium();
-                router.push('/(app)/insights');
+                router.navigate('/(app)/insights');
               }}
               scaleDown={0.96}
               style={styles.actionButton}

@@ -566,7 +566,7 @@ export default function HomeScreen() {
                   } else if (!eveningDone) {
                     router.push({ pathname: '/(app)/quick-log', params: { date: selectedDate, mode: 'evening' } });
                   } else {
-                    router.push('/(app)/log');
+                    router.navigate('/(app)/log');
                   }
                 }}
                 scaleDown={0.97}
@@ -597,7 +597,7 @@ export default function HomeScreen() {
                 } else if (!eveningDone) {
                   router.push({ pathname: '/(app)/quick-log', params: { date: selectedDate, mode: 'evening' } });
                 } else if (isToday) {
-                  router.push('/(app)/journal');
+                  router.navigate('/(app)/journal');
                 }
               }}
               scaleDown={0.97}
@@ -740,7 +740,7 @@ export default function HomeScreen() {
               <View style={styles.section}>
                 <View style={styles.sectionHeader}>
                   <Text style={styles.sectionTitle}>How you're doing</Text>
-                  <AnimatedPressable onPress={() => { hapticLight(); router.push('/(app)/insights'); }} scaleDown={0.97}>
+                  <AnimatedPressable onPress={() => { hapticLight(); router.navigate('/(app)/insights'); }} scaleDown={0.97}>
                     <Text style={styles.seeAll}>See why →</Text>
                   </AnimatedPressable>
                 </View>
@@ -751,7 +751,7 @@ export default function HomeScreen() {
                         key={s.name}
                         onPress={() => {
                           hapticLight();
-                          router.push({ pathname: '/(app)/insights', params: { symptom: s.name } } as any);
+                          router.navigate({ pathname: '/(app)/insights', params: { symptom: s.name } } as any);
                         }}
                         scaleDown={0.97}
                         style={styles.trendCard}
@@ -821,7 +821,7 @@ export default function HomeScreen() {
             {/* Insight nudge — pattern detection (from AI or fallback) */}
             {(insightNudge || (hasLog && symptomTrends.length > 0)) && (
               <AnimatedPressable
-                onPress={() => { hapticLight(); router.push('/(app)/insights'); }}
+                onPress={() => { hapticLight(); router.navigate('/(app)/insights'); }}
                 scaleDown={0.98}
                 style={styles.insightCard}
               >
@@ -996,7 +996,7 @@ export default function HomeScreen() {
                 <View style={{ gap: 8 }}>
                   {/* 1. Program lesson — always first, from 8-week plan */}
                   <AnimatedPressable
-                    onPress={() => { hapticLight(); router.push('/(app)/wellness'); }}
+                    onPress={() => { hapticLight(); router.navigate('/(app)/wellness'); }}
                     scaleDown={0.97}
                     style={styles.programLessonCard}
                   >
@@ -1017,7 +1017,7 @@ export default function HomeScreen() {
 
                   {/* 2. Suggested evening audio — with tag pills */}
                   <AnimatedPressable
-                    onPress={() => { hapticLight(); router.push('/(app)/wellness'); }}
+                    onPress={() => { hapticLight(); router.navigate('/(app)/wellness'); }}
                     scaleDown={0.97}
                     style={[styles.card, { flexDirection: 'row', alignItems: 'center', gap: 12 }]}
                   >
@@ -1076,7 +1076,7 @@ export default function HomeScreen() {
             {/* Wellness Centre entry card */}
             {isToday && (
               <AnimatedPressable
-                onPress={() => { hapticMedium(); router.push('/(app)/wellness'); }}
+                onPress={() => { hapticMedium(); router.navigate('/(app)/wellness'); }}
                 scaleDown={0.97}
                 style={styles.wellnessEntryCard}
               >

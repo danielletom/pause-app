@@ -1,16 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   SafeAreaView,
   ScrollView,
   StyleSheet,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useAuth } from '@clerk/clerk-expo';
 import AnimatedPressable from '@/components/AnimatedPressable';
 import { hapticMedium, hapticLight } from '@/lib/haptics';
+import { apiRequest } from '@/lib/api';
 
-/* ─── Mock content data ──────────────────────────────────── */
+/* ─── Types ──────────────────────────────────────────────── */
+
+interface ContentItem {
+  id: number;
+  title: string;
+  contentType: string;
+  audioUrl: string | null;
+  durationMinutes: number | null;
+  category: string | null;
+  tags: string[];
+  description: string | null;
+}
+
+/* ─── Content tabs & fallback data ───────────────────────── */
 
 const CONTENT_TABS = [
   { key: 'all', label: 'All' },
@@ -27,13 +43,12 @@ const MEDITATIONS = [
   { title: 'Anxiety Grounding', dur: '10 min', icon: '🌿', bgColor: '#d1fae5', iconColor: '#059669', tags: ['anytime', 'calm'] },
 ];
 
-const PODCASTS = [
-  { title: 'The 34 Symptoms Nobody Warned You About', dur: '18 min', isNew: true, tags: ['anytime', 'basics'] },
-  { title: 'Why Sleep Changes in Perimenopause', dur: '20 min', isNew: true, tags: ['evening', 'sleep'] },
-  { title: 'Hot Flashes: What Actually Triggers Them', dur: '18 min', isNew: false, tags: ['anytime', 'hot flashes'] },
+const FALLBACK_PODCASTS = [
+  { title: 'Why Sleep Changes in Perimenopause', dur: '8 min', isNew: true, tags: ['evening', 'sleep'] },
+  { title: 'Hot Flashes: What Actually Triggers Them', dur: '8 min', isNew: false, tags: ['anytime', 'hot flashes'] },
 ];
 
-const LESSONS = [
+const LESSONS_FALLBACK = [
   { title: 'Hormones 101', dur: '10 min', tags: ['anytime', 'basics'] },
   { title: 'Night Sweat Toolkit', dur: '12 min', tags: ['evening', 'sleep'] },
   { title: 'Brain Fog Strategies', dur: '10 min', tags: ['morning', 'mind'] },
@@ -55,7 +70,26 @@ const FOCUSED_PROGRAMS = [
 
 export default function WellnessScreen() {
   const router = useRouter();
+  const { getToken } = useAuth();
   const [activeTab, setActiveTab] = useState('all');
+  const [podcasts, setPodcasts] = useState<ContentItem[]>([]);
+  const [loadingPodcasts, setLoadingPodcasts] = useState(true);
+
+  // Fetch published podcasts from API
+  useEffect(() => {
+    async function fetchPodcasts() {
+      try {
+        const token = await getToken();
+        const data = await apiRequest('/api/content?type=podcast', token);
+        setPodcasts(data);
+      } catch (err) {
+        console.log('Failed to load podcasts:', err);
+      } finally {
+        setLoadingPodcasts(false);
+      }
+    }
+    fetchPodcasts();
+  }, []);
 
   const showMeditations = activeTab === 'all' || activeTab === 'meditations';
   const showPodcasts = activeTab === 'all' || activeTab === 'podcasts';
@@ -178,41 +212,71 @@ export default function WellnessScreen() {
         {showPodcasts && (
           <View style={styles.sectionBlock}>
             <View style={styles.sectionHeaderRow}>
-              <Text style={styles.sectionLabel}>Podcasts & Discussions</Text>
-              <Text style={styles.sectionCount}>16+ episodes</Text>
+              <Text style={styles.sectionLabel}>The Pause Pod</Text>
+              <Text style={styles.sectionCount}>{podcasts.length > 0 ? `${podcasts.length} episodes` : '16+ episodes'}</Text>
             </View>
-            <View style={{ gap: 8 }}>
-              {PODCASTS.map((ep) => (
-                <AnimatedPressable
-                  key={ep.title}
-                  onPress={() => { hapticLight(); /* Future: navigate to audio player */ }}
-                  scaleDown={0.97}
-                  style={styles.podcastCard}
-                >
-                  <View style={styles.playButton}>
-                    <Text style={styles.playIcon}>▶</Text>
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <View style={styles.podcastTitleRow}>
+            {loadingPodcasts ? (
+              <ActivityIndicator size="small" color="#a8a29e" style={{ marginVertical: 12 }} />
+            ) : (
+              <View style={{ gap: 8 }}>
+                {/* Real published podcasts from API */}
+                {podcasts.map((ep) => (
+                  <AnimatedPressable
+                    key={ep.id}
+                    onPress={() => {
+                      hapticLight();
+                      router.push({ pathname: '/(app)/player', params: { id: String(ep.id) } });
+                    }}
+                    scaleDown={0.97}
+                    style={styles.podcastCard}
+                  >
+                    <View style={styles.playButton}>
+                      <Text style={styles.playIcon}>▶</Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <View style={styles.podcastTitleRow}>
+                        <Text style={styles.podcastTitle} numberOfLines={2}>{ep.title}</Text>
+                        {ep.audioUrl && (
+                          <View style={styles.newBadge}>
+                            <Text style={styles.newBadgeText}>New</Text>
+                          </View>
+                        )}
+                      </View>
+                      <Text style={styles.podcastDur}>{ep.durationMinutes ? `${ep.durationMinutes} min` : '8 min'}</Text>
+                      <View style={styles.tagRow}>
+                        {(ep.tags || []).map((t) => (
+                          <View key={t} style={styles.tag}>
+                            <Text style={styles.tagText}>{t}</Text>
+                          </View>
+                        ))}
+                        {ep.category && (
+                          <View style={styles.tag}>
+                            <Text style={styles.tagText}>{ep.category.toLowerCase()}</Text>
+                          </View>
+                        )}
+                      </View>
+                    </View>
+                  </AnimatedPressable>
+                ))}
+                {/* Fallback/coming soon podcasts if fewer than 3 published */}
+                {podcasts.length < 3 && FALLBACK_PODCASTS.map((ep) => (
+                  <AnimatedPressable
+                    key={ep.title}
+                    onPress={() => { hapticLight(); }}
+                    scaleDown={0.97}
+                    style={[styles.podcastCard, { opacity: 0.5 }]}
+                  >
+                    <View style={[styles.playButton, { backgroundColor: '#a8a29e' }]}>
+                      <Text style={styles.playIcon}>▶</Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
                       <Text style={styles.podcastTitle} numberOfLines={2}>{ep.title}</Text>
-                      {ep.isNew && (
-                        <View style={styles.newBadge}>
-                          <Text style={styles.newBadgeText}>New</Text>
-                        </View>
-                      )}
+                      <Text style={styles.podcastDur}>Coming soon</Text>
                     </View>
-                    <Text style={styles.podcastDur}>{ep.dur}</Text>
-                    <View style={styles.tagRow}>
-                      {ep.tags.map((t) => (
-                        <View key={t} style={styles.tag}>
-                          <Text style={styles.tagText}>{t}</Text>
-                        </View>
-                      ))}
-                    </View>
-                  </View>
-                </AnimatedPressable>
-              ))}
-            </View>
+                  </AnimatedPressable>
+                ))}
+              </View>
+            )}
           </View>
         )}
 
@@ -224,15 +288,15 @@ export default function WellnessScreen() {
               <Text style={styles.sectionCount}>24+ lessons</Text>
             </View>
             <View style={styles.grid}>
-              {LESSONS.map((l) => (
+              {LESSONS_FALLBACK.map((l) => (
                 <AnimatedPressable
                   key={l.title}
-                  onPress={() => { hapticLight(); /* Future: navigate to audio player */ }}
+                  onPress={() => { hapticLight(); }}
                   scaleDown={0.97}
-                  style={styles.lessonCard}
+                  style={[styles.lessonCard, { opacity: 0.5 }]}
                 >
                   <Text style={styles.lessonTitle}>{l.title}</Text>
-                  <Text style={styles.lessonDur}>{l.dur}</Text>
+                  <Text style={styles.lessonDur}>Coming soon</Text>
                   <View style={styles.tagRow}>
                     {l.tags.map((t) => (
                       <View key={t} style={styles.tag}>
