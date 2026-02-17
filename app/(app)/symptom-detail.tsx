@@ -7,10 +7,9 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
-import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
+import { useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
-import AnimatedPressable from '@/components/AnimatedPressable';
-import { hapticLight } from '@/lib/haptics';
+import BackButton from '@/components/BackButton';
 import { apiRequest } from '@/lib/api';
 
 /* ─── Benchmark data (hardcoded for V2) ─── */
@@ -47,7 +46,6 @@ interface LogEntry {
 }
 
 export default function SymptomDetailScreen() {
-  const router = useRouter();
   const { getToken } = useAuth();
   const { symptom } = useLocalSearchParams<{ symptom?: string }>();
   const [logs, setLogs] = useState<LogEntry[]>([]);
@@ -157,9 +155,9 @@ export default function SymptomDetailScreen() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.nav}>
-        <AnimatedPressable onPress={() => { hapticLight(); router.back(); }} scaleDown={0.9} style={styles.navSide}>
-          <Text style={styles.navBackText}>← Back</Text>
-        </AnimatedPressable>
+        <View style={styles.navSide}>
+          <BackButton />
+        </View>
         <Text style={styles.navTitle}>Symptom Detail</Text>
         <View style={styles.navSide} />
       </View>
@@ -291,7 +289,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   navSide: { width: 60 },
-  navBackText: { fontSize: 13, color: '#a8a29e' },
   navTitle: { fontSize: 13, color: '#a8a29e', fontWeight: '500' },
 
   title: { fontSize: 24, fontWeight: '700', color: '#1c1917', marginBottom: 4 },

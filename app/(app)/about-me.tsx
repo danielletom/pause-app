@@ -9,10 +9,10 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { useRouter } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
 import AnimatedPressable from '@/components/AnimatedPressable';
-import { hapticLight, hapticMedium, hapticSelection } from '@/lib/haptics';
+import BackButton from '@/components/BackButton';
+import { hapticMedium, hapticSelection } from '@/lib/haptics';
 import { apiRequest } from '@/lib/api';
 import { useProfile } from '@/lib/useProfile';
 
@@ -23,7 +23,6 @@ const CHILDREN_OPTIONS = ['0', '1', '2', '3', '4+'];
 const EXERCISE_OPTIONS = ['Rarely', '1-2x/week', '3-4x/week', '5+/week'];
 
 export default function AboutMeScreen() {
-  const router = useRouter();
   const { getToken } = useAuth();
   const { profile, refetch } = useProfile();
 
@@ -136,13 +135,7 @@ export default function AboutMeScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <AnimatedPressable
-            onPress={() => { hapticLight(); router.back(); }}
-            scaleDown={0.95}
-            style={styles.backButton}
-          >
-            <Text style={styles.backText}>‹ Back</Text>
-          </AnimatedPressable>
+          <BackButton />
           <Text style={styles.title}>About me</Text>
         </View>
 
@@ -270,8 +263,6 @@ const styles = StyleSheet.create({
 
   // Header
   header: { marginBottom: 16 },
-  backButton: { marginBottom: 12 },
-  backText: { fontSize: 16, color: '#78716c' },
   title: { fontSize: 22, fontWeight: '700', color: '#1c1917' },
 
   // Info card

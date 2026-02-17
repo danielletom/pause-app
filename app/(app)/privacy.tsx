@@ -1,8 +1,6 @@
 import React from 'react';
 import { View, Text, SafeAreaView, ScrollView, StyleSheet } from 'react-native';
-import { useRouter } from 'expo-router';
-import AnimatedPressable from '@/components/AnimatedPressable';
-import { hapticLight } from '@/lib/haptics';
+import BackButton from '@/components/BackButton';
 
 const SECTIONS = [
   {
@@ -40,8 +38,6 @@ const SECTIONS = [
 ];
 
 export default function PrivacyScreen() {
-  const router = useRouter();
-
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView
@@ -49,13 +45,7 @@ export default function PrivacyScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Back nav */}
-        <AnimatedPressable
-          onPress={() => { hapticLight(); router.back(); }}
-          scaleDown={0.95}
-          style={styles.backButton}
-        >
-          <Text style={styles.backText}>← Back</Text>
-        </AnimatedPressable>
+        <BackButton />
 
         {/* Title */}
         <View style={styles.header}>
@@ -100,9 +90,6 @@ export default function PrivacyScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fafaf9' },
   scrollContent: { paddingHorizontal: 24, paddingTop: 8, paddingBottom: 60 },
-
-  backButton: { paddingVertical: 12, alignSelf: 'flex-start' },
-  backText: { fontSize: 13, color: '#a8a29e', fontWeight: '500' },
 
   header: { marginBottom: 16 },
   title: { fontSize: 22, fontWeight: '700', color: '#1c1917', marginBottom: 4 },

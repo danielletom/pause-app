@@ -7,10 +7,10 @@ import {
   StyleSheet,
   Animated,
 } from 'react-native';
-import { useRouter } from 'expo-router';
 import { useUser } from '@clerk/clerk-expo';
 import AnimatedPressable from '@/components/AnimatedPressable';
-import { hapticLight, hapticSelection, hapticMedium } from '@/lib/haptics';
+import BackButton from '@/components/BackButton';
+import { hapticSelection, hapticMedium } from '@/lib/haptics';
 
 const DATE_RANGES: [string, string][] = [
   ['30d', 'Last 30 days'],
@@ -39,7 +39,6 @@ const CSV_FILES = [
 ];
 
 export default function ExportDataScreen() {
-  const router = useRouter();
   const { user } = useUser();
   const email = user?.primaryEmailAddress?.emailAddress || 'your email';
 
@@ -84,13 +83,7 @@ export default function ExportDataScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.headerRow}>
-          <AnimatedPressable
-            onPress={() => { hapticLight(); router.back(); }}
-            scaleDown={0.92}
-            style={styles.backButton}
-          >
-            <Text style={styles.backText}>{'\u2039'}</Text>
-          </AnimatedPressable>
+          <BackButton />
           <Text style={styles.headerTitle}>Export your data</Text>
           <View style={{ width: 36 }} />
         </View>
@@ -234,15 +227,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 20,
   },
-  backButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#f5f5f4',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  backText: { fontSize: 22, color: '#1c1917', marginTop: -2 },
   headerTitle: { fontSize: 17, fontWeight: '600', color: '#1c1917' },
 
   // Sections

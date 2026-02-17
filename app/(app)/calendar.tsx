@@ -10,6 +10,7 @@ import {
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
 import AnimatedPressable from '@/components/AnimatedPressable';
+import BackButton from '@/components/BackButton';
 import { hapticLight, hapticSelection } from '@/lib/haptics';
 import { apiRequest } from '@/lib/api';
 
@@ -151,9 +152,7 @@ export default function CalendarScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.headerRow}>
-          <AnimatedPressable onPress={() => { hapticLight(); router.back(); }} scaleDown={0.92} style={styles.backBtn}>
-            <Text style={styles.backText}>‹</Text>
-          </AnimatedPressable>
+          <BackButton />
           <Text style={styles.headerTitle}>Calendar</Text>
           <View style={{ width: 36 }} />
         </View>
@@ -350,12 +349,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 16,
   },
-  backBtn: {
-    width: 36, height: 36, borderRadius: 18,
-    backgroundColor: '#f5f5f4',
-    alignItems: 'center', justifyContent: 'center',
-  },
-  backText: { fontSize: 22, color: '#1c1917', marginTop: -2 },
   headerTitle: { fontSize: 17, fontWeight: '600', color: '#1c1917' },
 
   // Month nav

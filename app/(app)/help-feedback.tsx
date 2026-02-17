@@ -7,9 +7,9 @@ import {
   StyleSheet,
   TextInput,
 } from 'react-native';
-import { useRouter } from 'expo-router';
 import AnimatedPressable from '@/components/AnimatedPressable';
-import { hapticLight, hapticSelection, hapticSuccess } from '@/lib/haptics';
+import BackButton from '@/components/BackButton';
+import { hapticSelection, hapticSuccess } from '@/lib/haptics';
 
 const TABS = [
   { key: 'help', label: 'Get help' },
@@ -46,7 +46,6 @@ const IMPORTANCE_OPTIONS: [string, string][] = [
 ];
 
 export default function HelpFeedbackScreen() {
-  const router = useRouter();
   const [tab, setTab] = useState<'help' | 'feature'>('help');
   const [submitted, setSubmitted] = useState(false);
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
@@ -63,13 +62,7 @@ export default function HelpFeedbackScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.headerRow}>
-          <AnimatedPressable
-            onPress={() => { hapticLight(); router.back(); }}
-            scaleDown={0.92}
-            style={styles.backButton}
-          >
-            <Text style={styles.backText}>\u2039</Text>
-          </AnimatedPressable>
+          <BackButton />
           <Text style={styles.headerTitle}>Help & feedback</Text>
           <View style={{ width: 36 }} />
         </View>
@@ -272,15 +265,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 16,
   },
-  backButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#f5f5f4',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  backText: { fontSize: 22, color: '#1c1917', marginTop: -2 },
   headerTitle: { fontSize: 17, fontWeight: '600', color: '#1c1917' },
 
   // Tab switcher

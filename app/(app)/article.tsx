@@ -7,11 +7,10 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
 import Markdown from '@ronradtke/react-native-markdown-display';
-import AnimatedPressable from '@/components/AnimatedPressable';
-import { hapticLight } from '@/lib/haptics';
+import BackButton from '@/components/BackButton';
 import { apiRequest } from '@/lib/api';
 
 interface Article {
@@ -25,7 +24,6 @@ interface Article {
 export default function ArticleScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { getToken } = useAuth();
-  const router = useRouter();
   const [article, setArticle] = useState<Article | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -67,13 +65,7 @@ export default function ArticleScreen() {
     <SafeAreaView style={styles.container}>
       {/* Sticky back header */}
       <View style={styles.stickyHeader}>
-        <AnimatedPressable
-          onPress={() => { hapticLight(); router.back(); }}
-          scaleDown={0.95}
-          style={styles.backButton}
-        >
-          <Text style={styles.backText}>← Back</Text>
-        </AnimatedPressable>
+        <BackButton />
         <Text style={styles.stickyTitle} numberOfLines={1}>
           {article.title}
         </Text>
@@ -160,9 +152,6 @@ const styles = StyleSheet.create({
     color: '#1c1917',
     textAlign: 'center',
   },
-  backButton: { paddingVertical: 6, paddingHorizontal: 16 },
-  backText: { fontSize: 13, color: '#a8a29e', fontWeight: '500' },
-
   heroImage: {
     width: '100%',
     height: 160,

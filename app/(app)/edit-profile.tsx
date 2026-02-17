@@ -12,6 +12,7 @@ import {
 import { useRouter } from 'expo-router';
 import { useUser, useAuth } from '@clerk/clerk-expo';
 import AnimatedPressable from '@/components/AnimatedPressable';
+import BackButton from '@/components/BackButton';
 import { hapticLight, hapticMedium } from '@/lib/haptics';
 import { apiRequest } from '@/lib/api';
 import { useProfile } from '@/lib/useProfile';
@@ -76,13 +77,7 @@ export default function EditProfileScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <AnimatedPressable
-            onPress={() => { hapticLight(); router.back(); }}
-            scaleDown={0.95}
-            style={styles.backButton}
-          >
-            <Text style={styles.backText}>‹ Back</Text>
-          </AnimatedPressable>
+          <BackButton />
           <Text style={styles.title}>Edit profile</Text>
         </View>
 
@@ -199,8 +194,6 @@ const styles = StyleSheet.create({
 
   // Header
   header: { marginBottom: 24 },
-  backButton: { marginBottom: 12 },
-  backText: { fontSize: 16, color: '#78716c' },
   title: { fontSize: 22, fontWeight: '700', color: '#1c1917' },
 
   // Fields

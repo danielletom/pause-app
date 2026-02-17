@@ -10,6 +10,7 @@ import {
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
 import AnimatedPressable from '@/components/AnimatedPressable';
+import BackButton from '@/components/BackButton';
 import { hapticLight } from '@/lib/haptics';
 import { apiRequest } from '@/lib/api';
 
@@ -156,13 +157,9 @@ export default function JournalWeekScreen() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.nav}>
-        <AnimatedPressable
-          onPress={() => { hapticLight(); router.back(); }}
-          scaleDown={0.9}
-          style={styles.navBack}
-        >
-          <Text style={styles.navBackText}>← Back</Text>
-        </AnimatedPressable>
+        <View style={styles.navBack}>
+          <BackButton />
+        </View>
         <Text style={styles.navTitle}>Past 7 days</Text>
         <View style={styles.navSpacer} />
       </View>
@@ -297,7 +294,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   navBack: { paddingVertical: 4 },
-  navBackText: { fontSize: 13, color: '#a8a29e' },
   navTitle: { fontSize: 15, fontWeight: '600', color: '#1c1917' },
   navSpacer: { width: 50 },
 
