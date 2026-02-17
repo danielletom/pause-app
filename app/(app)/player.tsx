@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   PanResponder,
+  Animated,
   Dimensions,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -27,8 +28,10 @@ interface ContentData {
 }
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
+const SCREEN_HEIGHT = Dimensions.get('window').height;
 const PROGRESS_HORIZONTAL_PADDING = 32;
 const PROGRESS_WIDTH = SCREEN_WIDTH - PROGRESS_HORIZONTAL_PADDING * 2;
+const DISMISS_THRESHOLD = 120;
 
 export default function PlayerScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -38,6 +41,48 @@ export default function PlayerScreen() {
 
   const [contentData, setContentData] = useState<ContentData | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Swipe-down to minimize
+  const translateY = useRef(new Animated.Value(0)).current;
+  const opacity = translateY.interpolate({
+    inputRange: [0, DISMISS_THRESHOLD],
+    outputRange: [1, 0.5],
+    extrapolate: 'clamp',
+  });
+
+  const dismissPanResponder = useMemo(() => PanResponder.create({
+    onStartShouldSetPanResponder: () => false,
+    onMoveShouldSetPanResponder: (_, gestureState) => {
+      // Only capture vertical downward swipes (not taps or horizontal gestures)
+      return gestureState.dy > 10 && Math.abs(gestureState.dy) > Math.abs(gestureState.dx * 1.5);
+    },
+    onPanResponderMove: (_, gestureState) => {
+      if (gestureState.dy > 0) {
+        translateY.setValue(gestureState.dy);
+      }
+    },
+    onPanResponderRelease: (_, gestureState) => {
+      if (gestureState.dy > DISMISS_THRESHOLD || gestureState.vy > 0.5) {
+        // Dismiss — animate out then navigate
+        Animated.timing(translateY, {
+          toValue: SCREEN_HEIGHT,
+          duration: 200,
+          useNativeDriver: true,
+        }).start(() => {
+          hapticLight();
+          router.back();
+        });
+      } else {
+        // Snap back
+        Animated.spring(translateY, {
+          toValue: 0,
+          useNativeDriver: true,
+          tension: 100,
+          friction: 10,
+        }).start();
+      }
+    },
+  }), []);
 
   // Fetch content data
   useEffect(() => {
@@ -125,7 +170,16 @@ export default function PlayerScreen() {
     : '🎧';
 
   return (
+    <Animated.View
+      {...dismissPanResponder.panHandlers}
+      style={[styles.dismissWrapper, { transform: [{ translateY }], opacity }]}
+    >
     <SafeAreaView style={styles.container}>
+      {/* Swipe indicator pill */}
+      <View style={styles.swipeIndicator}>
+        <View style={styles.swipePill} />
+      </View>
+
       {/* Back / minimize button */}
       <AnimatedPressable
         onPress={() => { hapticLight(); router.back(); }}
@@ -211,11 +265,15 @@ export default function PlayerScreen() {
         </View>
       </View>
     </SafeAreaView>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fafaf9' },
+  dismissWrapper: { flex: 1, backgroundColor: '#fafaf9' },
+  container: { flex: 1 },
+  swipeIndicator: { alignItems: 'center', paddingTop: 8, paddingBottom: 4 },
+  swipePill: { width: 36, height: 5, borderRadius: 3, backgroundColor: '#d6d3d1' },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   errorText: { fontSize: 14, color: '#a8a29e' },
 
