@@ -903,7 +903,7 @@ export default function InsightsScreen() {
 
             {/* ─── CTA ─── */}
             <AnimatedPressable
-              onPress={() => { hapticLight(); router.push('/(app)/log'); }}
+              onPress={() => { hapticLight(); router.navigate('/(app)/log'); }}
               scaleDown={0.97}
               style={ls.bigCta}
             >

@@ -189,6 +189,8 @@ export default function HomeScreen() {
   const [narrative, setNarrative] = useState<string | null>(null);
   const [topCorrelations, setTopCorrelations] = useState<{ factor: string; symptom: string; direction: string; effectSizePct: number; humanLabel: string }[]>([]);
   const [weekTrends, setWeekTrends] = useState<Record<string, { thisWeek: number; lastWeek: number }>>({});
+  const [periodEnabled, setPeriodEnabled] = useState(false);
+  const [periodCycle, setPeriodCycle] = useState<any>(null);
   const hasLoadedOnce = useRef(false);
 
   const todayStr = useMemo(() => toDateStr(new Date()), []);
@@ -208,13 +210,15 @@ export default function HomeScreen() {
       }
       const token = await getTokenRef.current();
       const todayDate = toDateStr(new Date());
-      const [logData, medsData, medLogsData, recentLogs, articlesData, homeData] = await Promise.all([
+      const [logData, medsData, medLogsData, recentLogs, articlesData, homeData, periodSettings, periodCurrent] = await Promise.all([
         apiRequest(`/api/logs?date=${selectedDate}`, token).catch(() => []),
         apiRequest('/api/meds', token).catch(() => []),
         apiRequest(`/api/meds/logs?date=${todayDate}`, token).catch(() => []),
         apiRequest('/api/logs?range=28d', token).catch(() => []),
         apiRequest('/api/articles', token).catch(() => []),
         apiRequest(`/api/insights/home?date=${todayDate}`, token).catch(() => null),
+        apiRequest('/api/period/settings', token).catch(() => null),
+        apiRequest('/api/period/cycles/current', token).catch(() => null),
       ]);
       // API now returns array of entries per day
       setDayLogs(Array.isArray(logData) ? logData : logData ? [logData] : []);
@@ -309,6 +313,17 @@ export default function HomeScreen() {
           if (log.logType === 'evening') statusMap[log.date].pm = true;
         }
         setWeekLogStatus(statusMap);
+      }
+
+      // Period tracker state
+      if (periodSettings && periodSettings.enabled) {
+        setPeriodEnabled(true);
+        if (periodSettings.homeWidget !== false) {
+          setPeriodCycle(periodCurrent || null);
+        }
+      } else {
+        setPeriodEnabled(false);
+        setPeriodCycle(null);
       }
 
       hasLoadedOnce.current = true;
@@ -469,7 +484,7 @@ export default function HomeScreen() {
           </View>
         ) : (
           <>
-            {/* Readiness Score Card — dark, with activity recommendation inside */}
+            {/* Readiness Score Card — dark, with AI activity recommendation */}
             {(() => {
               // Prefer server-computed score, fall back to client-side
               const score = serverReadiness ?? readinessScore;
@@ -478,19 +493,106 @@ export default function HomeScreen() {
               const arcLength = (scoreNum / 100) * circumference;
               const activityLabel = (score ?? 0) >= 70 ? 'Good day for activity' : (score ?? 0) >= 40 ? 'Take it easy' : 'Rest & recover';
               const activityColor = (score ?? 0) >= 70 ? '#34d399' : (score ?? 0) >= 40 ? '#fbbf24' : '#fca5a5';
+              const activityBg = (score ?? 0) >= 70 ? 'rgba(52,211,153,0.12)' : (score ?? 0) >= 40 ? 'rgba(251,191,36,0.12)' : 'rgba(252,165,165,0.12)';
+
+              // Stressor level from contextTags or aggregate
+              const allStressors = new Set<string>();
+              dayLogs.forEach((e) => (e.contextTags || []).forEach((t) => allStressors.add(t)));
+              const stressorCount = allStressors.size;
+              const stressLabel = stressorCount === 0 ? 'Low ✓' : stressorCount <= 2 ? 'Moderate' : 'High';
+
+              // AI narrative: prefer recommendation, then narrative, then smart fallback
+              const aiNarrative = recommendation || narrative || null;
+
               return (
                 <View style={styles.readinessCard}>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.readinessLabel}>READINESS SCORE</Text>
-                    <Text style={styles.readinessValue}>{score ?? '—'}</Text>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.readinessLabel}>READINESS SCORE</Text>
+                        <Text style={styles.readinessValue}>{score ?? '—'}</Text>
+                      </View>
+                      <View style={styles.readinessRingOuter}>
+                        <View style={styles.readinessRing}>
+                          {score !== null && (
+                            <View style={styles.readinessArcWrap}>
+                              <Svg width={64} height={64} viewBox="0 0 64 64">
+                                <Circle
+                                  cx={32} cy={32} r={26}
+                                  fill="none"
+                                  stroke="#a8a29e"
+                                  strokeWidth={3}
+                                  strokeDasharray={`${arcLength} ${circumference - arcLength}`}
+                                  strokeLinecap="round"
+                                  transform="rotate(-90 32 32)"
+                                />
+                              </Svg>
+                            </View>
+                          )}
+                          <Text style={styles.readinessRingScore}>{score ?? '—'}</Text>
+                        </View>
+                        <Text style={styles.readinessRingLabel}>/100</Text>
+                      </View>
+                    </View>
                     {hasLog && (
                       <>
-                        <Text style={[styles.readinessActivity, { color: activityColor }]}>{activityLabel}</Text>
-                        <Text style={styles.readinessHint}>
-                          {recommendation || narrative || (
-                            `${sleepLog?.sleepHours ? `${sleepLog.sleepHours}h sleep` : 'Sleep data'}${latestMood ? ` + ${MOOD_LABEL[latestMood]?.toLowerCase() || ''} mood` : ''}${symptomTrends.length > 0 ? ` + ${symptomTrends.length <= 2 ? 'low' : 'moderate'} symptoms` : ''}`
-                          )}
-                        </Text>
+                        {/* Activity recommendation pill with AI explanation */}
+                        <View style={[styles.readinessActivityPill, { backgroundColor: activityBg }]}>
+                          <Text style={[styles.readinessActivity, { color: activityColor }]}>{activityLabel}</Text>
+                          {(() => {
+                            // Use AI narrative if available, otherwise build a proper client-side one
+                            if (aiNarrative) {
+                              return <Text style={styles.readinessNarrative}>{aiNarrative}</Text>;
+                            }
+                            // Smart client-side fallback using actual log data
+                            const parts: string[] = [];
+                            if (sleepLog?.sleepHours != null) {
+                              const sq = sleepLog.sleepHours >= 7 ? 'Good' : sleepLog.sleepHours >= 5 ? 'Okay' : 'Low';
+                              parts.push(`${sq} sleep (${sleepLog.sleepHours}h)`);
+                            }
+                            if (latestMood) {
+                              parts.push(`${MOOD_LABEL[latestMood]?.toLowerCase() || 'neutral'} mood`);
+                            }
+                            const symLevel = symptomTrends.length === 0 ? 'no' : symptomTrends.length <= 2 ? 'low' : 'moderate';
+                            parts.push(`${symLevel} symptom load`);
+                            const allStress = new Set<string>();
+                            dayLogs.forEach((e) => (e.contextTags || []).forEach((t: string) => allStress.add(t)));
+                            if (allStress.size > 2) parts.push('high stress');
+                            else if (allStress.size > 0) parts.push('moderate stress');
+
+                            const prefix = parts.join(' + ');
+                            let msg = '';
+                            if (scoreNum >= 70) {
+                              msg = `${prefix} means your body is ready for more today. Consider some gentle movement or an activity you enjoy.`;
+                            } else if (scoreNum >= 40) {
+                              msg = `${prefix} — a mixed picture today. Listen to your body and take things at your own pace.`;
+                            } else {
+                              msg = `${prefix} suggests today might feel harder. Be extra gentle with yourself and prioritize rest.`;
+                            }
+                            return <Text style={styles.readinessNarrative}>{msg}</Text>;
+                          })()}
+                        </View>
+                        {/* Stats row — Sleep, Symptoms, Stress */}
+                        <View style={styles.readinessStatsInline}>
+                          <View style={styles.readinessStatItem}>
+                            <Text style={styles.readinessStatText}>
+                              Sleep: {sleepLog?.sleepHours ? `${sleepLog.sleepHours}h` : '—'}
+                            </Text>
+                            {sleepLog?.sleepHours && sleepLog.sleepHours >= 6 && <Text style={styles.readinessStatCheck}> ✓</Text>}
+                          </View>
+                          <View style={styles.readinessStatItem}>
+                            <Text style={styles.readinessStatText}>
+                              Symptoms: {symptomTrends.length > 0 ? (symptomTrends.length <= 2 ? 'Low' : 'Moderate') : 'None'}
+                            </Text>
+                            {symptomTrends.length <= 2 && <Text style={styles.readinessStatCheck}> ✓</Text>}
+                          </View>
+                          <View style={styles.readinessStatItem}>
+                            <Text style={styles.readinessStatText}>
+                              Stress: {stressLabel.replace(' ✓', '')}
+                            </Text>
+                            {stressorCount <= 0 && <Text style={styles.readinessStatCheck}> ✓</Text>}
+                          </View>
+                        </View>
                       </>
                     )}
                     {!hasLog && (
@@ -498,39 +600,6 @@ export default function HomeScreen() {
                         {isToday ? 'Log today to see your score' : 'No data for this day'}
                       </Text>
                     )}
-                    {/* Stats row inside card */}
-                    {hasLog && (
-                      <View style={styles.readinessStatsInline}>
-                        <Text style={styles.readinessStatText}>
-                          Sleep: {sleepLog?.sleepHours ? `${sleepLog.sleepHours}h ✓` : '—'}
-                        </Text>
-                        <Text style={styles.readinessStatDot}>·</Text>
-                        <Text style={styles.readinessStatText}>
-                          Symptoms: {symptomTrends.length > 0 ? (symptomTrends.length <= 2 ? 'Low ✓' : 'Moderate') : 'None ✓'}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                  <View style={styles.readinessRingOuter}>
-                    <View style={styles.readinessRing}>
-                      {score !== null && (
-                        <View style={styles.readinessArcWrap}>
-                          <Svg width={64} height={64} viewBox="0 0 64 64">
-                            <Circle
-                              cx={32} cy={32} r={26}
-                              fill="none"
-                              stroke="#a8a29e"
-                              strokeWidth={3}
-                              strokeDasharray={`${arcLength} ${circumference - arcLength}`}
-                              strokeLinecap="round"
-                              transform="rotate(-90 32 32)"
-                            />
-                          </Svg>
-                        </View>
-                      )}
-                      <Text style={styles.readinessRingScore}>{score ?? '—'}</Text>
-                    </View>
-                    <Text style={styles.readinessRingLabel}>/100</Text>
                   </View>
                 </View>
               );
@@ -557,7 +626,7 @@ export default function HomeScreen() {
                   } else if (!eveningDone) {
                     router.push({ pathname: '/(app)/quick-log', params: { date: selectedDate, mode: 'evening' } });
                   } else {
-                    router.push('/(app)/log');
+                    router.navigate('/(app)/log');
                   }
                 }}
                 scaleDown={0.97}
@@ -588,7 +657,7 @@ export default function HomeScreen() {
                 } else if (!eveningDone) {
                   router.push({ pathname: '/(app)/quick-log', params: { date: selectedDate, mode: 'evening' } });
                 } else if (isToday) {
-                  router.push('/(app)/journal');
+                  router.navigate('/(app)/journal');
                 }
               }}
               scaleDown={0.97}
@@ -731,7 +800,7 @@ export default function HomeScreen() {
               <View style={styles.section}>
                 <View style={styles.sectionHeader}>
                   <Text style={styles.sectionTitle}>How you're doing</Text>
-                  <AnimatedPressable onPress={() => { hapticLight(); router.push('/(app)/insights'); }} scaleDown={0.97}>
+                  <AnimatedPressable onPress={() => { hapticLight(); router.navigate('/(app)/insights'); }} scaleDown={0.97}>
                     <Text style={styles.seeAll}>See why →</Text>
                   </AnimatedPressable>
                 </View>
@@ -828,7 +897,7 @@ export default function HomeScreen() {
             {/* Insight nudge — pattern detection (from correlations or AI fallback) */}
             {(insightNudge || topCorrelations.length > 0 || (hasLog && symptomTrends.length > 0)) && (
               <AnimatedPressable
-                onPress={() => { hapticLight(); router.push('/(app)/insights'); }}
+                onPress={() => { hapticLight(); router.navigate('/(app)/insights'); }}
                 scaleDown={0.98}
                 style={styles.insightCard}
               >
@@ -1007,7 +1076,7 @@ export default function HomeScreen() {
                 <View style={{ gap: 8 }}>
                   {/* 1. Program lesson — always first, from 8-week plan */}
                   <AnimatedPressable
-                    onPress={() => { hapticLight(); router.push('/(app)/wellness'); }}
+                    onPress={() => { hapticLight(); router.navigate('/(app)/wellness'); }}
                     scaleDown={0.97}
                     style={styles.programLessonCard}
                   >
@@ -1028,7 +1097,7 @@ export default function HomeScreen() {
 
                   {/* 2. Suggested evening audio — with tag pills */}
                   <AnimatedPressable
-                    onPress={() => { hapticLight(); router.push('/(app)/wellness'); }}
+                    onPress={() => { hapticLight(); router.navigate('/(app)/wellness'); }}
                     scaleDown={0.97}
                     style={[styles.card, { flexDirection: 'row', alignItems: 'center', gap: 12 }]}
                   >
@@ -1087,7 +1156,7 @@ export default function HomeScreen() {
             {/* Wellness Centre entry card */}
             {isToday && (
               <AnimatedPressable
-                onPress={() => { hapticMedium(); router.push('/(app)/wellness'); }}
+                onPress={() => { hapticMedium(); router.navigate('/(app)/wellness'); }}
                 scaleDown={0.97}
                 style={styles.wellnessEntryCard}
               >
@@ -1106,6 +1175,128 @@ export default function HomeScreen() {
                 </View>
                 <Text style={styles.wellnessProgressText}>Day 10 of 56 · Week 2: Sleep & Night Sweats</Text>
               </AnimatedPressable>
+            )}
+
+            {/* Period Tracker Widget — 3 states */}
+            {isToday && periodEnabled && (() => {
+              const hasCycleData = periodCycle && periodCycle.cycle;
+              const isActive = hasCycleData && periodCycle.cycle.status === 'active' && periodCycle.daysSinceStart != null && periodCycle.daysSinceStart <= 10;
+
+              // Helper: human-friendly time since last period
+              const timeAgo = (dateStr: string) => {
+                const days = Math.round((Date.now() - new Date(dateStr).getTime()) / 86400000);
+                if (days === 0) return 'Today';
+                if (days === 1) return 'Yesterday';
+                if (days < 7) return `${days} days ago`;
+                const weeks = Math.round(days / 7);
+                if (weeks <= 8) return `${weeks} week${weeks > 1 ? 's' : ''} ago`;
+                const months = Math.round(days / 30);
+                return `${months} month${months > 1 ? 's' : ''} ago`;
+              };
+
+              // State 3: Active period (promoted, rose card)
+              if (isActive) {
+                return (
+                  <AnimatedPressable
+                    onPress={() => { hapticMedium(); router.push('/(app)/period-tracker'); }}
+                    scaleDown={0.97}
+                    style={styles.periodWidgetActive}
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                      <View style={styles.periodWidgetActiveIcon}>
+                        <Text style={{ fontSize: 14 }}>🩸</Text>
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.periodWidgetActiveTitle}>Period — Day {periodCycle.daysSinceStart}</Text>
+                        <Text style={styles.periodWidgetActiveSub}>Tap to log today's flow</Text>
+                      </View>
+                      <AnimatedPressable
+                        onPress={() => { hapticLight(); router.push('/(app)/period-daily'); }}
+                        scaleDown={0.95}
+                        style={styles.periodWidgetLogBtn}
+                      >
+                        <Text style={styles.periodWidgetLogBtnText}>Log</Text>
+                      </AnimatedPressable>
+                    </View>
+                  </AnimatedPressable>
+                );
+              }
+
+              // State 2: Waiting (has cycle data, not currently active)
+              if (hasCycleData) {
+                return (
+                  <AnimatedPressable
+                    onPress={() => { hapticLight(); router.push('/(app)/period-tracker'); }}
+                    scaleDown={0.97}
+                    style={styles.periodWidgetWaiting}
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                      <View style={styles.periodWidgetWaitingIcon}>
+                        <Text style={{ fontSize: 14 }}>◯</Text>
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.periodWidgetWaitingTitle}>Period Tracker</Text>
+                        <Text style={styles.periodWidgetWaitingSub}>
+                          Last period: {timeAgo(periodCycle.cycle.startDate)}
+                        </Text>
+                      </View>
+                      <Text style={{ fontSize: 18, color: '#d6d3d1' }}>›</Text>
+                    </View>
+                  </AnimatedPressable>
+                );
+              }
+
+              // State 1: Empty (enabled but no data yet)
+              return (
+                <AnimatedPressable
+                  onPress={() => { hapticLight(); router.push('/(app)/period-tracker'); }}
+                  scaleDown={0.97}
+                  style={styles.periodWidgetEmpty}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                    <View style={styles.periodWidgetEmptyIcon}>
+                      <Text style={{ fontSize: 14, color: '#f43f5e' }}>✦</Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.periodWidgetEmptyTitle}>Period Tracker</Text>
+                      <Text style={styles.periodWidgetEmptySub}>Tap to start tracking your cycle</Text>
+                    </View>
+                    <Text style={{ fontSize: 18, color: '#d6d3d1' }}>›</Text>
+                  </View>
+                </AnimatedPressable>
+              );
+            })()}
+
+            {/* Empty state — no log for selected day */}
+            {!hasLog && (
+              <View style={styles.emptyCard}>
+                <View style={styles.emptyIcon}>
+                  <Ionicons name="add-circle-outline" size={36} color="#f59e0b" />
+                </View>
+                <Text style={styles.emptyTitle}>
+                  {isToday ? 'No check-in yet today' : 'No log for this day'}
+                </Text>
+                <Text style={styles.emptyDesc}>
+                  {isToday
+                    ? 'Track your symptoms, mood, and sleep to see patterns over time.'
+                    : 'You can still add a past entry to fill in the gaps.'}
+                </Text>
+                <AnimatedPressable
+                  onPress={() => {
+                    hapticMedium();
+                    router.push({
+                      pathname: '/(app)/quick-log',
+                      params: { date: selectedDate, mode: 'morning' },
+                    });
+                  }}
+                  scaleDown={0.96}
+                  style={styles.emptyButton}
+                >
+                  <Text style={styles.emptyButtonText}>
+                    {isToday ? 'Start morning journal' : 'Log this day'}
+                  </Text>
+                </AnimatedPressable>
+              </View>
             )}
 
             {/* Streak */}
@@ -1256,8 +1447,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#1c1917',
     borderRadius: 16,
     padding: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
     marginBottom: 12,
   },
   readinessLabel: {
@@ -1306,16 +1495,30 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 
+  readinessActivityPill: {
+    borderRadius: 12,
+    padding: 12,
+    marginTop: 12,
+  },
   readinessActivity: {
     fontSize: 16,
     fontWeight: '600',
-    marginTop: 8,
+  },
+  readinessNarrative: {
+    fontSize: 12,
+    color: '#d6d3d1',
+    marginTop: 6,
+    lineHeight: 18,
   },
   readinessStatsInline: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginTop: 12,
+  },
+  readinessStatItem: {
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    marginTop: 6,
   },
   readinessStatText: {
     fontSize: 12,
@@ -1324,6 +1527,10 @@ const styles = StyleSheet.create({
   readinessStatDot: {
     fontSize: 12,
     color: '#78716c',
+  },
+  readinessStatCheck: {
+    fontSize: 12,
+    color: '#34d399',
   },
 
   // Journal card
@@ -1879,4 +2086,82 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   wellnessProgressText: { fontSize: 14, color: '#78716c', marginTop: 4 },
+
+  // Period widget — Active (rose, promoted)
+  periodWidgetActive: {
+    backgroundColor: '#fff1f2',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 2,
+    borderColor: '#fecdd3',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  periodWidgetActiveIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#fecdd3',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  periodWidgetActiveTitle: { fontSize: 14, fontWeight: '600', color: '#1c1917' },
+  periodWidgetActiveSub: { fontSize: 14, color: '#78716c', marginTop: 1 },
+  periodWidgetLogBtn: {
+    backgroundColor: '#f43f5e',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  periodWidgetLogBtnText: { fontSize: 14, fontWeight: '600', color: '#ffffff' },
+
+  // Period widget — Waiting (has data)
+  periodWidgetWaiting: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#f5f5f4',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  periodWidgetWaitingIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#ffe4e6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  periodWidgetWaitingTitle: { fontSize: 14, fontWeight: '500', color: '#1c1917' },
+  periodWidgetWaitingSub: { fontSize: 14, color: '#78716c', marginTop: 1 },
+
+  // Period widget — Empty (no data yet)
+  periodWidgetEmpty: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#f5f5f4',
+    borderStyle: 'dashed',
+  },
+  periodWidgetEmptyIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#fff1f2',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  periodWidgetEmptyTitle: { fontSize: 14, fontWeight: '500', color: '#1c1917' },
+  periodWidgetEmptySub: { fontSize: 14, color: '#78716c', marginTop: 1 },
 });

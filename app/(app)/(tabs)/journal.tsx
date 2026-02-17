@@ -266,11 +266,30 @@ export default function JournalScreen() {
           <Text style={styles.linkArrow}>›</Text>
         </AnimatedPressable>
 
+        {/* Gratitude journal entry */}
+        <AnimatedPressable
+          onPress={() => {
+            hapticLight();
+            router.push('/(app)/gratitude-journal');
+          }}
+          scaleDown={0.97}
+          style={[styles.linkCard, { backgroundColor: '#fffbeb', borderWidth: 1, borderColor: '#fef3c7' }]}
+        >
+          <View style={[styles.linkIcon, { backgroundColor: '#fef3c7' }]}>
+            <Text style={styles.linkIconText}>✦</Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.linkTitle}>Gratitude journal</Text>
+            <Text style={styles.linkDesc}>Your collection of golden moments</Text>
+          </View>
+          <Text style={styles.linkArrow}>›</Text>
+        </AnimatedPressable>
+
         {/* Custom tracking nudge */}
         <AnimatedPressable
           onPress={() => {
             hapticLight();
-            router.push('/(app)/log');
+            router.navigate('/(app)/log');
           }}
           scaleDown={0.97}
           style={[styles.linkCard, { borderWidth: 1, borderColor: '#f5f5f4' }]}

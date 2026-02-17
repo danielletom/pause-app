@@ -13,6 +13,7 @@ import { useRouter } from 'expo-router';
 import { apiRequest } from '@/lib/api';
 
 import { useColorScheme } from '@/components/useColorScheme';
+import { AudioProvider } from '@/lib/audio-context';
 
 // Configure foreground notification display
 Notifications.setNotificationHandler({
@@ -67,7 +68,9 @@ export default function RootLayout() {
   return (
     <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
       <ClerkLoaded>
-        <RootLayoutNav />
+        <AudioProvider>
+          <RootLayoutNav />
+        </AudioProvider>
       </ClerkLoaded>
     </ClerkProvider>
   );

@@ -332,7 +332,6 @@ export default function WellnessScreen() {
               <View style={{ gap: 8 }}>
                 {medicationArticles.map((a) => {
                   const style = getCategoryStyle(a.category);
-                  // Derive a tag from category or tags array
                   const tagLabel = (a.tags as string[] | null)?.[0] || a.category || '';
                   return (
                     <AnimatedPressable
@@ -425,7 +424,6 @@ export default function WellnessScreen() {
               >
                 {recipes.map((r) => {
                   const style = getCategoryStyle(r.category);
-                  // Extract benefit tag from tags array if available
                   const benefitTag = (r.tags as string[] | null)?.[0] || r.description || '';
                   return (
                     <AnimatedPressable

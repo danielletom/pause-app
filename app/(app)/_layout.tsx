@@ -1,114 +1,57 @@
-import { Redirect, Tabs } from 'expo-router';
-import { Platform } from 'react-native';
+import { View } from 'react-native';
+import { Redirect, Stack } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import TabBarIcon, { TabBarLogIcon } from '@/components/TabBarIcon';
-import { hapticLight } from '@/lib/haptics';
+import MiniPlayer from '@/components/MiniPlayer';
 
 export default function AppLayout() {
   const { isSignedIn, isLoaded } = useAuth();
-  const insets = useSafeAreaInsets();
 
   if (!isLoaded) return null;
   if (!isSignedIn) return <Redirect href="/(auth)/sign-in" />;
 
-  // Safe bottom padding: use device insets or fallback for older devices
-  const bottomPadding = Math.max(insets.bottom, Platform.OS === 'ios' ? 20 : 12);
-
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: '#1c1917',
-        tabBarInactiveTintColor: '#78716c',
-        tabBarStyle: {
-          backgroundColor: '#ffffff',
-          borderTopColor: '#f5f5f4',
-          borderTopWidth: 1,
-          paddingBottom: bottomPadding,
-          paddingTop: 8,
-          height: 56 + bottomPadding,
-          zIndex: 50,
-          elevation: 8,
-        },
-        tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: '500',
-          marginTop: -2,
-        },
-      }}
-      screenListeners={{
-        tabPress: () => {
-          hapticLight();
-        },
-      }}
-    >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ color, size, focused }) => (
-            <TabBarIcon name="home-outline" size={22} color={color} focused={focused} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="insights"
-        options={{
-          title: 'Insights',
-          tabBarIcon: ({ color, size, focused }) => (
-            <TabBarIcon name="bar-chart-outline" size={22} color={color} focused={focused} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="log"
-        options={{
-          title: '',
-          tabBarIcon: ({ focused }) => <TabBarLogIcon focused={focused} />,
-          tabBarLabel: () => null,
-          tabBarStyle: { display: 'none' },
-        }}
-      />
-      <Tabs.Screen name="meds" options={{ href: null }} />
-      <Tabs.Screen
-        name="journal"
-        options={{
-          title: 'Journal',
-          tabBarIcon: ({ color, size, focused }) => (
-            <TabBarIcon name="book-outline" size={22} color={color} focused={focused} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="wellness"
-        options={{
-          title: 'Wellness',
-          tabBarIcon: ({ color, size, focused }) => (
-            <TabBarIcon name="heart-outline" size={22} color={color} focused={focused} />
-          ),
-        }}
-      />
-      {/* Hidden screens — accessible via router.push but not shown in tab bar */}
-      <Tabs.Screen name="profile" options={{ href: null }} />
-      <Tabs.Screen name="quick-log" options={{ href: null, tabBarStyle: { display: 'none' } }} />
-      <Tabs.Screen name="learn" options={{ href: null }} />
-      <Tabs.Screen name="article" options={{ href: null }} />
-      <Tabs.Screen name="sos" options={{ href: null, tabBarStyle: { display: 'none' } }} />
-      <Tabs.Screen name="symptom-detail" options={{ href: null }} />
-      <Tabs.Screen name="edit-profile" options={{ href: null }} />
-      <Tabs.Screen name="about-me" options={{ href: null }} />
-      <Tabs.Screen name="legal" options={{ href: null }} />
-      <Tabs.Screen name="terms" options={{ href: null }} />
-      <Tabs.Screen name="privacy" options={{ href: null }} />
-      <Tabs.Screen name="help-feedback" options={{ href: null }} />
-      <Tabs.Screen name="export-data" options={{ href: null }} />
-      <Tabs.Screen name="custom-tracking" options={{ href: null }} />
-      <Tabs.Screen name="calendar" options={{ href: null }} />
-      <Tabs.Screen name="journal-am" options={{ href: null }} />
-      <Tabs.Screen name="journal-pm" options={{ href: null }} />
-      <Tabs.Screen name="journal-done" options={{ href: null }} />
-      <Tabs.Screen name="journal-week" options={{ href: null }} />
-    </Tabs>
+    <View style={{ flex: 1 }}>
+      <Stack screenOptions={{ headerShown: false }}>
+        {/* Tabs group — the main 5 tab screens */}
+        <Stack.Screen name="(tabs)" />
+
+        {/* All sub-screens — pushed onto the stack so router.back() works */}
+        <Stack.Screen name="profile" />
+        <Stack.Screen name="quick-log" options={{ animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="meds" />
+        <Stack.Screen name="learn" />
+        <Stack.Screen name="article" />
+        <Stack.Screen name="sos" options={{ animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="symptom-detail" />
+        <Stack.Screen name="edit-profile" />
+        <Stack.Screen name="about-me" />
+        <Stack.Screen name="legal" />
+        <Stack.Screen name="terms" />
+        <Stack.Screen name="privacy" />
+        <Stack.Screen name="help-feedback" />
+        <Stack.Screen name="export-data" />
+        <Stack.Screen name="calendar" />
+        <Stack.Screen name="journal-am" />
+        <Stack.Screen name="journal-pm" />
+        <Stack.Screen name="journal-done" />
+        <Stack.Screen name="journal-week" />
+        {/* Period tracker screens */}
+        <Stack.Screen name="period-tracker" />
+        <Stack.Screen name="period-log" />
+        <Stack.Screen name="period-bleeding" />
+        <Stack.Screen name="period-daily" />
+        <Stack.Screen name="period-history" />
+        <Stack.Screen name="period-insights" />
+        <Stack.Screen name="period-settings" />
+        {/* Gratitude journal screens */}
+        <Stack.Screen name="gratitude-journal" />
+        <Stack.Screen name="gratitude-garden" />
+        <Stack.Screen name="gratitude-themes" />
+        <Stack.Screen name="gratitude-reflect" />
+        {/* Audio player (full screen) */}
+        <Stack.Screen name="player" options={{ animation: 'slide_from_bottom' }} />
+      </Stack>
+      <MiniPlayer />
+    </View>
   );
 }
