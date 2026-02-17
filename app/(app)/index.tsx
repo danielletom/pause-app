@@ -184,8 +184,11 @@ export default function HomeScreen() {
   const [weekLogStatus, setWeekLogStatus] = useState<Record<string, { am: boolean; pm: boolean }>>({});
   const [recommendation, setRecommendation] = useState<string | null>(null);
   const [serverReadiness, setServerReadiness] = useState<number | null>(null);
+  const [readinessComponents, setReadinessComponents] = useState<Record<string, number> | null>(null);
   const [insightNudge, setInsightNudge] = useState<{ title: string; body: string } | null>(null);
   const [narrative, setNarrative] = useState<string | null>(null);
+  const [topCorrelations, setTopCorrelations] = useState<{ factor: string; symptom: string; direction: string; effectSizePct: number; humanLabel: string }[]>([]);
+  const [weekTrends, setWeekTrends] = useState<Record<string, { thisWeek: number; lastWeek: number }>>({});
   const hasLoadedOnce = useRef(false);
 
   const todayStr = useMemo(() => toDateStr(new Date()), []);
@@ -253,8 +256,48 @@ export default function HomeScreen() {
       if (homeData) {
         if (homeData.recommendation) setRecommendation(homeData.recommendation);
         if (homeData.readiness != null) setServerReadiness(homeData.readiness);
+        if (homeData.readinessComponents) setReadinessComponents(homeData.readinessComponents);
         if (homeData.insightNudge) setInsightNudge(homeData.insightNudge);
         if (homeData.narrative) setNarrative(homeData.narrative);
+        if (homeData.topCorrelations) setTopCorrelations(homeData.topCorrelations);
+      }
+
+      // Compute weekly symptom trends from 28-day logs
+      if (Array.isArray(recentLogs) && recentLogs.length > 0) {
+        const now = new Date();
+        const thisWeekStart = new Date(now);
+        thisWeekStart.setDate(now.getDate() - 7);
+        const lastWeekStart = new Date(now);
+        lastWeekStart.setDate(now.getDate() - 14);
+
+        const thisWeekStr = toDateStr(thisWeekStart);
+        const lastWeekStr = toDateStr(lastWeekStart);
+
+        const thisWeekSymptoms: Record<string, number[]> = {};
+        const lastWeekSymptoms: Record<string, number[]> = {};
+
+        for (const log of recentLogs) {
+          if (!log.symptomsJson || typeof log.symptomsJson !== 'object') continue;
+          const bucket = log.date >= thisWeekStr ? thisWeekSymptoms : (log.date >= lastWeekStr ? lastWeekSymptoms : null);
+          if (!bucket) continue;
+          for (const [k, v] of Object.entries(log.symptomsJson)) {
+            const sev = typeof v === 'number' ? v : (typeof v === 'object' && v !== null ? ((v as any).severity ?? 1) : 1);
+            if (!bucket[k]) bucket[k] = [];
+            bucket[k].push(sev);
+          }
+        }
+
+        const trends: Record<string, { thisWeek: number; lastWeek: number }> = {};
+        const allKeys = new Set([...Object.keys(thisWeekSymptoms), ...Object.keys(lastWeekSymptoms)]);
+        for (const k of allKeys) {
+          const tw = thisWeekSymptoms[k] || [];
+          const lw = lastWeekSymptoms[k] || [];
+          trends[k] = {
+            thisWeek: tw.length > 0 ? tw.reduce((a, b) => a + b, 0) / tw.length : 0,
+            lastWeek: lw.length > 0 ? lw.reduce((a, b) => a + b, 0) / lw.length : 0,
+          };
+        }
+        setWeekTrends(trends);
       }
 
       // Build week log status for AM/PM dots
@@ -312,16 +355,33 @@ export default function HomeScreen() {
       .sort(([, a], [, b]) => b - a)
       .slice(0, 4);
     const colors = ['#fbbf24', '#818cf8', '#34d399', '#fda4af'];
-    return entries.map(([name, sev], i) => ({
-      name: name
-        .replace(/_/g, ' ')                           // snake_case → spaces
-        .replace(/([A-Z])/g, ' $1')                   // camelCase → spaces
-        .replace(/\b\w/g, (s) => s.toUpperCase())     // capitalize each word
-        .trim(),
-      sev: Math.min(sev, 3),                          // severity is already 1-3
-      color: colors[i % colors.length],
-    }));
-  }, [dayLogs]);
+    return entries.map(([name, sev], i) => {
+      const trend = weekTrends[name];
+      let weekChange: string | null = null;
+      if (trend && trend.lastWeek > 0) {
+        const pctChange = Math.round(((trend.thisWeek - trend.lastWeek) / trend.lastWeek) * 100);
+        if (pctChange <= -10) weekChange = `↓ ${Math.abs(pctChange)}% this week`;
+        else if (pctChange >= 10) weekChange = `↑ ${pctChange}% this week`;
+        else weekChange = '— same this week';
+      } else if (trend && trend.thisWeek > 0) {
+        weekChange = '↑ new this week';
+      } else {
+        weekChange = '— steady this week';
+      }
+      return {
+        name: name
+          .replace(/_/g, ' ')
+          .replace(/([A-Z])/g, ' $1')
+          .replace(/\b\w/g, (s) => s.toUpperCase())
+          .trim(),
+        rawName: name,
+        sev: Math.min(sev, 3),
+        color: colors[i % colors.length],
+        weekChange,
+        improving: trend ? trend.thisWeek < trend.lastWeek : false,
+      };
+    });
+  }, [dayLogs, weekTrends]);
 
   // Sleep data from latest entry that has it
   const sleepLog = useMemo(() => dayLogs.find((l) => l.sleepHours != null), [dayLogs]);
@@ -675,32 +735,45 @@ export default function HomeScreen() {
                     <Text style={styles.seeAll}>See why →</Text>
                   </AnimatedPressable>
                 </View>
+                {/* Weekly narrative summary — from AI or smart fallback */}
+                {narrative && (
+                  <View style={styles.narrativeCard}>
+                    <Text style={{ fontSize: 16, color: '#059669', marginTop: 2 }}>↓</Text>
+                    <Text style={styles.narrativeText}>{narrative}</Text>
+                  </View>
+                )}
                 {symptomTrends.length > 0 ? (
                   <View style={styles.trendGrid}>
-                    {symptomTrends.map((s) => (
-                      <AnimatedPressable
-                        key={s.name}
-                        onPress={() => {
-                          hapticLight();
-                          router.push({ pathname: '/(app)/insights', params: { symptom: s.name } } as any);
-                        }}
-                        scaleDown={0.97}
-                        style={styles.trendCard}
-                      >
-                        <View style={styles.trendBarsRow}>
-                          {[1, 2, 3].map((i) => (
-                            <View
-                              key={i}
-                              style={[
-                                styles.trendBar,
-                                { backgroundColor: i <= s.sev ? s.color : '#e7e5e4' },
-                              ]}
-                            />
-                          ))}
-                          <Text style={styles.trendName}>{s.name}</Text>
-                        </View>
-                      </AnimatedPressable>
-                    ))}
+                    {symptomTrends.map((s) => {
+                      const changeColor = s.weekChange?.startsWith('↓') ? '#059669' : s.weekChange?.startsWith('↑') ? '#dc2626' : '#78716c';
+                      return (
+                        <AnimatedPressable
+                          key={s.name}
+                          onPress={() => {
+                            hapticLight();
+                            router.push({ pathname: '/(app)/insights', params: { symptom: s.name } } as any);
+                          }}
+                          scaleDown={0.97}
+                          style={styles.trendCard}
+                        >
+                          <View style={styles.trendBarsRow}>
+                            {[1, 2, 3].map((i) => (
+                              <View
+                                key={i}
+                                style={[
+                                  styles.trendBar,
+                                  { backgroundColor: i <= s.sev ? s.color : '#e7e5e4' },
+                                ]}
+                              />
+                            ))}
+                            <Text style={styles.trendName}>{s.name}</Text>
+                          </View>
+                          {s.weekChange && (
+                            <Text style={[styles.trendWeekChange, { color: changeColor }]}>{s.weekChange}</Text>
+                          )}
+                        </AnimatedPressable>
+                      );
+                    })}
                   </View>
                 ) : (
                   <View style={styles.card}>
@@ -710,7 +783,7 @@ export default function HomeScreen() {
                   </View>
                 )}
 
-                {/* Sleep score row — tappable to edit */}
+                {/* Sleep Score card — shows score from readiness components */}
                 {sleepLog?.sleepHours && (
                   <AnimatedPressable
                     onPress={() => {
@@ -718,39 +791,42 @@ export default function HomeScreen() {
                       router.push({ pathname: '/(app)/quick-log', params: { date: selectedDate, mode: 'morning' } });
                     }}
                     scaleDown={0.97}
-                    style={[styles.card, { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 8 }]}
+                    style={[styles.card, { marginTop: 8 }]}
                   >
-                    <View style={styles.trendBarsRow}>
-                      {[1, 2, 3].map((i) => (
-                        <View
-                          key={i}
-                          style={[
-                            styles.trendBar,
-                            { backgroundColor: i <= Math.ceil((sleepLog.sleepHours ?? 0) / 3) ? '#818cf8' : '#e7e5e4' },
-                          ]}
-                        />
-                      ))}
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.trendName}>
-                        Sleep{' '}
-                        <Text style={{ color: '#4f46e5', fontWeight: '700' }}>
-                          {sleepLog.sleepHours}h
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                      <View style={styles.trendBarsRow}>
+                        {[1, 2, 3].map((i) => (
+                          <View
+                            key={i}
+                            style={[
+                              styles.trendBar,
+                              { backgroundColor: i <= Math.ceil((sleepLog.sleepHours ?? 0) / 3) ? '#818cf8' : '#e7e5e4' },
+                            ]}
+                          />
+                        ))}
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.trendName}>
+                          Sleep Score{' '}
+                          <Text style={{ color: '#4f46e5', fontWeight: '700' }}>
+                            {readinessComponents?.sleep ? Math.round(readinessComponents.sleep) : sleepLog.sleepHours ? Math.round(Math.min(100, (sleepLog.sleepHours / 9) * 100)) : '—'}
+                          </Text>
                         </Text>
-                      </Text>
-                      <Text style={styles.trendSubtext}>
-                        {sleepLog.disruptions ? `${sleepLog.disruptions} disruption${sleepLog.disruptions !== 1 ? 's' : ''}` : 'No disruptions logged'}
-                        {sleepLog.sleepQuality ? ` · ${sleepLog.sleepQuality}` : ''}
-                      </Text>
+                        <Text style={styles.trendSubtext}>
+                          {sleepLog.sleepHours}h
+                          {sleepLog.disruptions ? ` · ${sleepLog.disruptions} disruption${sleepLog.disruptions !== 1 ? 's' : ''}` : ''}
+                          {sleepLog.sleepQuality ? ` · ${sleepLog.sleepQuality}` : ''}
+                        </Text>
+                      </View>
+                      <Text style={{ fontSize: 14, color: '#78716c' }}>Edit →</Text>
                     </View>
-                    <Text style={{ fontSize: 14, color: '#78716c' }}>Edit →</Text>
                   </AnimatedPressable>
                 )}
               </View>
             )}
 
-            {/* Insight nudge — pattern detection (from AI or fallback) */}
-            {(insightNudge || (hasLog && symptomTrends.length > 0)) && (
+            {/* Insight nudge — pattern detection (from correlations or AI fallback) */}
+            {(insightNudge || topCorrelations.length > 0 || (hasLog && symptomTrends.length > 0)) && (
               <AnimatedPressable
                 onPress={() => { hapticLight(); router.push('/(app)/insights'); }}
                 scaleDown={0.98}
@@ -760,16 +836,20 @@ export default function HomeScreen() {
                 <View style={{ flex: 1 }}>
                   <Text style={styles.insightTitle}>
                     {insightNudge?.title || (
-                      streak >= 14
-                        ? `Overall ${symptomTrends.length > 0 ? 'improving' : 'stable'}. ${symptomTrends[0]?.name || 'Your patterns'} trending.`
-                        : 'We spotted a pattern'
+                      topCorrelations.length > 0
+                        ? 'We spotted a pattern'
+                        : streak >= 14
+                          ? `Overall ${symptomTrends.some((s) => s.improving) ? 'improving' : 'stable'}. ${symptomTrends[0]?.name || 'Your patterns'} trending.`
+                          : 'Building your picture'
                     )}
                   </Text>
                   <Text style={styles.insightDesc}>
                     {insightNudge?.body || (
-                      streak >= 14
-                        ? `Your ${symptomTrends[0]?.name?.toLowerCase() || 'top symptom'} tends to worsen after poor sleep.`
-                        : 'Keep logging daily so we can identify triggers and trends in your symptoms.'
+                      topCorrelations.length > 0
+                        ? topCorrelations[0].humanLabel + (topCorrelations.length > 1 ? ` We found ${topCorrelations.length} patterns so far.` : '')
+                        : streak >= 7
+                          ? `${streak}-day streak! Patterns start emerging after 14 days of data.`
+                          : 'Keep logging daily so we can identify triggers and trends in your symptoms.'
                     )}
                   </Text>
                   <Text style={[styles.seeAll, { marginTop: 6 }]}>See why →</Text>
@@ -1526,6 +1606,30 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#78716c',
     marginTop: 1,
+  },
+  trendWeekChange: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginTop: 4,
+  },
+
+  // Narrative card
+  narrativeCard: {
+    backgroundColor: '#ecfdf5',
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#d1fae5',
+    marginBottom: 8,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+  },
+  narrativeText: {
+    fontSize: 14,
+    color: '#1c1917',
+    lineHeight: 20,
+    flex: 1,
   },
 
   // Generic card
