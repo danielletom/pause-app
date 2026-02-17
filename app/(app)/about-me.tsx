@@ -9,10 +9,10 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { useRouter } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
 import AnimatedPressable from '@/components/AnimatedPressable';
-import { hapticLight, hapticMedium, hapticSelection } from '@/lib/haptics';
+import BackButton from '@/components/BackButton';
+import { hapticMedium, hapticSelection } from '@/lib/haptics';
 import { apiRequest } from '@/lib/api';
 import { useProfile } from '@/lib/useProfile';
 
@@ -23,7 +23,6 @@ const CHILDREN_OPTIONS = ['0', '1', '2', '3', '4+'];
 const EXERCISE_OPTIONS = ['Rarely', '1-2x/week', '3-4x/week', '5+/week'];
 
 export default function AboutMeScreen() {
-  const router = useRouter();
   const { getToken } = useAuth();
   const { profile, refetch } = useProfile();
 
@@ -136,13 +135,7 @@ export default function AboutMeScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <AnimatedPressable
-            onPress={() => { hapticLight(); router.back(); }}
-            scaleDown={0.95}
-            style={styles.backButton}
-          >
-            <Text style={styles.backText}>‹ Back</Text>
-          </AnimatedPressable>
+          <BackButton />
           <Text style={styles.title}>About me</Text>
         </View>
 
@@ -162,7 +155,7 @@ export default function AboutMeScreen() {
             value={dateOfBirth}
             onChangeText={setDateOfBirth}
             placeholder="YYYY-MM-DD"
-            placeholderTextColor="#a8a29e"
+            placeholderTextColor="#78716c"
             autoCapitalize="none"
           />
           {computedAge !== null && (
@@ -181,7 +174,7 @@ export default function AboutMeScreen() {
               value={heightFeet}
               onChangeText={setHeightFeet}
               placeholder="5"
-              placeholderTextColor="#a8a29e"
+              placeholderTextColor="#78716c"
               keyboardType="numeric"
               maxLength={1}
             />
@@ -191,7 +184,7 @@ export default function AboutMeScreen() {
               value={heightInches}
               onChangeText={setHeightInches}
               placeholder="6"
-              placeholderTextColor="#a8a29e"
+              placeholderTextColor="#78716c"
               keyboardType="numeric"
               maxLength={2}
             />
@@ -208,7 +201,7 @@ export default function AboutMeScreen() {
               value={weight}
               onChangeText={setWeight}
               placeholder="148"
-              placeholderTextColor="#a8a29e"
+              placeholderTextColor="#78716c"
               keyboardType="numeric"
               maxLength={3}
             />
@@ -270,8 +263,6 @@ const styles = StyleSheet.create({
 
   // Header
   header: { marginBottom: 16 },
-  backButton: { marginBottom: 12 },
-  backText: { fontSize: 16, color: '#78716c' },
   title: { fontSize: 22, fontWeight: '700', color: '#1c1917' },
 
   // Info card
@@ -284,15 +275,15 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   infoText: {
-    fontSize: 13,
+    fontSize: 16,
     color: '#1c1917',
-    lineHeight: 19,
+    lineHeight: 22,
   },
 
   // Fields
   fieldGroup: { marginBottom: 20 },
   label: {
-    fontSize: 13,
+    fontSize: 16,
     fontWeight: '600',
     color: '#1c1917',
     marginBottom: 8,
@@ -302,12 +293,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f4',
     borderRadius: 12,
     padding: 14,
-    fontSize: 14,
+    fontSize: 16,
     color: '#1c1917',
   },
   fieldHint: {
-    fontSize: 12,
-    color: '#a8a29e',
+    fontSize: 16,
+    color: '#78716c',
     marginTop: 6,
     marginLeft: 2,
   },
@@ -323,7 +314,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   unitText: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#78716c',
     fontWeight: '500',
   },
@@ -351,12 +342,14 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 8,
+    minHeight: 44,
+    justifyContent: 'center',
   },
   pillActive: {
     backgroundColor: '#1c1917',
   },
   pillText: {
-    fontSize: 13,
+    fontSize: 16,
     color: '#78716c',
     fontWeight: '500',
   },
@@ -373,7 +366,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   saveButtonText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
     color: '#ffffff',
   },

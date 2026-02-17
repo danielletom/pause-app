@@ -151,7 +151,7 @@ export default function SignInScreen() {
               <TextInput
                 style={styles.input}
                 placeholder="your@email.com"
-                placeholderTextColor="#a8a29e"
+                placeholderTextColor="#78716c"
                 value={email}
                 onChangeText={setEmail}
                 autoCapitalize="none"
@@ -166,7 +166,7 @@ export default function SignInScreen() {
               <TextInput
                 style={styles.input}
                 placeholder="••••••••"
-                placeholderTextColor="#a8a29e"
+                placeholderTextColor="#78716c"
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry
@@ -209,7 +209,7 @@ export default function SignInScreen() {
               onPress={useTestAccount}
               activeOpacity={0.7}
             >
-              <Ionicons name="flask-outline" size={14} color="#a8a29e" />
+              <Ionicons name="flask-outline" size={14} color="#78716c" />
               <Text style={styles.testAccountText}>Use test account</Text>
             </TouchableOpacity>
           )}
@@ -238,8 +238,8 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   backText: {
-    fontSize: 13,
-    color: '#a8a29e',
+    fontSize: 14,
+    color: '#78716c',
   },
 
   // Logo
@@ -270,8 +270,8 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   subheading: {
-    fontSize: 13,
-    color: '#a8a29e',
+    fontSize: 14,
+    color: '#78716c',
     marginBottom: 24,
   },
 
@@ -284,7 +284,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: '#dc2626',
-    fontSize: 13,
+    fontSize: 14,
     lineHeight: 18,
   },
 
@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
   },
   appleButtonText: {
     color: '#ffffff',
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '600',
   },
   buttonDisabled: {
@@ -324,8 +324,8 @@ const styles = StyleSheet.create({
   },
   dividerText: {
     marginHorizontal: 12,
-    fontSize: 12,
-    color: '#d6d3d1',
+    fontSize: 14,
+    color: '#78716c',
   },
 
   // Form
@@ -336,7 +336,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   label: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '500',
     color: '#44403c',
   },
@@ -354,8 +354,8 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   forgotLink: {
-    fontSize: 12,
-    color: '#a8a29e',
+    fontSize: 14,
+    color: '#78716c',
     textDecorationLine: 'underline',
   },
 
@@ -375,7 +375,7 @@ const styles = StyleSheet.create({
   },
   signInButtonText: {
     color: '#ffffff',
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
   },
 
@@ -386,11 +386,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   signUpText: {
-    fontSize: 13,
-    color: '#d6d3d1',
+    fontSize: 14,
+    color: '#78716c',
   },
   signUpLink: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     color: '#1c1917',
     textDecorationLine: 'underline',
@@ -410,8 +410,8 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
   },
   testAccountText: {
-    fontSize: 12,
-    color: '#a8a29e',
+    fontSize: 14,
+    color: '#78716c',
     fontWeight: '500',
   },
 });

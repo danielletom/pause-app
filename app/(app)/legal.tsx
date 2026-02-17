@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, SafeAreaView, ScrollView, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import AnimatedPressable from '@/components/AnimatedPressable';
+import BackButton from '@/components/BackButton';
 import { hapticLight } from '@/lib/haptics';
 
 const LEGAL_ITEMS = [
@@ -41,13 +42,7 @@ export default function LegalScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Back nav */}
-        <AnimatedPressable
-          onPress={() => { hapticLight(); router.back(); }}
-          scaleDown={0.95}
-          style={styles.backButton}
-        >
-          <Text style={styles.backText}>← Back</Text>
-        </AnimatedPressable>
+        <BackButton />
 
         {/* Title */}
         <View style={styles.header}>
@@ -94,9 +89,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fafaf9' },
   scrollContent: { paddingHorizontal: 24, paddingTop: 8, paddingBottom: 40 },
 
-  backButton: { paddingVertical: 12, alignSelf: 'flex-start' },
-  backText: { fontSize: 13, color: '#a8a29e', fontWeight: '500' },
-
   header: { marginBottom: 16 },
   title: { fontSize: 22, fontWeight: '700', color: '#1c1917' },
 
@@ -115,11 +107,11 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   cardIcon: { fontSize: 16 },
-  cardLabel: { fontSize: 14, fontWeight: '500', color: '#1c1917' },
-  cardDesc: { fontSize: 12, color: '#a8a29e', marginTop: 1 },
-  chevron: { fontSize: 18, color: '#d6d3d1' },
+  cardLabel: { fontSize: 16, fontWeight: '500', color: '#1c1917' },
+  cardDesc: { fontSize: 14, color: '#78716c', marginTop: 1 },
+  chevron: { fontSize: 18, color: '#78716c' },
 
   footer: { alignItems: 'center', marginTop: 8 },
-  footerText: { fontSize: 11, color: '#d6d3d1', marginBottom: 4 },
-  footerAddress: { fontSize: 11, color: '#d6d3d1', textAlign: 'center' },
+  footerText: { fontSize: 14, color: '#78716c', marginBottom: 4 },
+  footerAddress: { fontSize: 14, color: '#78716c', textAlign: 'center' },
 });

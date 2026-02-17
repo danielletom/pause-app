@@ -10,6 +10,7 @@ import {
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
 import AnimatedPressable from '@/components/AnimatedPressable';
+import BackButton from '@/components/BackButton';
 import { hapticLight, hapticMedium } from '@/lib/haptics';
 import { apiRequest } from '@/lib/api';
 
@@ -100,13 +101,9 @@ export default function JournalPMScreen() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.nav}>
-        <AnimatedPressable
-          onPress={() => { hapticLight(); router.back(); }}
-          scaleDown={0.9}
-          style={styles.navBack}
-        >
-          <Text style={styles.navBackText}>← Back</Text>
-        </AnimatedPressable>
+        <View style={styles.navBack}>
+          <BackButton />
+        </View>
         <Text style={styles.navTitle}>🌙 Evening review</Text>
         <View style={styles.navSpacer} />
       </View>
@@ -295,8 +292,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   navBack: { paddingVertical: 4 },
-  navBackText: { fontSize: 13, color: '#a8a29e' },
-  navTitle: { fontSize: 15, fontWeight: '600', color: '#1c1917' },
+  navTitle: { fontSize: 16, fontWeight: '600', color: '#1c1917' },
   navSpacer: { width: 50 },
 
   /* Error */
@@ -309,7 +305,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#fecaca',
   },
-  errorText: { fontSize: 13, color: '#991b1b', lineHeight: 18 },
+  errorText: { fontSize: 14, color: '#991b1b', lineHeight: 18 },
 
   /* Empty state */
   emptyState: {
@@ -320,8 +316,8 @@ const styles = StyleSheet.create({
   emptyEmoji: { fontSize: 48, marginBottom: 16 },
   emptyTitle: { fontSize: 18, fontWeight: '700', color: '#1c1917', marginBottom: 8 },
   emptyDesc: {
-    fontSize: 13,
-    color: '#a8a29e',
+    fontSize: 14,
+    color: '#78716c',
     textAlign: 'center',
     lineHeight: 20,
     marginBottom: 28,
@@ -334,7 +330,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   ctaButtonDisabled: { opacity: 0.4 },
-  ctaButtonText: { color: '#ffffff', fontSize: 15, fontWeight: '600' },
+  ctaButtonText: { color: '#ffffff', fontSize: 16, fontWeight: '600' },
 
   /* Cards */
   card: {
@@ -356,7 +352,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   cardIcon: { fontSize: 16 },
-  cardTitle: { fontSize: 14, fontWeight: '600', color: '#1c1917' },
+  cardTitle: { fontSize: 16, fontWeight: '600', color: '#1c1917' },
   cardBody: { gap: 8 },
 
   /* Mood */
@@ -378,7 +374,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 4,
   },
-  symptomLabel: { fontSize: 13, color: '#1c1917', flex: 1 },
+  symptomLabel: { fontSize: 14, color: '#1c1917', flex: 1 },
   symptomMeta: {
     flexDirection: 'row',
     gap: 6,
@@ -390,14 +386,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
   },
-  severityBadgeText: { fontSize: 11, color: '#78716c', fontWeight: '500' },
+  severityBadgeText: { fontSize: 12, color: '#78716c', fontWeight: '500' },
   comparisonBadge: {
     backgroundColor: '#fafaf9',
     borderRadius: 10,
     paddingHorizontal: 8,
     paddingVertical: 4,
   },
-  comparisonBadgeText: { fontSize: 11, color: '#78716c' },
+  comparisonBadgeText: { fontSize: 12, color: '#78716c' },
 
   /* Tags */
   tagRow: {
@@ -412,12 +408,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
   },
-  tagText: { fontSize: 12, color: '#78716c', fontWeight: '500' },
+  tagText: { fontSize: 14, color: '#78716c', fontWeight: '500' },
 
   /* Notes */
   noteSection: { marginBottom: 8 },
-  noteLabel: { fontSize: 11, color: '#a8a29e', fontWeight: '600', marginBottom: 2 },
-  noteText: { fontSize: 13, color: '#1c1917', lineHeight: 20 },
+  noteLabel: { fontSize: 14, color: '#78716c', fontWeight: '600', marginBottom: 2 },
+  noteText: { fontSize: 16, color: '#1c1917', lineHeight: 20 },
 
   /* Edit link */
   editLink: {
@@ -426,5 +422,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
   },
-  editLinkText: { fontSize: 13, color: '#a8a29e', textDecorationLine: 'underline' },
+  editLinkText: { fontSize: 14, color: '#78716c', textDecorationLine: 'underline' },
 });

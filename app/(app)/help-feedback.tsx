@@ -7,9 +7,9 @@ import {
   StyleSheet,
   TextInput,
 } from 'react-native';
-import { useRouter } from 'expo-router';
 import AnimatedPressable from '@/components/AnimatedPressable';
-import { hapticLight, hapticSelection, hapticSuccess } from '@/lib/haptics';
+import BackButton from '@/components/BackButton';
+import { hapticSelection, hapticSuccess } from '@/lib/haptics';
 
 const TABS = [
   { key: 'help', label: 'Get help' },
@@ -46,7 +46,6 @@ const IMPORTANCE_OPTIONS: [string, string][] = [
 ];
 
 export default function HelpFeedbackScreen() {
-  const router = useRouter();
   const [tab, setTab] = useState<'help' | 'feature'>('help');
   const [submitted, setSubmitted] = useState(false);
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
@@ -63,13 +62,7 @@ export default function HelpFeedbackScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.headerRow}>
-          <AnimatedPressable
-            onPress={() => { hapticLight(); router.back(); }}
-            scaleDown={0.92}
-            style={styles.backButton}
-          >
-            <Text style={styles.backText}>\u2039</Text>
-          </AnimatedPressable>
+          <BackButton />
           <Text style={styles.headerTitle}>Help & feedback</Text>
           <View style={{ width: 36 }} />
         </View>
@@ -84,6 +77,8 @@ export default function HelpFeedbackScreen() {
                 onPress={() => { hapticSelection(); setTab(t.key as 'help' | 'feature'); }}
                 scaleDown={0.97}
                 style={[styles.tab, active && styles.tabActive]}
+                accessibilityRole="tab"
+                accessibilityLabel={t.label}
               >
                 <Text style={[styles.tabText, active && styles.tabTextActive]}>{t.label}</Text>
               </AnimatedPressable>
@@ -107,6 +102,8 @@ export default function HelpFeedbackScreen() {
                     }}
                     scaleDown={0.98}
                     style={styles.card}
+                    accessibilityRole="button"
+                    accessibilityLabel={faq.question}
                   >
                     <View style={styles.faqHeader}>
                       <Text style={styles.faqQuestion}>{faq.question}</Text>
@@ -146,7 +143,7 @@ export default function HelpFeedbackScreen() {
                 <TextInput
                   style={styles.textArea}
                   placeholder="Tell us what happened..."
-                  placeholderTextColor="#a8a29e"
+                  placeholderTextColor="#78716c"
                   multiline
                   numberOfLines={4}
                   value={description}
@@ -164,6 +161,8 @@ export default function HelpFeedbackScreen() {
                   onPress={() => { hapticSuccess(); setSubmitted(true); }}
                   scaleDown={0.97}
                   style={styles.primaryButton}
+                  accessibilityRole="button"
+                  accessibilityLabel="Send to support"
                 >
                   <Text style={styles.primaryButtonText}>Send to support</Text>
                 </AnimatedPressable>
@@ -194,7 +193,7 @@ export default function HelpFeedbackScreen() {
                 <TextInput
                   style={styles.textArea}
                   placeholder="I wish Pause could..."
-                  placeholderTextColor="#a8a29e"
+                  placeholderTextColor="#78716c"
                   multiline
                   numberOfLines={4}
                   value={featureText}
@@ -243,6 +242,8 @@ export default function HelpFeedbackScreen() {
                   onPress={() => { hapticSuccess(); setFeatureSubmitted(true); }}
                   scaleDown={0.97}
                   style={styles.primaryButton}
+                  accessibilityRole="button"
+                  accessibilityLabel="Submit request"
                 >
                   <Text style={styles.primaryButtonText}>Submit request</Text>
                 </AnimatedPressable>
@@ -272,15 +273,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 16,
   },
-  backButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#f5f5f4',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  backText: { fontSize: 22, color: '#1c1917', marginTop: -2 },
   headerTitle: { fontSize: 17, fontWeight: '600', color: '#1c1917' },
 
   // Tab switcher
@@ -305,7 +297,7 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 2,
   },
-  tabText: { fontSize: 13, fontWeight: '500', color: '#78716c' },
+  tabText: { fontSize: 14, fontWeight: '500', color: '#78716c' },
   tabTextActive: { color: '#1c1917', fontWeight: '600' },
 
   // Section
@@ -330,8 +322,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   faqQuestion: { fontSize: 14, fontWeight: '600', color: '#1c1917', flex: 1, marginRight: 8 },
-  faqToggle: { fontSize: 14, color: '#a8a29e' },
-  faqAnswer: { fontSize: 13, color: '#78716c', lineHeight: 19, marginTop: 10 },
+  faqToggle: { fontSize: 14, color: '#78716c' },
+  faqAnswer: { fontSize: 14, color: '#78716c', lineHeight: 20, marginTop: 10 },
 
   // Pills
   pillRow: {
@@ -344,12 +336,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f4',
     borderRadius: 20,
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 10,
+    minHeight: 44,
+    justifyContent: 'center',
   },
   pillActive: {
     backgroundColor: '#1c1917',
   },
-  pillText: { fontSize: 13, fontWeight: '500', color: '#78716c' },
+  pillText: { fontSize: 14, fontWeight: '500', color: '#78716c' },
   pillTextActive: { color: '#ffffff' },
 
   // Text area
@@ -380,8 +374,10 @@ const styles = StyleSheet.create({
     borderColor: '#e7e5e4',
     borderStyle: 'dashed',
     marginBottom: 16,
+    minHeight: 44,
+    justifyContent: 'center',
   },
-  attachText: { fontSize: 13, color: '#78716c', fontWeight: '500' },
+  attachText: { fontSize: 14, color: '#78716c', fontWeight: '500' },
 
   // Primary button
   primaryButton: {
@@ -391,10 +387,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 10,
   },
-  primaryButtonText: { fontSize: 15, fontWeight: '600', color: '#ffffff' },
+  primaryButtonText: { fontSize: 16, fontWeight: '600', color: '#ffffff' },
 
   // Note
-  noteText: { fontSize: 12, color: '#a8a29e', textAlign: 'center', marginBottom: 16 },
+  noteText: { fontSize: 12, color: '#78716c', textAlign: 'center', marginBottom: 16 },
 
   // Success card
   successCard: {
@@ -411,7 +407,7 @@ const styles = StyleSheet.create({
   },
   successEmoji: { fontSize: 32, marginBottom: 12 },
   successTitle: { fontSize: 17, fontWeight: '700', color: '#1c1917', marginBottom: 6 },
-  successDesc: { fontSize: 13, color: '#78716c', textAlign: 'center' },
+  successDesc: { fontSize: 14, color: '#78716c', textAlign: 'center' },
 
   // Amber card
   amberCard: {
@@ -422,5 +418,5 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 16,
   },
-  amberText: { fontSize: 13, color: '#78716c', lineHeight: 19 },
+  amberText: { fontSize: 14, color: '#78716c', lineHeight: 20 },
 });

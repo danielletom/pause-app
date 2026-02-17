@@ -10,6 +10,7 @@ import {
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
 import AnimatedPressable from '@/components/AnimatedPressable';
+import BackButton from '@/components/BackButton';
 import { hapticLight, hapticSelection } from '@/lib/haptics';
 import { apiRequest } from '@/lib/api';
 
@@ -151,9 +152,7 @@ export default function CalendarScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.headerRow}>
-          <AnimatedPressable onPress={() => { hapticLight(); router.back(); }} scaleDown={0.92} style={styles.backBtn}>
-            <Text style={styles.backText}>‹</Text>
-          </AnimatedPressable>
+          <BackButton />
           <Text style={styles.headerTitle}>Calendar</Text>
           <View style={{ width: 36 }} />
         </View>
@@ -272,7 +271,7 @@ export default function CalendarScreen() {
                         {morningLog.symptomsJson ? `${typeof morningLog.symptomsJson === 'object' ? Object.keys(morningLog.symptomsJson).length : 0} symptoms` : ''}
                       </Text>
                     </View>
-                    <Text style={{ fontSize: 11, color: '#a8a29e' }}>View →</Text>
+                    <Text style={{ fontSize: 14, color: '#78716c' }}>View →</Text>
                   </AnimatedPressable>
                 ) : null}
 
@@ -296,7 +295,7 @@ export default function CalendarScreen() {
                         {eveningLog.notes ? ' · Has notes' : ''}
                       </Text>
                     </View>
-                    <Text style={{ fontSize: 11, color: '#a8a29e' }}>View →</Text>
+                    <Text style={{ fontSize: 14, color: '#78716c' }}>View →</Text>
                   </AnimatedPressable>
                 ) : null}
 
@@ -350,12 +349,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 16,
   },
-  backBtn: {
-    width: 36, height: 36, borderRadius: 18,
-    backgroundColor: '#f5f5f4',
-    alignItems: 'center', justifyContent: 'center',
-  },
-  backText: { fontSize: 22, color: '#1c1917', marginTop: -2 },
   headerTitle: { fontSize: 17, fontWeight: '600', color: '#1c1917' },
 
   // Month nav
@@ -366,7 +359,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   navArrow: {
-    width: 32, height: 32, borderRadius: 16,
+    width: 48, height: 48, borderRadius: 24,
     backgroundColor: '#f5f5f4',
     alignItems: 'center', justifyContent: 'center',
   },
@@ -380,7 +373,7 @@ const styles = StyleSheet.create({
   },
   weekDay: {
     flex: 1, textAlign: 'center',
-    fontSize: 11, fontWeight: '600', color: '#a8a29e',
+    fontSize: 12, fontWeight: '600', color: '#78716c',
     textTransform: 'uppercase',
   },
 
@@ -392,7 +385,7 @@ const styles = StyleSheet.create({
   dayCell: {
     width: `${100 / 7}%` as any,
     alignItems: 'center',
-    paddingVertical: 6,
+    paddingVertical: 16,
     borderRadius: 10,
   },
   dayCellSelected: {
@@ -400,11 +393,11 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   dayNumber: {
-    fontSize: 13, fontWeight: '500', color: '#1c1917',
+    fontSize: 14, fontWeight: '500', color: '#1c1917',
     marginBottom: 3,
   },
   dayNumberSelected: { color: '#ffffff' },
-  dayNumberToday: { color: '#f59e0b', fontWeight: '700' },
+  dayNumberToday: { color: '#b45309', fontWeight: '700' },
   dotRow: {
     flexDirection: 'row', gap: 3,
     alignItems: 'center',
@@ -429,7 +422,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   adherencePct: { fontSize: 28, fontWeight: '700', color: '#ffffff' },
-  adherenceLabel: { fontSize: 13, color: '#a8a29e' },
+  adherenceLabel: { fontSize: 14, color: '#78716c' },
   adherenceRows: { gap: 8, marginBottom: 14 },
   adherenceRow: {
     flexDirection: 'row',
@@ -437,8 +430,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   adherenceDotBig: { width: 8, height: 8, borderRadius: 4 },
-  adherenceRowLabel: { fontSize: 13, color: '#a8a29e', flex: 1 },
-  adherenceRowValue: { fontSize: 13, fontWeight: '600', color: '#ffffff' },
+  adherenceRowLabel: { fontSize: 14, color: '#78716c', flex: 1 },
+  adherenceRowValue: { fontSize: 14, fontWeight: '600', color: '#ffffff' },
   progressBg: {
     height: 6, backgroundColor: '#292524',
     borderRadius: 3, overflow: 'hidden',
@@ -451,7 +444,7 @@ const styles = StyleSheet.create({
   // Day detail
   dayDetailSection: { gap: 8 },
   dayDetailTitle: {
-    fontSize: 15, fontWeight: '600', color: '#1c1917',
+    fontSize: 16, fontWeight: '600', color: '#1c1917',
     marginBottom: 4,
   },
   detailCard: {
@@ -467,8 +460,8 @@ const styles = StyleSheet.create({
   detailCardPM: { borderColor: '#e0e7ff' },
   detailCardPeriod: { borderColor: '#fecdd3' },
   detailCardIcon: { fontSize: 18 },
-  detailCardTitle: { fontSize: 14, fontWeight: '600', color: '#1c1917' },
-  detailCardMeta: { fontSize: 12, color: '#78716c', marginTop: 2 },
+  detailCardTitle: { fontSize: 16, fontWeight: '600', color: '#1c1917' },
+  detailCardMeta: { fontSize: 14, color: '#78716c', marginTop: 2 },
 
   // Empty day
   emptyDayCard: {
@@ -479,12 +472,12 @@ const styles = StyleSheet.create({
     padding: 20,
     alignItems: 'center',
   },
-  emptyDayText: { fontSize: 13, color: '#a8a29e', marginBottom: 8 },
+  emptyDayText: { fontSize: 14, color: '#78716c', marginBottom: 8 },
   logNowBtn: {
     backgroundColor: '#f5f5f4',
     borderRadius: 10,
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 12,
   },
-  logNowText: { fontSize: 13, fontWeight: '600', color: '#1c1917' },
+  logNowText: { fontSize: 14, fontWeight: '600', color: '#1c1917' },
 });

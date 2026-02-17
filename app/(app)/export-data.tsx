@@ -7,16 +7,17 @@ import {
   StyleSheet,
   Animated,
 } from 'react-native';
-import { useRouter } from 'expo-router';
 import { useUser } from '@clerk/clerk-expo';
 import AnimatedPressable from '@/components/AnimatedPressable';
-import { hapticLight, hapticSelection, hapticMedium } from '@/lib/haptics';
+import BackButton from '@/components/BackButton';
+import { hapticSelection, hapticMedium } from '@/lib/haptics';
 
 const DATE_RANGES: [string, string][] = [
   ['30d', 'Last 30 days'],
   ['90d', 'Last 90 days'],
   ['6m', 'Last 6 months'],
   ['all', 'All time'],
+  ['custom', 'Custom range'],
 ];
 
 const PDF_ITEMS = [
@@ -39,7 +40,6 @@ const CSV_FILES = [
 ];
 
 export default function ExportDataScreen() {
-  const router = useRouter();
   const { user } = useUser();
   const email = user?.primaryEmailAddress?.emailAddress || 'your email';
 
@@ -84,13 +84,7 @@ export default function ExportDataScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.headerRow}>
-          <AnimatedPressable
-            onPress={() => { hapticLight(); router.back(); }}
-            scaleDown={0.92}
-            style={styles.backButton}
-          >
-            <Text style={styles.backText}>{'\u2039'}</Text>
-          </AnimatedPressable>
+          <BackButton />
           <Text style={styles.headerTitle}>Export your data</Text>
           <View style={{ width: 36 }} />
         </View>
@@ -207,7 +201,7 @@ export default function ExportDataScreen() {
               {'\u2193'}
             </Animated.Text>
             <Text style={styles.exportingTitle}>Generating your export...</Text>
-            <Text style={styles.exportingDesc}>This takes about 10 seconds</Text>
+            <Text style={styles.exportingDesc}>This may take a minute for large exports</Text>
             <View style={styles.progressBarBg}>
               <Animated.View style={[styles.progressBarFill, { opacity: pulseAnim }]} />
             </View>
@@ -217,6 +211,9 @@ export default function ExportDataScreen() {
         {/* Email note */}
         <Text style={styles.emailNote}>
           Your export will be emailed to {email}
+        </Text>
+        <Text style={styles.emailNote}>
+          Large exports may take a few minutes to generate.{'\n'}Your data is always yours.
         </Text>
       </ScrollView>
     </SafeAreaView>
@@ -234,19 +231,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 20,
   },
-  backButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#f5f5f4',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  backText: { fontSize: 22, color: '#1c1917', marginTop: -2 },
   headerTitle: { fontSize: 17, fontWeight: '600', color: '#1c1917' },
 
   // Sections
-  sectionTitle: { fontSize: 14, fontWeight: '600', color: '#1c1917', marginBottom: 10 },
+  sectionTitle: { fontSize: 16, fontWeight: '600', color: '#1c1917', marginBottom: 10 },
 
   // Pill strip
   pillStrip: { marginBottom: 20, maxHeight: 44 },
@@ -255,10 +243,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f4',
     borderRadius: 20,
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 10,
+    minHeight: 44,
+    justifyContent: 'center',
   },
   pillActive: { backgroundColor: '#1c1917' },
-  pillText: { fontSize: 13, fontWeight: '500', color: '#78716c' },
+  pillText: { fontSize: 14, fontWeight: '500', color: '#78716c' },
   pillTextActive: { color: '#ffffff' },
 
   // Format picker
@@ -294,10 +284,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  checkMark: { fontSize: 11, color: '#ffffff', fontWeight: '700' },
+  checkMark: { fontSize: 14, color: '#ffffff', fontWeight: '700' },
   formatEmoji: { fontSize: 28, marginBottom: 8 },
-  formatLabel: { fontSize: 14, fontWeight: '600', color: '#1c1917', marginBottom: 4 },
-  formatDesc: { fontSize: 11, color: '#78716c', textAlign: 'center', lineHeight: 16 },
+  formatLabel: { fontSize: 16, fontWeight: '600', color: '#1c1917', marginBottom: 4 },
+  formatDesc: { fontSize: 14, color: '#78716c', textAlign: 'center', lineHeight: 20 },
 
   // Card
   card: {
@@ -318,11 +308,11 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingVertical: 6,
   },
-  contentCheck: { fontSize: 13, color: '#059669', fontWeight: '600', marginTop: 1 },
-  contentText: { fontSize: 13, color: '#44403c', lineHeight: 18, flex: 1 },
-  contentClip: { fontSize: 13, marginTop: 1 },
-  csvFileName: { fontSize: 13, fontWeight: '600', color: '#1c1917' },
-  csvFileDesc: { fontSize: 12, color: '#78716c', marginTop: 1 },
+  contentCheck: { fontSize: 14, color: '#047857', fontWeight: '600', marginTop: 1 },
+  contentText: { fontSize: 16, color: '#44403c', lineHeight: 22, flex: 1 },
+  contentClip: { fontSize: 14, marginTop: 1 },
+  csvFileName: { fontSize: 16, fontWeight: '600', color: '#1c1917' },
+  csvFileDesc: { fontSize: 14, color: '#78716c', marginTop: 1 },
 
   // Primary button
   primaryButton: {
@@ -332,7 +322,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
-  primaryButtonText: { fontSize: 15, fontWeight: '600', color: '#ffffff' },
+  primaryButtonText: { fontSize: 16, fontWeight: '600', color: '#ffffff' },
 
   // Exporting card
   exportingCard: {
@@ -344,9 +334,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
-  exportingIcon: { fontSize: 28, color: '#059669', marginBottom: 10 },
-  exportingTitle: { fontSize: 15, fontWeight: '600', color: '#1c1917', marginBottom: 4 },
-  exportingDesc: { fontSize: 12, color: '#78716c', marginBottom: 16 },
+  exportingIcon: { fontSize: 28, color: '#047857', marginBottom: 10 },
+  exportingTitle: { fontSize: 16, fontWeight: '600', color: '#1c1917', marginBottom: 4 },
+  exportingDesc: { fontSize: 14, color: '#78716c', marginBottom: 16 },
   progressBarBg: {
     width: '100%',
     height: 6,
@@ -363,8 +353,8 @@ const styles = StyleSheet.create({
 
   // Email note
   emailNote: {
-    fontSize: 12,
-    color: '#a8a29e',
+    fontSize: 14,
+    color: '#78716c',
     textAlign: 'center',
     marginTop: 4,
   },

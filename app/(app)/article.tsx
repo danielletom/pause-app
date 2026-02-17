@@ -7,11 +7,10 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
 import Markdown from '@ronradtke/react-native-markdown-display';
-import AnimatedPressable from '@/components/AnimatedPressable';
-import { hapticLight } from '@/lib/haptics';
+import BackButton from '@/components/BackButton';
 import { apiRequest } from '@/lib/api';
 
 interface Article {
@@ -20,12 +19,13 @@ interface Article {
   bodyMarkdown: string | null;
   category: string | null;
   readTime: number | null;
+  durationMinutes?: number | null;
+  format?: string | null;
 }
 
 export default function ArticleScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, source } = useLocalSearchParams<{ id: string; source?: string }>();
   const { getToken } = useAuth();
-  const router = useRouter();
   const [article, setArticle] = useState<Article | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -33,7 +33,23 @@ export default function ArticleScreen() {
     (async () => {
       try {
         const token = await getToken();
-        const data = await apiRequest(`/api/articles/${id}`, token);
+        let data: any;
+
+        if (source === 'content') {
+          // Fetch from content API (lessons, guides, medication articles, recipes)
+          data = await apiRequest(`/api/content?id=${id}`, token);
+          // Map content fields to article shape
+          if (data) {
+            data = {
+              ...data,
+              readTime: data.durationMinutes || data.readTime || null,
+            };
+          }
+        } else {
+          // Default: fetch from articles API
+          data = await apiRequest(`/api/articles/${id}`, token);
+        }
+
         setArticle(data);
       } catch {
         // Non-critical
@@ -41,7 +57,7 @@ export default function ArticleScreen() {
         setLoading(false);
       }
     })();
-  }, [id, getToken]);
+  }, [id, source, getToken]);
 
   if (loading) {
     return (
@@ -57,7 +73,7 @@ export default function ArticleScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <Text style={{ color: '#a8a29e', fontSize: 15 }}>Article not found</Text>
+          <Text style={{ color: '#78716c', fontSize: 16 }}>Article not found</Text>
         </View>
       </SafeAreaView>
     );
@@ -67,13 +83,7 @@ export default function ArticleScreen() {
     <SafeAreaView style={styles.container}>
       {/* Sticky back header */}
       <View style={styles.stickyHeader}>
-        <AnimatedPressable
-          onPress={() => { hapticLight(); router.back(); }}
-          scaleDown={0.95}
-          style={styles.backButton}
-        >
-          <Text style={styles.backText}>← Back</Text>
-        </AnimatedPressable>
+        <BackButton />
         <Text style={styles.stickyTitle} numberOfLines={1}>
           {article.title}
         </Text>
@@ -101,7 +111,7 @@ export default function ArticleScreen() {
         {/* Header meta */}
         <View style={styles.header}>
           <Text style={styles.metaText}>
-            {article.category || 'General'}{article.readTime ? ` · ${article.readTime} min read` : ''}
+            {article.category || 'General'}{article.readTime ? ` · ${article.readTime} min read` : article.durationMinutes ? ` · ${article.durationMinutes} min` : ''}
           </Text>
           <Text style={styles.title}>{article.title}</Text>
         </View>
@@ -128,13 +138,13 @@ export default function ArticleScreen() {
 }
 
 const markdownStyles = StyleSheet.create({
-  body: { color: '#44403c', fontSize: 15, lineHeight: 24 },
+  body: { color: '#44403c', fontSize: 16, lineHeight: 24 },
   heading2: { color: '#1c1917', fontSize: 20, fontWeight: '700', marginTop: 24, marginBottom: 12 },
   heading3: { color: '#1c1917', fontSize: 17, fontWeight: '600', marginTop: 20, marginBottom: 10 },
   paragraph: { marginBottom: 14, lineHeight: 24 },
   strong: { fontWeight: '700', color: '#1c1917' },
   listItem: { marginBottom: 6 },
-  listUnorderedItemIcon: { color: '#a8a29e', fontSize: 8, marginTop: 8, marginRight: 8 },
+  listUnorderedItemIcon: { color: '#78716c', fontSize: 8, marginTop: 8, marginRight: 8 },
   bullet_list: { marginBottom: 14 },
 });
 
@@ -155,14 +165,11 @@ const styles = StyleSheet.create({
   },
   stickyTitle: {
     flex: 1,
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     color: '#1c1917',
     textAlign: 'center',
   },
-  backButton: { paddingVertical: 6, paddingHorizontal: 16 },
-  backText: { fontSize: 13, color: '#a8a29e', fontWeight: '500' },
-
   heroImage: {
     width: '100%',
     height: 160,
@@ -173,7 +180,7 @@ const styles = StyleSheet.create({
   },
 
   header: { marginBottom: 20, paddingHorizontal: 24 },
-  metaText: { fontSize: 12, color: '#a8a29e', marginBottom: 8 },
+  metaText: { fontSize: 14, color: '#78716c', marginBottom: 8 },
   title: { fontSize: 22, fontWeight: '700', color: '#1c1917', lineHeight: 30 },
 
   body: { paddingHorizontal: 24 },
@@ -187,11 +194,11 @@ const styles = StyleSheet.create({
     marginHorizontal: 24,
     marginTop: 20,
   },
-  ctaText: { fontSize: 12, color: '#78716c' },
+  ctaText: { fontSize: 16, color: '#78716c' },
 
   disclaimer: {
-    fontSize: 12,
-    color: '#d6d3d1',
+    fontSize: 14,
+    color: '#78716c',
     fontStyle: 'italic',
     marginTop: 24,
     marginHorizontal: 24,

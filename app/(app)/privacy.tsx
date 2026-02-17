@@ -1,8 +1,6 @@
 import React from 'react';
 import { View, Text, SafeAreaView, ScrollView, StyleSheet } from 'react-native';
-import { useRouter } from 'expo-router';
-import AnimatedPressable from '@/components/AnimatedPressable';
-import { hapticLight } from '@/lib/haptics';
+import BackButton from '@/components/BackButton';
 
 const SECTIONS = [
   {
@@ -40,8 +38,6 @@ const SECTIONS = [
 ];
 
 export default function PrivacyScreen() {
-  const router = useRouter();
-
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView
@@ -49,13 +45,7 @@ export default function PrivacyScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Back nav */}
-        <AnimatedPressable
-          onPress={() => { hapticLight(); router.back(); }}
-          scaleDown={0.95}
-          style={styles.backButton}
-        >
-          <Text style={styles.backText}>← Back</Text>
-        </AnimatedPressable>
+        <BackButton />
 
         {/* Title */}
         <View style={styles.header}>
@@ -101,12 +91,9 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fafaf9' },
   scrollContent: { paddingHorizontal: 24, paddingTop: 8, paddingBottom: 60 },
 
-  backButton: { paddingVertical: 12, alignSelf: 'flex-start' },
-  backText: { fontSize: 13, color: '#a8a29e', fontWeight: '500' },
-
   header: { marginBottom: 16 },
   title: { fontSize: 22, fontWeight: '700', color: '#1c1917', marginBottom: 4 },
-  subtitle: { fontSize: 13, color: '#a8a29e' },
+  subtitle: { fontSize: 14, color: '#78716c' },
 
   pipedaCard: {
     backgroundColor: '#fffbeb',
@@ -117,7 +104,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   pipedaText: {
-    fontSize: 13,
+    fontSize: 16,
     color: '#78716c',
     lineHeight: 20,
   },
@@ -125,13 +112,13 @@ const styles = StyleSheet.create({
   sectionsContainer: { gap: 20, marginBottom: 32 },
   section: {},
   sectionHeading: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
     color: '#1c1917',
     marginBottom: 6,
   },
   sectionBody: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#78716c',
     lineHeight: 22,
   },
@@ -147,9 +134,9 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   footerLabel: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '600',
-    color: '#a8a29e',
+    color: '#78716c',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 4,
@@ -161,13 +148,13 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   footerName: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#78716c',
     marginBottom: 2,
   },
   footerDetail: {
-    fontSize: 13,
-    color: '#a8a29e',
+    fontSize: 14,
+    color: '#78716c',
     lineHeight: 20,
   },
 });

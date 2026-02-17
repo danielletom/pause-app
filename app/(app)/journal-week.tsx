@@ -10,6 +10,7 @@ import {
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
 import AnimatedPressable from '@/components/AnimatedPressable';
+import BackButton from '@/components/BackButton';
 import { hapticLight } from '@/lib/haptics';
 import { apiRequest } from '@/lib/api';
 
@@ -156,13 +157,9 @@ export default function JournalWeekScreen() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.nav}>
-        <AnimatedPressable
-          onPress={() => { hapticLight(); router.back(); }}
-          scaleDown={0.9}
-          style={styles.navBack}
-        >
-          <Text style={styles.navBackText}>← Back</Text>
-        </AnimatedPressable>
+        <View style={styles.navBack}>
+          <BackButton />
+        </View>
         <Text style={styles.navTitle}>Past 7 days</Text>
         <View style={styles.navSpacer} />
       </View>
@@ -297,8 +294,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   navBack: { paddingVertical: 4 },
-  navBackText: { fontSize: 13, color: '#a8a29e' },
-  navTitle: { fontSize: 15, fontWeight: '600', color: '#1c1917' },
+  navTitle: { fontSize: 16, fontWeight: '600', color: '#1c1917' },
   navSpacer: { width: 50 },
 
   /* Error */
@@ -312,7 +308,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#fecaca',
   },
-  errorText: { fontSize: 13, color: '#991b1b', lineHeight: 18 },
+  errorText: { fontSize: 14, color: '#991b1b', lineHeight: 18 },
 
   /* Streak card */
   streakCard: {
@@ -330,7 +326,7 @@ const styles = StyleSheet.create({
   },
   streakFlame: { fontSize: 28 },
   streakCount: { fontSize: 20, fontWeight: '700', color: '#ffffff' },
-  streakLabel: { fontSize: 12, color: '#78716c', marginTop: 2 },
+  streakLabel: { fontSize: 14, color: '#78716c', marginTop: 2 },
 
   /* Day cards */
   dayCard: {
@@ -354,9 +350,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  dayName: { fontSize: 14, fontWeight: '600', color: '#1c1917' },
+  dayName: { fontSize: 16, fontWeight: '600', color: '#1c1917' },
   dayNameToday: { color: '#1c1917' },
-  dayDate: { fontSize: 12, color: '#a8a29e', marginTop: 1 },
+  dayDate: { fontSize: 14, color: '#78716c', marginTop: 1 },
 
   /* Completion dots */
   completionDots: {
@@ -368,7 +364,7 @@ const styles = StyleSheet.create({
   dotAm: { backgroundColor: '#fbbf24' },
   dotPm: { backgroundColor: '#818cf8' },
   dotEmpty: { backgroundColor: '#e7e5e4' },
-  dotLabel: { fontSize: 9, color: '#a8a29e', fontWeight: '500' },
+  dotLabel: { fontSize: 14, color: '#78716c', fontWeight: '500' },
 
   /* Day body */
   dayBody: {
@@ -389,8 +385,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
   },
-  dayMetaEmoji: { fontSize: 12 },
-  dayMetaText: { fontSize: 11, color: '#78716c', fontWeight: '500' },
+  dayMetaEmoji: { fontSize: 14 },
+  dayMetaText: { fontSize: 14, color: '#78716c', fontWeight: '500' },
 
   /* Empty day */
   emptyDay: {
@@ -399,7 +395,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#f5f5f4',
   },
-  emptyDayText: { fontSize: 12, color: '#d6d3d1' },
+  emptyDayText: { fontSize: 14, color: '#78716c' },
 
   /* Calendar link */
   calendarLink: {
@@ -426,7 +422,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   calendarLinkIconText: { fontSize: 14, color: '#78716c' },
-  calendarLinkTitle: { fontSize: 12, fontWeight: '600', color: '#1c1917' },
-  calendarLinkDesc: { fontSize: 11, color: '#a8a29e', marginTop: 1 },
-  calendarLinkArrow: { fontSize: 18, color: '#d6d3d1' },
+  calendarLinkTitle: { fontSize: 16, fontWeight: '600', color: '#1c1917' },
+  calendarLinkDesc: { fontSize: 14, color: '#78716c', marginTop: 1 },
+  calendarLinkArrow: { fontSize: 18, color: '#78716c' },
 });

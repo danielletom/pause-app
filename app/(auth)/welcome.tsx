@@ -114,8 +114,8 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   tagline: {
-    fontSize: 15,
-    color: '#a8a29e',
+    fontSize: 16,
+    color: '#78716c',
     textAlign: 'center',
     lineHeight: 22,
     fontWeight: '300',
@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: '#dc2626',
-    fontSize: 13,
+    fontSize: 14,
     textAlign: 'center',
     lineHeight: 18,
   },
@@ -186,11 +186,11 @@ const styles = StyleSheet.create({
   },
   fallbackDot: {
     fontSize: 14,
-    color: '#d6d3d1',
+    color: '#78716c',
   },
   privacy: {
-    fontSize: 12,
-    color: '#d6d3d1',
+    fontSize: 14,
+    color: '#78716c',
     textAlign: 'center',
     marginTop: 20,
   },

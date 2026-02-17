@@ -72,6 +72,8 @@ export default function StageScreen() {
                 styles.option,
                 selected === stage.id && styles.optionSelected,
               ]}
+              accessibilityRole="radio"
+              accessibilityLabel={stage.label}
             >
               <Text style={styles.optionLabel}>{stage.label}</Text>
               <Text style={styles.optionDesc}>{stage.desc}</Text>
@@ -107,7 +109,7 @@ const styles = StyleSheet.create({
   },
   subheading: {
     fontSize: 14,
-    color: '#a8a29e',
+    color: '#78716c',
     marginBottom: 24,
     lineHeight: 20,
   },
@@ -126,14 +128,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#fafaf9',
   },
   optionLabel: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
     color: '#1c1917',
     marginBottom: 2,
   },
   optionDesc: {
-    fontSize: 13,
-    color: '#a8a29e',
+    fontSize: 14,
+    color: '#78716c',
   },
   footer: {
     paddingHorizontal: 24,

@@ -97,6 +97,8 @@ export default function GoalsScreen() {
                 styles.option,
                 selected.has(goal.id) && styles.optionSelected,
               ]}
+              accessibilityRole="checkbox"
+              accessibilityLabel={goal.label}
             >
               <Text style={styles.optionIcon}>{goal.icon}</Text>
               <View style={styles.optionContent}>
@@ -145,7 +147,7 @@ const styles = StyleSheet.create({
   },
   subheading: {
     fontSize: 14,
-    color: '#a8a29e',
+    color: '#78716c',
     marginBottom: 22,
     lineHeight: 20,
   },
@@ -181,8 +183,8 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   optionDesc: {
-    fontSize: 12,
-    color: '#a8a29e',
+    fontSize: 14,
+    color: '#78716c',
   },
   checkbox: {
     width: 22,

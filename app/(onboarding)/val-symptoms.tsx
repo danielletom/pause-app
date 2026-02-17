@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
   },
   subheading: {
     fontSize: 14,
-    color: '#a8a29e',
+    color: '#78716c',
     textAlign: 'center',
     lineHeight: 22,
     marginBottom: 28,
@@ -145,21 +145,21 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   statPercent: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
   },
   statContent: {
     flex: 1,
   },
   statTitle: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '500',
     color: '#1c1917',
     marginBottom: 2,
   },
   statDesc: {
-    fontSize: 12,
-    color: '#a8a29e',
+    fontSize: 14,
+    color: '#78716c',
   },
   footer: {
     paddingHorizontal: 24,

@@ -131,7 +131,7 @@ export default function NotifSetupScreen() {
             <TextInput
               style={styles.phoneInput}
               placeholder="(555) 555-1234"
-              placeholderTextColor="#a8a29e"
+              placeholderTextColor="#78716c"
               value={notifs.phone}
               onChangeText={setPhone}
               keyboardType="phone-pad"
@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
   },
   subheading: {
     fontSize: 14,
-    color: '#a8a29e',
+    color: '#78716c',
     marginBottom: 24,
     lineHeight: 20,
   },
@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     width: 24,
     textAlign: 'center',
-    color: '#a8a29e',
+    color: '#78716c',
   },
   notifContent: {
     flex: 1,
@@ -237,13 +237,13 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   premBadgeText: {
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: '600',
-    color: '#d97706',
+    color: '#b45309',
   },
   notifDesc: {
-    fontSize: 12,
-    color: '#a8a29e',
+    fontSize: 14,
+    color: '#78716c',
     marginTop: 2,
   },
   phoneSection: {
@@ -253,7 +253,7 @@ const styles = StyleSheet.create({
     padding: 14,
   },
   phoneLabel: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '500',
     color: '#44403c',
     marginBottom: 8,
@@ -265,14 +265,14 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    fontSize: 15,
+    fontSize: 16,
     color: '#1c1917',
   },
   timeSection: {
     marginTop: 24,
   },
   timeLabel: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '500',
     color: '#44403c',
     marginBottom: 10,
@@ -291,7 +291,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#1c1917',
   },
   timePillText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '500',
     color: '#78716c',
   },

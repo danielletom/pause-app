@@ -184,8 +184,11 @@ export default function HomeScreen() {
   const [weekLogStatus, setWeekLogStatus] = useState<Record<string, { am: boolean; pm: boolean }>>({});
   const [recommendation, setRecommendation] = useState<string | null>(null);
   const [serverReadiness, setServerReadiness] = useState<number | null>(null);
+  const [readinessComponents, setReadinessComponents] = useState<Record<string, number> | null>(null);
   const [insightNudge, setInsightNudge] = useState<{ title: string; body: string } | null>(null);
   const [narrative, setNarrative] = useState<string | null>(null);
+  const [topCorrelations, setTopCorrelations] = useState<{ factor: string; symptom: string; direction: string; effectSizePct: number; humanLabel: string }[]>([]);
+  const [weekTrends, setWeekTrends] = useState<Record<string, { thisWeek: number; lastWeek: number }>>({});
   const [periodEnabled, setPeriodEnabled] = useState(false);
   const [periodCycle, setPeriodCycle] = useState<any>(null);
   const hasLoadedOnce = useRef(false);
@@ -257,8 +260,48 @@ export default function HomeScreen() {
       if (homeData) {
         if (homeData.recommendation) setRecommendation(homeData.recommendation);
         if (homeData.readiness != null) setServerReadiness(homeData.readiness);
+        if (homeData.readinessComponents) setReadinessComponents(homeData.readinessComponents);
         if (homeData.insightNudge) setInsightNudge(homeData.insightNudge);
         if (homeData.narrative) setNarrative(homeData.narrative);
+        if (homeData.topCorrelations) setTopCorrelations(homeData.topCorrelations);
+      }
+
+      // Compute weekly symptom trends from 28-day logs
+      if (Array.isArray(recentLogs) && recentLogs.length > 0) {
+        const now = new Date();
+        const thisWeekStart = new Date(now);
+        thisWeekStart.setDate(now.getDate() - 7);
+        const lastWeekStart = new Date(now);
+        lastWeekStart.setDate(now.getDate() - 14);
+
+        const thisWeekStr = toDateStr(thisWeekStart);
+        const lastWeekStr = toDateStr(lastWeekStart);
+
+        const thisWeekSymptoms: Record<string, number[]> = {};
+        const lastWeekSymptoms: Record<string, number[]> = {};
+
+        for (const log of recentLogs) {
+          if (!log.symptomsJson || typeof log.symptomsJson !== 'object') continue;
+          const bucket = log.date >= thisWeekStr ? thisWeekSymptoms : (log.date >= lastWeekStr ? lastWeekSymptoms : null);
+          if (!bucket) continue;
+          for (const [k, v] of Object.entries(log.symptomsJson)) {
+            const sev = typeof v === 'number' ? v : (typeof v === 'object' && v !== null ? ((v as any).severity ?? 1) : 1);
+            if (!bucket[k]) bucket[k] = [];
+            bucket[k].push(sev);
+          }
+        }
+
+        const trends: Record<string, { thisWeek: number; lastWeek: number }> = {};
+        const allKeys = new Set([...Object.keys(thisWeekSymptoms), ...Object.keys(lastWeekSymptoms)]);
+        for (const k of allKeys) {
+          const tw = thisWeekSymptoms[k] || [];
+          const lw = lastWeekSymptoms[k] || [];
+          trends[k] = {
+            thisWeek: tw.length > 0 ? tw.reduce((a, b) => a + b, 0) / tw.length : 0,
+            lastWeek: lw.length > 0 ? lw.reduce((a, b) => a + b, 0) / lw.length : 0,
+          };
+        }
+        setWeekTrends(trends);
       }
 
       // Build week log status for AM/PM dots
@@ -327,16 +370,33 @@ export default function HomeScreen() {
       .sort(([, a], [, b]) => b - a)
       .slice(0, 4);
     const colors = ['#fbbf24', '#818cf8', '#34d399', '#fda4af'];
-    return entries.map(([name, sev], i) => ({
-      name: name
-        .replace(/_/g, ' ')                           // snake_case → spaces
-        .replace(/([A-Z])/g, ' $1')                   // camelCase → spaces
-        .replace(/\b\w/g, (s) => s.toUpperCase())     // capitalize each word
-        .trim(),
-      sev: Math.min(sev, 3),                          // severity is already 1-3
-      color: colors[i % colors.length],
-    }));
-  }, [dayLogs]);
+    return entries.map(([name, sev], i) => {
+      const trend = weekTrends[name];
+      let weekChange: string | null = null;
+      if (trend && trend.lastWeek > 0) {
+        const pctChange = Math.round(((trend.thisWeek - trend.lastWeek) / trend.lastWeek) * 100);
+        if (pctChange <= -10) weekChange = `↓ ${Math.abs(pctChange)}% this week`;
+        else if (pctChange >= 10) weekChange = `↑ ${pctChange}% this week`;
+        else weekChange = '— same this week';
+      } else if (trend && trend.thisWeek > 0) {
+        weekChange = '↑ new this week';
+      } else {
+        weekChange = '— steady this week';
+      }
+      return {
+        name: name
+          .replace(/_/g, ' ')
+          .replace(/([A-Z])/g, ' $1')
+          .replace(/\b\w/g, (s) => s.toUpperCase())
+          .trim(),
+        rawName: name,
+        sev: Math.min(sev, 3),
+        color: colors[i % colors.length],
+        weekChange,
+        improving: trend ? trend.thisWeek < trend.lastWeek : false,
+      };
+    });
+  }, [dayLogs, weekTrends]);
 
   // Sleep data from latest entry that has it
   const sleepLog = useMemo(() => dayLogs.find((l) => l.sleepHours != null), [dayLogs]);
@@ -605,7 +665,7 @@ export default function HomeScreen() {
             >
               <View style={styles.journalCardRow}>
                 <View style={styles.journalMorningIcon}>
-                  <Text style={{ fontSize: 18, color: '#d97706' }}>☀</Text>
+                  <Text style={{ fontSize: 18, color: '#b45309' }}>☀</Text>
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.journalCardTitle}>
@@ -632,7 +692,7 @@ export default function HomeScreen() {
                   <Text style={{ fontSize: 18, color: '#6366f1' }}>☽</Text>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.journalCardTitle, !eveningDone && isToday && hour < 19 && { color: '#78716c' }]}>
+                  <Text style={[styles.journalCardTitle, !eveningDone && isToday && hour < 19 && { color: '#57534e' }]}>
                     {eveningDone ? 'Evening ✓' : 'Evening reflection'}
                   </Text>
                   <Text style={styles.journalCardDesc}>
@@ -687,7 +747,7 @@ export default function HomeScreen() {
                           styles.medRowIcon,
                           med.type === 'supplement' ? { backgroundColor: '#fef3c7' } : { backgroundColor: '#1c1917' },
                         ]}>
-                          <Text style={{ fontSize: 12, color: med.type === 'supplement' ? '#d97706' : '#fff' }}>
+                          <Text style={{ fontSize: 12, color: med.type === 'supplement' ? '#b45309' : '#fff' }}>
                             {med.type === 'supplement' ? '⬡' : '◎'}
                           </Text>
                         </View>
@@ -744,32 +804,45 @@ export default function HomeScreen() {
                     <Text style={styles.seeAll}>See why →</Text>
                   </AnimatedPressable>
                 </View>
+                {/* Weekly narrative summary — from AI or smart fallback */}
+                {narrative && (
+                  <View style={styles.narrativeCard}>
+                    <Text style={{ fontSize: 16, color: '#059669', marginTop: 2 }}>↓</Text>
+                    <Text style={styles.narrativeText}>{narrative}</Text>
+                  </View>
+                )}
                 {symptomTrends.length > 0 ? (
                   <View style={styles.trendGrid}>
-                    {symptomTrends.map((s) => (
-                      <AnimatedPressable
-                        key={s.name}
-                        onPress={() => {
-                          hapticLight();
-                          router.navigate({ pathname: '/(app)/insights', params: { symptom: s.name } } as any);
-                        }}
-                        scaleDown={0.97}
-                        style={styles.trendCard}
-                      >
-                        <View style={styles.trendBarsRow}>
-                          {[1, 2, 3].map((i) => (
-                            <View
-                              key={i}
-                              style={[
-                                styles.trendBar,
-                                { backgroundColor: i <= s.sev ? s.color : '#e7e5e4' },
-                              ]}
-                            />
-                          ))}
-                          <Text style={styles.trendName}>{s.name}</Text>
-                        </View>
-                      </AnimatedPressable>
-                    ))}
+                    {symptomTrends.map((s) => {
+                      const changeColor = s.weekChange?.startsWith('↓') ? '#059669' : s.weekChange?.startsWith('↑') ? '#dc2626' : '#78716c';
+                      return (
+                        <AnimatedPressable
+                          key={s.name}
+                          onPress={() => {
+                            hapticLight();
+                            router.push({ pathname: '/(app)/insights', params: { symptom: s.name } } as any);
+                          }}
+                          scaleDown={0.97}
+                          style={styles.trendCard}
+                        >
+                          <View style={styles.trendBarsRow}>
+                            {[1, 2, 3].map((i) => (
+                              <View
+                                key={i}
+                                style={[
+                                  styles.trendBar,
+                                  { backgroundColor: i <= s.sev ? s.color : '#e7e5e4' },
+                                ]}
+                              />
+                            ))}
+                            <Text style={styles.trendName}>{s.name}</Text>
+                          </View>
+                          {s.weekChange && (
+                            <Text style={[styles.trendWeekChange, { color: changeColor }]}>{s.weekChange}</Text>
+                          )}
+                        </AnimatedPressable>
+                      );
+                    })}
                   </View>
                 ) : (
                   <View style={styles.card}>
@@ -779,7 +852,7 @@ export default function HomeScreen() {
                   </View>
                 )}
 
-                {/* Sleep score row — tappable to edit */}
+                {/* Sleep Score card — shows score from readiness components */}
                 {sleepLog?.sleepHours && (
                   <AnimatedPressable
                     onPress={() => {
@@ -787,39 +860,42 @@ export default function HomeScreen() {
                       router.push({ pathname: '/(app)/quick-log', params: { date: selectedDate, mode: 'morning' } });
                     }}
                     scaleDown={0.97}
-                    style={[styles.card, { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 8 }]}
+                    style={[styles.card, { marginTop: 8 }]}
                   >
-                    <View style={styles.trendBarsRow}>
-                      {[1, 2, 3].map((i) => (
-                        <View
-                          key={i}
-                          style={[
-                            styles.trendBar,
-                            { backgroundColor: i <= Math.ceil((sleepLog.sleepHours ?? 0) / 3) ? '#818cf8' : '#e7e5e4' },
-                          ]}
-                        />
-                      ))}
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.trendName}>
-                        Sleep{' '}
-                        <Text style={{ color: '#818cf8', fontWeight: '700' }}>
-                          {sleepLog.sleepHours}h
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                      <View style={styles.trendBarsRow}>
+                        {[1, 2, 3].map((i) => (
+                          <View
+                            key={i}
+                            style={[
+                              styles.trendBar,
+                              { backgroundColor: i <= Math.ceil((sleepLog.sleepHours ?? 0) / 3) ? '#818cf8' : '#e7e5e4' },
+                            ]}
+                          />
+                        ))}
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.trendName}>
+                          Sleep Score{' '}
+                          <Text style={{ color: '#4f46e5', fontWeight: '700' }}>
+                            {readinessComponents?.sleep ? Math.round(readinessComponents.sleep) : sleepLog.sleepHours ? Math.round(Math.min(100, (sleepLog.sleepHours / 9) * 100)) : '—'}
+                          </Text>
                         </Text>
-                      </Text>
-                      <Text style={styles.trendSubtext}>
-                        {sleepLog.disruptions ? `${sleepLog.disruptions} disruption${sleepLog.disruptions !== 1 ? 's' : ''}` : 'No disruptions logged'}
-                        {sleepLog.sleepQuality ? ` · ${sleepLog.sleepQuality}` : ''}
-                      </Text>
+                        <Text style={styles.trendSubtext}>
+                          {sleepLog.sleepHours}h
+                          {sleepLog.disruptions ? ` · ${sleepLog.disruptions} disruption${sleepLog.disruptions !== 1 ? 's' : ''}` : ''}
+                          {sleepLog.sleepQuality ? ` · ${sleepLog.sleepQuality}` : ''}
+                        </Text>
+                      </View>
+                      <Text style={{ fontSize: 14, color: '#78716c' }}>Edit →</Text>
                     </View>
-                    <Text style={{ fontSize: 11, color: '#a8a29e' }}>Edit →</Text>
                   </AnimatedPressable>
                 )}
               </View>
             )}
 
-            {/* Insight nudge — pattern detection (from AI or fallback) */}
-            {(insightNudge || (hasLog && symptomTrends.length > 0)) && (
+            {/* Insight nudge — pattern detection (from correlations or AI fallback) */}
+            {(insightNudge || topCorrelations.length > 0 || (hasLog && symptomTrends.length > 0)) && (
               <AnimatedPressable
                 onPress={() => { hapticLight(); router.navigate('/(app)/insights'); }}
                 scaleDown={0.98}
@@ -829,16 +905,20 @@ export default function HomeScreen() {
                 <View style={{ flex: 1 }}>
                   <Text style={styles.insightTitle}>
                     {insightNudge?.title || (
-                      streak >= 14
-                        ? `Overall ${symptomTrends.length > 0 ? 'improving' : 'stable'}. ${symptomTrends[0]?.name || 'Your patterns'} trending.`
-                        : 'We spotted a pattern'
+                      topCorrelations.length > 0
+                        ? 'We spotted a pattern'
+                        : streak >= 14
+                          ? `Overall ${symptomTrends.some((s) => s.improving) ? 'improving' : 'stable'}. ${symptomTrends[0]?.name || 'Your patterns'} trending.`
+                          : 'Building your picture'
                     )}
                   </Text>
                   <Text style={styles.insightDesc}>
                     {insightNudge?.body || (
-                      streak >= 14
-                        ? `Your ${symptomTrends[0]?.name?.toLowerCase() || 'top symptom'} tends to worsen after poor sleep.`
-                        : 'Keep logging daily so we can identify triggers and trends in your symptoms.'
+                      topCorrelations.length > 0
+                        ? topCorrelations[0].humanLabel + (topCorrelations.length > 1 ? ` We found ${topCorrelations.length} patterns so far.` : '')
+                        : streak >= 7
+                          ? `${streak}-day streak! Patterns start emerging after 14 days of data.`
+                          : 'Keep logging daily so we can identify triggers and trends in your symptoms.'
                     )}
                   </Text>
                   <Text style={[styles.seeAll, { marginTop: 6 }]}>See why →</Text>
@@ -974,7 +1054,7 @@ export default function HomeScreen() {
                             <Text style={styles.summaryEmoji}>🌙</Text>
                             <Text style={[styles.summaryTitle, { fontWeight: '700' }]}>Evening reflection</Text>
                           </View>
-                          <Text style={{ fontSize: 12, color: '#78716c', marginTop: 4 }}>
+                          <Text style={{ fontSize: 14, color: '#78716c', marginTop: 4 }}>
                             Ready when you are — 4 steps · under 2 min
                           </Text>
                         </AnimatedPressable>
@@ -1036,7 +1116,7 @@ export default function HomeScreen() {
                       </View>
                     </View>
                     <View style={styles.tonightPlayBtnLight}>
-                      <Text style={{ fontSize: 10, color: '#a8a29e' }}>▶</Text>
+                      <Text style={{ fontSize: 10, color: '#78716c' }}>▶</Text>
                     </View>
                   </AnimatedPressable>
 
@@ -1063,7 +1143,7 @@ export default function HomeScreen() {
 
                   {/* Tomorrow's forecast insight */}
                   <View style={styles.tonightInsight}>
-                    <Text style={{ fontSize: 12, color: '#059669', marginTop: 2 }}>💡</Text>
+                    <Text style={{ fontSize: 14, color: '#047857', marginTop: 2 }}>💡</Text>
                     <Text style={styles.tonightInsightText}>
                       <Text style={{ fontWeight: '500', color: '#44403c' }}>Tomorrow's forecast: </Text>
                       Sleep 7+ hours tonight and your readiness could hit 78. Your body responds well to early wind-downs.
@@ -1082,13 +1162,13 @@ export default function HomeScreen() {
               >
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                   <View style={styles.wellnessEntryIcon}>
-                    <Text style={{ fontSize: 14, fontWeight: '700', color: '#d97706' }}>✦</Text>
+                    <Text style={{ fontSize: 14, fontWeight: '700', color: '#b45309' }}>✦</Text>
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.wellnessEntryTitle}>Wellness Centre</Text>
                     <Text style={styles.wellnessEntrySubtitle}>Your program, meditations, podcasts & guides</Text>
                   </View>
-                  <Text style={{ fontSize: 18, color: '#d6d3d1' }}>›</Text>
+                  <Text style={{ fontSize: 18, color: '#78716c' }}>›</Text>
                 </View>
                 <View style={styles.wellnessProgressBg}>
                   <View style={[styles.wellnessProgressFill, { width: '18%' }]} />
@@ -1283,7 +1363,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     marginBottom: 20,
   },
-  dateText: { fontSize: 12, color: '#a8a29e', fontWeight: '300', marginBottom: 2 },
+  dateText: { fontSize: 14, color: '#78716c', fontWeight: '300', marginBottom: 2 },
   greeting: { fontSize: 24, fontWeight: '700', color: '#1c1917' },
   avatar: {
     width: 40,
@@ -1312,8 +1392,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#1c1917',
   },
   weekStripDay: {
-    fontSize: 11,
-    color: '#a8a29e',
+    fontSize: 14,
+    color: '#78716c',
     fontWeight: '400',
     marginBottom: 3,
   },
@@ -1321,7 +1401,7 @@ const styles = StyleSheet.create({
     color: '#78716c',
   },
   weekStripNum: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
     color: '#1c1917',
     marginBottom: 4,
@@ -1358,8 +1438,8 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   weekLegendText: {
-    fontSize: 10,
-    color: '#a8a29e',
+    fontSize: 14,
+    color: '#78716c',
   },
 
   // Readiness score
@@ -1370,7 +1450,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   readinessLabel: {
-    fontSize: 10,
+    fontSize: 12,
     color: '#78716c',
     letterSpacing: 1,
     fontWeight: '300',
@@ -1383,7 +1463,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   readinessHint: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#78716c',
     marginTop: 4,
   },
@@ -1410,7 +1490,7 @@ const styles = StyleSheet.create({
     color: '#ffffff',
   },
   readinessRingLabel: {
-    fontSize: 10,
+    fontSize: 12,
     color: '#78716c',
     marginTop: 4,
   },
@@ -1421,7 +1501,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   readinessActivity: {
-    fontSize: 13,
+    fontSize: 16,
     fontWeight: '600',
   },
   readinessNarrative: {
@@ -1441,11 +1521,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   readinessStatText: {
-    fontSize: 11,
+    fontSize: 12,
+    color: '#78716c',
+  },
+  readinessStatDot: {
+    fontSize: 12,
     color: '#78716c',
   },
   readinessStatCheck: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#34d399',
   },
 
@@ -1480,13 +1564,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   journalCardTitle: {
-    fontSize: 13,
+    fontSize: 16,
     fontWeight: '600',
     color: '#1c1917',
   },
   journalCardDesc: {
-    fontSize: 11,
-    color: '#a8a29e',
+    fontSize: 14,
+    color: '#78716c',
     marginTop: 1,
   },
   nowBadge: {
@@ -1496,7 +1580,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
   },
   nowBadgeText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
     color: '#1c1917',
   },
@@ -1523,9 +1607,9 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   journalStreakText: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '600',
-    color: '#d97706',
+    color: '#b45309',
   },
 
   // Today's meds
@@ -1555,17 +1639,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   medRowName: {
-    fontSize: 12,
+    fontSize: 16,
     fontWeight: '500',
     color: '#1c1917',
   },
   medRowNameTaken: {
-    color: '#a8a29e',
+    color: '#78716c',
     textDecorationLine: 'line-through',
   },
   medRowDose: {
-    fontSize: 11,
-    color: '#a8a29e',
+    fontSize: 14,
+    color: '#78716c',
     marginTop: 1,
   },
   medRowCheck: {
@@ -1588,8 +1672,8 @@ const styles = StyleSheet.create({
     borderTopColor: '#f5f5f4',
   },
   medsSummaryText: {
-    fontSize: 11,
-    color: '#a8a29e',
+    fontSize: 14,
+    color: '#78716c',
   },
 
   // SOS + Check-in row
@@ -1619,12 +1703,12 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   checkinTitle: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '600',
     color: '#ffffff',
   },
   checkinSub: {
-    fontSize: 11,
+    fontSize: 14,
     color: '#78716c',
     marginTop: 2,
   },
@@ -1644,8 +1728,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  sosTitle: { fontSize: 12, fontWeight: '600', color: '#115e59' },
-  sosSubtitle: { fontSize: 11, color: '#5eead4' },
+  sosTitle: { fontSize: 14, fontWeight: '600', color: '#115e59' },
+  sosSubtitle: { fontSize: 14, color: '#5eead4' },
 
   // Sections
   section: { marginBottom: 20 },
@@ -1655,8 +1739,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
-  sectionTitle: { fontSize: 14, fontWeight: '600', color: '#1c1917', marginBottom: 2 },
-  seeAll: { fontSize: 12, color: '#a8a29e', fontWeight: '300' },
+  sectionTitle: { fontSize: 16, fontWeight: '600', color: '#1c1917', marginBottom: 2 },
+  seeAll: { fontSize: 14, color: '#78716c', fontWeight: '300' },
 
   // Trend grid
   trendGrid: {
@@ -1688,15 +1772,39 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   trendName: {
-    fontSize: 12,
+    fontSize: 16,
     fontWeight: '500',
     color: '#44403c',
     marginLeft: 6,
   },
   trendSubtext: {
-    fontSize: 11,
-    color: '#a8a29e',
+    fontSize: 14,
+    color: '#78716c',
     marginTop: 1,
+  },
+  trendWeekChange: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginTop: 4,
+  },
+
+  // Narrative card
+  narrativeCard: {
+    backgroundColor: '#ecfdf5',
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#d1fae5',
+    marginBottom: 8,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+  },
+  narrativeText: {
+    fontSize: 14,
+    color: '#1c1917',
+    lineHeight: 20,
+    flex: 1,
   },
 
   // Generic card
@@ -1710,7 +1818,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 1,
   },
-  cardHintText: { fontSize: 13, color: '#a8a29e', textAlign: 'center' },
+  cardHintText: { fontSize: 16, color: '#78716c', textAlign: 'center' },
 
   // Insight nudge
   insightCard: {
@@ -1724,9 +1832,9 @@ const styles = StyleSheet.create({
     gap: 12,
     marginBottom: 16,
   },
-  insightStar: { fontSize: 18, color: '#f59e0b' },
-  insightTitle: { fontSize: 14, fontWeight: '500', color: '#44403c' },
-  insightDesc: { fontSize: 12, color: '#78716c', marginTop: 4, lineHeight: 18 },
+  insightStar: { fontSize: 18, color: '#b45309' },
+  insightTitle: { fontSize: 16, fontWeight: '500', color: '#44403c' },
+  insightDesc: { fontSize: 14, color: '#78716c', marginTop: 4, lineHeight: 20 },
 
   // Plan icons
   planIcon: {
@@ -1736,8 +1844,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  planTitle: { fontSize: 13, fontWeight: '500', color: '#44403c' },
-  planSubtitle: { fontSize: 11, color: '#a8a29e', marginTop: 1 },
+  planTitle: { fontSize: 16, fontWeight: '500', color: '#44403c' },
+  planSubtitle: { fontSize: 14, color: '#78716c', marginTop: 1 },
   planCheckbox: {
     width: 20,
     height: 20,
@@ -1775,14 +1883,14 @@ const styles = StyleSheet.create({
   },
   emptyIcon: { marginBottom: 14 },
   emptyTitle: { fontSize: 18, fontWeight: '700', color: '#1c1917', marginBottom: 6 },
-  emptyDesc: { fontSize: 13, color: '#78716c', textAlign: 'center', lineHeight: 20, marginBottom: 20 },
+  emptyDesc: { fontSize: 16, color: '#78716c', textAlign: 'center', lineHeight: 22, marginBottom: 20 },
   emptyButton: {
     backgroundColor: '#1c1917',
     borderRadius: 16,
     paddingVertical: 14,
     paddingHorizontal: 32,
   },
-  emptyButtonText: { color: '#ffffff', fontSize: 15, fontWeight: '600' },
+  emptyButtonText: { color: '#ffffff', fontSize: 16, fontWeight: '600' },
 
   // Summary cards
   summaryCard: {
@@ -1805,8 +1913,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   summaryEmoji: { fontSize: 16 },
-  summaryTitle: { fontSize: 14, fontWeight: '600', color: '#1c1917', flex: 1 },
-  summaryTime: { fontSize: 11, color: '#a8a29e' },
+  summaryTitle: { fontSize: 16, fontWeight: '600', color: '#1c1917', flex: 1 },
+  summaryTime: { fontSize: 14, color: '#78716c' },
   summaryChips: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -1819,9 +1927,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
   },
-  summaryChipText: { fontSize: 11, color: '#78716c' },
+  summaryChipText: { fontSize: 14, color: '#78716c' },
   summaryGratitude: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#78716c',
     marginTop: 8,
     fontStyle: 'italic',
@@ -1848,8 +1956,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  learnMeta: { fontSize: 11, color: '#a8a29e', marginBottom: 4 },
-  learnTitle: { fontSize: 12, fontWeight: '500', color: '#44403c', lineHeight: 17 },
+  learnMeta: { fontSize: 14, color: '#78716c', marginBottom: 4 },
+  learnTitle: { fontSize: 16, fontWeight: '500', color: '#44403c', lineHeight: 22 },
 
   // Meds empty state
   medsEmptyCard: {
@@ -1861,18 +1969,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   medsEmptyIcon: { fontSize: 28, marginBottom: 8 },
-  medsEmptyTitle: { fontSize: 14, fontWeight: '600', color: '#1c1917', marginBottom: 4 },
-  medsEmptyDesc: { fontSize: 12, color: '#a8a29e', textAlign: 'center', marginBottom: 14, lineHeight: 18 },
+  medsEmptyTitle: { fontSize: 16, fontWeight: '600', color: '#1c1917', marginBottom: 4 },
+  medsEmptyDesc: { fontSize: 14, color: '#78716c', textAlign: 'center', marginBottom: 14, lineHeight: 20 },
   medsEmptyButton: {
     backgroundColor: '#f5f5f4',
     borderRadius: 12,
     paddingHorizontal: 20,
     paddingVertical: 10,
   },
-  medsEmptyButtonText: { fontSize: 13, fontWeight: '600', color: '#1c1917' },
+  medsEmptyButtonText: { fontSize: 16, fontWeight: '600', color: '#1c1917' },
 
   // Tonight's Plan — enhanced
-  tonightWeekLabel: { fontSize: 11, color: '#d97706', fontWeight: '500' },
+  tonightWeekLabel: { fontSize: 14, color: '#b45309', fontWeight: '500' },
   programLessonCard: {
     backgroundColor: '#fffbeb',
     borderRadius: 16,
@@ -1894,9 +2002,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   programLessonIconText: { fontSize: 14, fontWeight: '700', color: '#ffffff' },
-  programLessonTitle: { fontSize: 12, fontWeight: '500', color: '#1c1917' },
-  programLessonDur: { fontSize: 11, color: '#a8a29e', marginTop: 1 },
-  programLessonWeek: { fontSize: 11, color: '#d97706', marginTop: 2 },
+  programLessonTitle: { fontSize: 16, fontWeight: '500', color: '#1c1917' },
+  programLessonDur: { fontSize: 14, color: '#78716c', marginTop: 1 },
+  programLessonWeek: { fontSize: 14, color: '#b45309', marginTop: 2 },
   tonightPlayBtn: {
     width: 32,
     height: 32,
@@ -1926,7 +2034,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
-  tonightTagText: { fontSize: 10, color: '#a8a29e' },
+  tonightTagText: { fontSize: 14, color: '#78716c' },
   tonightInsight: {
     backgroundColor: '#f5f5f4',
     borderRadius: 16,
@@ -1936,9 +2044,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   tonightInsightText: {
-    fontSize: 11,
+    fontSize: 14,
     color: '#78716c',
-    lineHeight: 16,
+    lineHeight: 20,
     flex: 1,
   },
 
@@ -1964,8 +2072,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  wellnessEntryTitle: { fontSize: 14, fontWeight: '500', color: '#1c1917' },
-  wellnessEntrySubtitle: { fontSize: 11, color: '#a8a29e', marginTop: 1 },
+  wellnessEntryTitle: { fontSize: 16, fontWeight: '500', color: '#1c1917' },
+  wellnessEntrySubtitle: { fontSize: 14, color: '#78716c', marginTop: 1 },
   wellnessProgressBg: {
     height: 4,
     backgroundColor: '#f5f5f4',
@@ -1977,7 +2085,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fbbf24',
     borderRadius: 2,
   },
-  wellnessProgressText: { fontSize: 10, color: '#d6d3d1', marginTop: 4 },
+  wellnessProgressText: { fontSize: 14, color: '#78716c', marginTop: 4 },
 
   // Period widget — Active (rose, promoted)
   periodWidgetActive: {
@@ -2002,14 +2110,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   periodWidgetActiveTitle: { fontSize: 14, fontWeight: '600', color: '#1c1917' },
-  periodWidgetActiveSub: { fontSize: 11, color: '#a8a29e', marginTop: 1 },
+  periodWidgetActiveSub: { fontSize: 14, color: '#78716c', marginTop: 1 },
   periodWidgetLogBtn: {
     backgroundColor: '#f43f5e',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 8,
   },
-  periodWidgetLogBtnText: { fontSize: 12, fontWeight: '600', color: '#ffffff' },
+  periodWidgetLogBtnText: { fontSize: 14, fontWeight: '600', color: '#ffffff' },
 
   // Period widget — Waiting (has data)
   periodWidgetWaiting: {
@@ -2034,7 +2142,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   periodWidgetWaitingTitle: { fontSize: 14, fontWeight: '500', color: '#1c1917' },
-  periodWidgetWaitingSub: { fontSize: 11, color: '#a8a29e', marginTop: 1 },
+  periodWidgetWaitingSub: { fontSize: 14, color: '#78716c', marginTop: 1 },
 
   // Period widget — Empty (no data yet)
   periodWidgetEmpty: {
@@ -2055,5 +2163,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   periodWidgetEmptyTitle: { fontSize: 14, fontWeight: '500', color: '#1c1917' },
-  periodWidgetEmptySub: { fontSize: 11, color: '#a8a29e', marginTop: 1 },
+  periodWidgetEmptySub: { fontSize: 14, color: '#78716c', marginTop: 1 },
 });

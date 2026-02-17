@@ -12,6 +12,7 @@ import {
 import { useRouter } from 'expo-router';
 import { useUser, useAuth } from '@clerk/clerk-expo';
 import AnimatedPressable from '@/components/AnimatedPressable';
+import BackButton from '@/components/BackButton';
 import { hapticLight, hapticMedium } from '@/lib/haptics';
 import { apiRequest } from '@/lib/api';
 import { useProfile } from '@/lib/useProfile';
@@ -76,13 +77,7 @@ export default function EditProfileScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <AnimatedPressable
-            onPress={() => { hapticLight(); router.back(); }}
-            scaleDown={0.95}
-            style={styles.backButton}
-          >
-            <Text style={styles.backText}>‹ Back</Text>
-          </AnimatedPressable>
+          <BackButton />
           <Text style={styles.title}>Edit profile</Text>
         </View>
 
@@ -94,7 +89,7 @@ export default function EditProfileScreen() {
             value={firstName}
             onChangeText={setFirstName}
             placeholder="First name"
-            placeholderTextColor="#a8a29e"
+            placeholderTextColor="#78716c"
             autoCapitalize="words"
           />
         </View>
@@ -107,7 +102,7 @@ export default function EditProfileScreen() {
             value={lastName}
             onChangeText={setLastName}
             placeholder="Last name"
-            placeholderTextColor="#a8a29e"
+            placeholderTextColor="#78716c"
             autoCapitalize="words"
           />
         </View>
@@ -119,7 +114,7 @@ export default function EditProfileScreen() {
             style={[styles.input, { opacity: 0.5 }]}
             value={email}
             editable={false}
-            placeholderTextColor="#a8a29e"
+            placeholderTextColor="#78716c"
           />
         </View>
 
@@ -199,13 +194,11 @@ const styles = StyleSheet.create({
 
   // Header
   header: { marginBottom: 24 },
-  backButton: { marginBottom: 12 },
-  backText: { fontSize: 16, color: '#78716c' },
   title: { fontSize: 22, fontWeight: '700', color: '#1c1917' },
 
   // Fields
   fieldGroup: { marginBottom: 18 },
-  label: { fontSize: 13, fontWeight: '600', color: '#1c1917', marginBottom: 6, marginLeft: 2 },
+  label: { fontSize: 14, fontWeight: '600', color: '#1c1917', marginBottom: 6, marginLeft: 2 },
   input: {
     backgroundColor: '#f5f5f4',
     borderRadius: 12,
@@ -225,15 +218,15 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   appleIcon: { fontSize: 20 },
-  appleBadgeTitle: { fontSize: 14, fontWeight: '600', color: '#1c1917' },
-  appleBadgeDesc: { fontSize: 12, color: '#78716c', marginTop: 1 },
+  appleBadgeTitle: { fontSize: 16, fontWeight: '600', color: '#1c1917' },
+  appleBadgeDesc: { fontSize: 14, color: '#78716c', marginTop: 1 },
   connectedBadge: {
     backgroundColor: '#ecfdf5',
     borderRadius: 10,
     paddingHorizontal: 10,
     paddingVertical: 4,
   },
-  connectedText: { fontSize: 11, fontWeight: '600', color: '#059669' },
+  connectedText: { fontSize: 14, fontWeight: '600', color: '#047857' },
 
   // Save
   saveButton: {
@@ -243,12 +236,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 32,
   },
-  saveButtonText: { fontSize: 15, fontWeight: '600', color: '#ffffff' },
+  saveButtonText: { fontSize: 16, fontWeight: '600', color: '#ffffff' },
 
   // Delete section
   deleteSection: { alignItems: 'center', marginTop: 8 },
   deleteLink: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#ef4444',
     textDecorationLine: 'underline',
   },
@@ -261,21 +254,21 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   deleteCardTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     color: '#1c1917',
     marginBottom: 8,
   },
   deleteCardBody: {
-    fontSize: 13,
+    fontSize: 16,
     color: '#1c1917',
-    lineHeight: 19,
+    lineHeight: 22,
     marginBottom: 8,
   },
   deleteCardNote: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#78716c',
-    lineHeight: 17,
+    lineHeight: 20,
     marginBottom: 16,
   },
   deleteConfirmButton: {
@@ -285,12 +278,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
-  deleteConfirmText: { fontSize: 14, fontWeight: '600', color: '#ffffff' },
+  deleteConfirmText: { fontSize: 16, fontWeight: '600', color: '#ffffff' },
   deleteCancelButton: {
     backgroundColor: '#f5f5f4',
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
   },
-  deleteCancelText: { fontSize: 14, fontWeight: '500', color: '#78716c' },
+  deleteCancelText: { fontSize: 16, fontWeight: '500', color: '#78716c' },
 });

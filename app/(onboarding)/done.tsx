@@ -138,13 +138,13 @@ const styles = StyleSheet.create({
   },
   subheading: {
     fontSize: 14,
-    color: '#a8a29e',
+    color: '#78716c',
     textAlign: 'center',
     lineHeight: 22,
     marginBottom: 8,
   },
   errorText: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#dc2626',
     textAlign: 'center',
     marginTop: 8,
@@ -164,13 +164,13 @@ const styles = StyleSheet.create({
     color: '#1c1917',
   },
   statLabel: {
-    fontSize: 12,
-    color: '#a8a29e',
+    fontSize: 14,
+    color: '#78716c',
     marginTop: 2,
   },
   statsNote: {
-    fontSize: 12,
-    color: '#d6d3d1',
+    fontSize: 14,
+    color: '#78716c',
     textAlign: 'center',
   },
   footer: {
