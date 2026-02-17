@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
 
   header: { marginBottom: 16 },
   title: { fontSize: 22, fontWeight: '700', color: '#1c1917', marginBottom: 4 },
-  subtitle: { fontSize: 13, color: '#a8a29e' },
+  subtitle: { fontSize: 14, color: '#78716c' },
 
   pipedaCard: {
     backgroundColor: '#fffbeb',
@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   pipedaText: {
-    fontSize: 13,
+    fontSize: 16,
     color: '#78716c',
     lineHeight: 20,
   },
@@ -112,13 +112,13 @@ const styles = StyleSheet.create({
   sectionsContainer: { gap: 20, marginBottom: 32 },
   section: {},
   sectionHeading: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
     color: '#1c1917',
     marginBottom: 6,
   },
   sectionBody: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#78716c',
     lineHeight: 22,
   },
@@ -134,9 +134,9 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   footerLabel: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '600',
-    color: '#a8a29e',
+    color: '#78716c',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 4,

@@ -77,6 +77,8 @@ export default function SymptomsScreen() {
                 styles.pill,
                 selected.has(symptom) && styles.pillSelected,
               ]}
+              accessibilityRole="checkbox"
+              accessibilityLabel={symptom}
             >
               <Text
                 style={[
@@ -122,7 +124,7 @@ const styles = StyleSheet.create({
   },
   subheading: {
     fontSize: 14,
-    color: '#a8a29e',
+    color: '#78716c',
     marginBottom: 22,
     lineHeight: 20,
   },
@@ -136,12 +138,14 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 10,
+    minHeight: 44,
+    justifyContent: 'center',
   },
   pillSelected: {
     backgroundColor: '#1c1917',
   },
   pillText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '500',
     color: '#78716c',
   },
@@ -149,8 +153,8 @@ const styles = StyleSheet.create({
     color: '#ffffff',
   },
   count: {
-    fontSize: 13,
-    color: '#a8a29e',
+    fontSize: 14,
+    color: '#78716c',
     marginTop: 16,
   },
   footer: {

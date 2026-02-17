@@ -245,8 +245,8 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   headerLabel: {
-    fontSize: 12,
-    color: '#a8a29e',
+    fontSize: 14,
+    color: '#78716c',
     marginBottom: 4,
   },
   headerTitle: {
@@ -261,14 +261,14 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   darkCardLabel: {
-    fontSize: 11,
+    fontSize: 14,
     fontWeight: '700',
     color: '#f59e0b',
     letterSpacing: 1,
     marginBottom: 8,
   },
   darkCardText: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#ffffff',
     lineHeight: 22,
   },
@@ -277,7 +277,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   sectionLabel: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     color: '#44403c',
     marginBottom: 12,
@@ -305,17 +305,17 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   cardTitle: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '700',
     color: '#1c1917',
   },
   cardSubtitle: {
-    fontSize: 12,
-    color: '#a8a29e',
+    fontSize: 14,
+    color: '#78716c',
     marginTop: 1,
   },
   cardDesc: {
-    fontSize: 13,
+    fontSize: 16,
     color: '#78716c',
     lineHeight: 20,
     marginBottom: 12,
@@ -333,11 +333,11 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   featureCheck: {
-    fontSize: 12,
-    color: '#a8a29e',
+    fontSize: 14,
+    color: '#78716c',
   },
   featureText: {
-    fontSize: 13,
+    fontSize: 16,
     color: '#78716c',
   },
   badge: {
@@ -360,7 +360,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   scienceText: {
-    fontSize: 12,
+    fontSize: 16,
     color: '#44403c',
     lineHeight: 18,
   },
@@ -378,13 +378,13 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   includeTitle: {
-    fontSize: 13,
+    fontSize: 16,
     fontWeight: '600',
     color: '#1c1917',
   },
   includeDesc: {
-    fontSize: 12,
-    color: '#a8a29e',
+    fontSize: 14,
+    color: '#78716c',
     marginTop: 1,
   },
   pricingDivider: {
@@ -393,8 +393,8 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   pricingLabel: {
-    fontSize: 12,
-    color: '#a8a29e',
+    fontSize: 14,
+    color: '#78716c',
     marginBottom: 10,
   },
   pricingGrid: {
@@ -416,8 +416,8 @@ const styles = StyleSheet.create({
     borderColor: '#1c1917',
   },
   pricingDuration: {
-    fontSize: 12,
-    color: '#a8a29e',
+    fontSize: 14,
+    color: '#78716c',
     marginBottom: 4,
   },
   pricingDurationSelected: {
@@ -432,15 +432,15 @@ const styles = StyleSheet.create({
     color: '#ffffff',
   },
   pricingPer: {
-    fontSize: 11,
-    color: '#a8a29e',
+    fontSize: 14,
+    color: '#78716c',
     marginTop: 2,
   },
   pricingPerSelected: {
     color: '#a8a29e',
   },
   pricingTotal: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '500',
     color: '#78716c',
     marginTop: 4,
@@ -449,9 +449,9 @@ const styles = StyleSheet.create({
     color: '#f59e0b',
   },
   bestValue: {
-    fontSize: 11,
+    fontSize: 14,
     fontWeight: '600',
-    color: '#d97706',
+    color: '#b45309',
     marginTop: 4,
   },
   bestValueSelected: {
@@ -464,8 +464,8 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   trustText: {
-    fontSize: 11,
-    color: '#a8a29e',
+    fontSize: 14,
+    color: '#78716c',
     textAlign: 'center',
     lineHeight: 15,
   },
@@ -477,8 +477,8 @@ const styles = StyleSheet.create({
     borderTopColor: '#f5f5f4',
   },
   guarantee: {
-    fontSize: 12,
-    color: '#d6d3d1',
+    fontSize: 14,
+    color: '#78716c',
     textAlign: 'center',
     marginTop: 8,
     marginBottom: 4,

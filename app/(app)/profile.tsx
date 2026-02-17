@@ -228,9 +228,9 @@ const styles = StyleSheet.create({
     padding: 20,
     marginBottom: 10,
   },
-  subLabel: { fontSize: 12, color: '#78716c', marginBottom: 6 },
-  subTitle: { fontSize: 14, fontWeight: '500', color: '#ffffff', marginBottom: 2 },
-  subDesc: { fontSize: 12, color: '#78716c', marginBottom: 16 },
+  subLabel: { fontSize: 14, color: '#a8a29e', marginBottom: 6 },
+  subTitle: { fontSize: 16, fontWeight: '500', color: '#ffffff', marginBottom: 2 },
+  subDesc: { fontSize: 16, color: '#a8a29e', marginBottom: 16 },
   subButtonPrimary: {
     backgroundColor: '#ffffff',
     borderRadius: 12,
@@ -238,14 +238,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
-  subButtonPrimaryText: { fontSize: 13, fontWeight: '600', color: '#1c1917' },
+  subButtonPrimaryText: { fontSize: 16, fontWeight: '600', color: '#1c1917' },
   subButtonGold: {
     backgroundColor: '#fbbf24',
     borderRadius: 12,
     paddingVertical: 11,
     alignItems: 'center',
   },
-  subButtonGoldText: { fontSize: 13, fontWeight: '600', color: '#1c1917' },
+  subButtonGoldText: { fontSize: 16, fontWeight: '600', color: '#1c1917' },
 
   // Account info
   accountCard: {
@@ -271,15 +271,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   avatarText: { fontSize: 18, fontWeight: '500', color: '#ffffff' },
-  accountName: { fontSize: 14, fontWeight: '500', color: '#1c1917' },
-  accountEmail: { fontSize: 12, color: '#a8a29e', marginTop: 1 },
+  accountName: { fontSize: 16, fontWeight: '500', color: '#1c1917' },
+  accountEmail: { fontSize: 14, color: '#78716c', marginTop: 1 },
   accountMeta: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
   },
-  accountMetaText: { fontSize: 12, color: '#a8a29e' },
-  accountMetaDot: { fontSize: 12, color: '#a8a29e' },
+  accountMetaText: { fontSize: 14, color: '#78716c' },
+  accountMetaDot: { fontSize: 14, color: '#78716c' },
 
   // Menu items
   menuContainer: { gap: 6, marginBottom: 20 },
@@ -298,23 +298,23 @@ const styles = StyleSheet.create({
   },
   menuIcon: { fontSize: 16 },
   menuLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  menuLabel: { fontSize: 14, fontWeight: '500', color: '#1c1917' },
-  menuDesc: { fontSize: 12, color: '#a8a29e', marginTop: 1 },
-  menuChevron: { fontSize: 18, color: '#d6d3d1' },
+  menuLabel: { fontSize: 16, fontWeight: '500', color: '#1c1917' },
+  menuDesc: { fontSize: 14, color: '#78716c', marginTop: 1 },
+  menuChevron: { fontSize: 18, color: '#78716c' },
   badge: {
     backgroundColor: '#f5f5f4',
     borderRadius: 8,
     paddingHorizontal: 8,
     paddingVertical: 2,
   },
-  badgeText: { fontSize: 10, fontWeight: '600', color: '#78716c' },
+  badgeText: { fontSize: 12, fontWeight: '600', color: '#78716c' },
 
   // Dev section
   devSection: { marginBottom: 20 },
   devSectionLabel: {
-    fontSize: 11,
+    fontSize: 14,
     fontWeight: '600',
-    color: '#a8a29e',
+    color: '#78716c',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 6,
@@ -331,8 +331,8 @@ const styles = StyleSheet.create({
     borderColor: '#fef3c7',
     borderStyle: 'dashed',
   },
-  devLabel: { fontSize: 13, fontWeight: '600', color: '#1c1917' },
-  devDesc: { fontSize: 11, color: '#a8a29e', marginTop: 1 },
+  devLabel: { fontSize: 16, fontWeight: '600', color: '#1c1917' },
+  devDesc: { fontSize: 14, color: '#78716c', marginTop: 1 },
 
   // Logout / delete
   logoutButton: {
@@ -342,14 +342,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 10,
   },
-  logoutText: { fontSize: 14, fontWeight: '500', color: '#78716c' },
+  logoutText: { fontSize: 16, fontWeight: '500', color: '#78716c' },
   deleteButton: {
     alignItems: 'center',
     paddingVertical: 8,
     marginBottom: 16,
   },
-  deleteText: { fontSize: 12, color: '#ef4444', textDecorationLine: 'underline' },
+  deleteText: { fontSize: 14, color: '#ef4444', textDecorationLine: 'underline' },
 
   // Version
-  versionText: { fontSize: 11, color: '#d6d3d1', textAlign: 'center', marginBottom: 8 },
+  versionText: { fontSize: 14, color: '#78716c', textAlign: 'center', marginBottom: 8 },
 });

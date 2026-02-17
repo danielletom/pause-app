@@ -23,8 +23,8 @@ const CONTENT_TABS = [
 const MEDITATIONS = [
   { title: 'Body Scan for Sleep', dur: '15 min', icon: '☽', bgColor: '#e0e7ff', iconColor: '#6366f1', tags: ['evening', 'sleep'] },
   { title: 'Hot Flash Cooling', dur: '12 min', icon: '❄', bgColor: '#ccfbf1', iconColor: '#0d9488', tags: ['anytime', 'sos'] },
-  { title: 'Morning Energy', dur: '10 min', icon: '☀', bgColor: '#fef3c7', iconColor: '#d97706', tags: ['morning', 'energy'] },
-  { title: 'Anxiety Grounding', dur: '10 min', icon: '🌿', bgColor: '#d1fae5', iconColor: '#059669', tags: ['anytime', 'calm'] },
+  { title: 'Morning Energy', dur: '10 min', icon: '☀', bgColor: '#fef3c7', iconColor: '#b45309', tags: ['morning', 'energy'] },
+  { title: 'Anxiety Grounding', dur: '10 min', icon: '🌿', bgColor: '#d1fae5', iconColor: '#047857', tags: ['anytime', 'calm'] },
 ];
 
 const PODCASTS = [
@@ -48,9 +48,9 @@ const GUIDES = [
 
 const FOCUSED_PROGRAMS = [
   { title: 'Better Sleep', icon: '☽', bgColor: '#e0e7ff', iconColor: '#6366f1' },
-  { title: 'Hot Flash Relief', icon: '❄', bgColor: '#ccfbf1', iconColor: '#14b8a6' },
-  { title: 'Mood & Calm', icon: '◉', bgColor: '#d1fae5', iconColor: '#059669' },
-  { title: 'Movement', icon: '♡', bgColor: '#ffe4e6', iconColor: '#f43f5e' },
+  { title: 'Hot Flash Relief', icon: '❄', bgColor: '#ccfbf1', iconColor: '#0f766e' },
+  { title: 'Mood & Calm', icon: '◉', bgColor: '#d1fae5', iconColor: '#047857' },
+  { title: 'Movement', icon: '♡', bgColor: '#ffe4e6', iconColor: '#be123c' },
 ];
 
 export default function WellnessScreen() {
@@ -303,9 +303,9 @@ const styles = StyleSheet.create({
 
   header: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 12 },
   title: { fontSize: 22, fontWeight: '700', color: '#1c1917' },
-  subtitle: { fontSize: 12, color: '#a8a29e', marginTop: 2 },
+  subtitle: { fontSize: 14, color: '#78716c', marginTop: 2 },
 
-  chevron: { fontSize: 20, color: '#d6d3d1' },
+  chevron: { fontSize: 20, color: '#78716c' },
 
   /* 8-Week Program Card */
   programCard: {
@@ -332,8 +332,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   programIconText: { fontSize: 16, fontWeight: '700', color: '#ffffff' },
-  programTitle: { fontSize: 14, fontWeight: '600', color: '#1c1917' },
-  programWeek: { fontSize: 12, color: '#d97706', fontWeight: '500', marginTop: 2 },
+  programTitle: { fontSize: 16, fontWeight: '600', color: '#1c1917' },
+  programWeek: { fontSize: 16, color: '#b45309', fontWeight: '500', marginTop: 2 },
   progressBarBg: {
     height: 6,
     backgroundColor: '#f5f5f4',
@@ -344,7 +344,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fbbf24',
     borderRadius: 3,
   },
-  programProgress: { fontSize: 11, color: '#a8a29e', marginTop: 6 },
+  programProgress: { fontSize: 14, color: '#78716c', marginTop: 6 },
 
   /* SOS Card */
   sosCard: {
@@ -367,8 +367,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  sosTitle: { fontSize: 14, fontWeight: '500', color: '#1c1917' },
-  sosSubtitle: { fontSize: 12, color: '#a8a29e', marginTop: 1 },
+  sosTitle: { fontSize: 16, fontWeight: '500', color: '#1c1917' },
+  sosSubtitle: { fontSize: 14, color: '#78716c', marginTop: 1 },
 
   /* Section header */
   sectionHeader: {
@@ -376,7 +376,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   sectionTitle: { fontSize: 16, fontWeight: '700', color: '#1c1917' },
-  sectionSubtitle: { fontSize: 12, color: '#a8a29e', marginTop: 2 },
+  sectionSubtitle: { fontSize: 14, color: '#78716c', marginTop: 2 },
 
   /* Tabs */
   tabScroll: { marginBottom: 16 },
@@ -390,7 +390,7 @@ const styles = StyleSheet.create({
   tabActive: {
     backgroundColor: '#1c1917',
   },
-  tabText: { fontSize: 12, fontWeight: '500', color: '#78716c' },
+  tabText: { fontSize: 14, fontWeight: '500', color: '#78716c' },
   tabTextActive: { color: '#ffffff' },
 
   /* Section blocks */
@@ -401,8 +401,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 10,
   },
-  sectionLabel: { fontSize: 13, fontWeight: '600', color: '#1c1917' },
-  sectionCount: { fontSize: 11, color: '#d6d3d1' },
+  sectionLabel: { fontSize: 16, fontWeight: '600', color: '#1c1917' },
+  sectionCount: { fontSize: 14, color: '#78716c' },
 
   /* Tags */
   tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 6 },
@@ -412,7 +412,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
-  tagText: { fontSize: 10, color: '#a8a29e' },
+  tagText: { fontSize: 12, color: '#78716c' },
 
   /* Meditation cards — horizontal scroll */
   meditationCard: {
@@ -426,8 +426,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 6,
   },
-  meditationTitle: { fontSize: 12, fontWeight: '500', color: '#1c1917', lineHeight: 16 },
-  meditationDur: { fontSize: 11, color: '#a8a29e', marginTop: 2 },
+  meditationTitle: { fontSize: 16, fontWeight: '500', color: '#1c1917', lineHeight: 20 },
+  meditationDur: { fontSize: 14, color: '#78716c', marginTop: 2 },
 
   /* Podcast cards */
   podcastCard: {
@@ -454,22 +454,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     flexShrink: 0,
   },
-  playIcon: { fontSize: 10, color: '#ffffff' },
+  playIcon: { fontSize: 14, color: '#ffffff' },
   podcastTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     flexWrap: 'wrap',
   },
-  podcastTitle: { fontSize: 12, fontWeight: '500', color: '#1c1917', lineHeight: 16, flex: 1 },
-  podcastDur: { fontSize: 11, color: '#a8a29e', marginTop: 2 },
+  podcastTitle: { fontSize: 16, fontWeight: '500', color: '#1c1917', lineHeight: 20, flex: 1 },
+  podcastDur: { fontSize: 14, color: '#78716c', marginTop: 2 },
   newBadge: {
     backgroundColor: '#fef3c7',
     borderRadius: 10,
     paddingHorizontal: 8,
     paddingVertical: 2,
   },
-  newBadgeText: { fontSize: 10, fontWeight: '600', color: '#d97706' },
+  newBadgeText: { fontSize: 12, fontWeight: '600', color: '#b45309' },
 
   /* Lesson cards — 2x2 grid */
   grid: {
@@ -492,8 +492,8 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 1,
   },
-  lessonTitle: { fontSize: 12, fontWeight: '500', color: '#1c1917' },
-  lessonDur: { fontSize: 11, color: '#a8a29e', marginTop: 2 },
+  lessonTitle: { fontSize: 16, fontWeight: '500', color: '#1c1917' },
+  lessonDur: { fontSize: 14, color: '#78716c', marginTop: 2 },
 
   /* Guide cards */
   guideCard: {
@@ -511,8 +511,8 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 1,
   },
-  guideTitle: { fontSize: 12, fontWeight: '500', color: '#1c1917' },
-  guideType: { fontSize: 11, color: '#a8a29e', marginTop: 1 },
+  guideTitle: { fontSize: 16, fontWeight: '500', color: '#1c1917' },
+  guideType: { fontSize: 14, color: '#78716c', marginTop: 1 },
 
   /* Focused program cards */
   focusedCard: {
@@ -539,5 +539,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  focusedTitle: { fontSize: 12, fontWeight: '500', color: '#1c1917' },
+  focusedTitle: { fontSize: 16, fontWeight: '500', color: '#1c1917' },
 });

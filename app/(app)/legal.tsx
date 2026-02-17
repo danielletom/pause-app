@@ -107,11 +107,11 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   cardIcon: { fontSize: 16 },
-  cardLabel: { fontSize: 14, fontWeight: '500', color: '#1c1917' },
-  cardDesc: { fontSize: 12, color: '#a8a29e', marginTop: 1 },
-  chevron: { fontSize: 18, color: '#d6d3d1' },
+  cardLabel: { fontSize: 16, fontWeight: '500', color: '#1c1917' },
+  cardDesc: { fontSize: 14, color: '#78716c', marginTop: 1 },
+  chevron: { fontSize: 18, color: '#78716c' },
 
   footer: { alignItems: 'center', marginTop: 8 },
-  footerText: { fontSize: 11, color: '#d6d3d1', marginBottom: 4 },
-  footerAddress: { fontSize: 11, color: '#d6d3d1', textAlign: 'center' },
+  footerText: { fontSize: 14, color: '#78716c', marginBottom: 4 },
+  footerAddress: { fontSize: 14, color: '#78716c', textAlign: 'center' },
 });

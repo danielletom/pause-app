@@ -80,7 +80,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   label: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '500',
     color: '#1c1917',
   },
@@ -91,13 +91,13 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   badgeText: {
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: '600',
-    color: '#d97706',
+    color: '#b45309',
   },
   subtitle: {
-    fontSize: 12,
-    color: '#a8a29e',
+    fontSize: 14,
+    color: '#78716c',
     marginTop: 1,
   },
 });

@@ -275,15 +275,15 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   infoText: {
-    fontSize: 13,
+    fontSize: 16,
     color: '#1c1917',
-    lineHeight: 19,
+    lineHeight: 22,
   },
 
   // Fields
   fieldGroup: { marginBottom: 20 },
   label: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     color: '#1c1917',
     marginBottom: 8,
@@ -297,8 +297,8 @@ const styles = StyleSheet.create({
     color: '#1c1917',
   },
   fieldHint: {
-    fontSize: 12,
-    color: '#a8a29e',
+    fontSize: 14,
+    color: '#78716c',
     marginTop: 6,
     marginLeft: 2,
   },
@@ -347,7 +347,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#1c1917',
   },
   pillText: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#78716c',
     fontWeight: '500',
   },

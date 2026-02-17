@@ -556,14 +556,14 @@ export default function InsightsScreen() {
               <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
                 <View style={[ls.blurredCardSmall, { flex: 1 }]}>
                   <View style={ls.blurOverlay} />
-                  <Text style={{ fontSize: 12, fontWeight: '600', color: '#6ee7b7', marginBottom: 8 }}>Helps ↓</Text>
+                  <Text style={{ fontSize: 14, fontWeight: '600', color: '#047857', marginBottom: 8 }}>Helps ↓</Text>
                   <View style={ls.blurBar}><View style={[ls.blurBarFillGreen, { width: '75%' }]} /></View>
                   <View style={[ls.blurBar, { marginTop: 4 }]}><View style={[ls.blurBarFillGreen, { width: '50%' }]} /></View>
                   <View style={[ls.blurBar, { marginTop: 4 }]}><View style={[ls.blurBarFillGreen, { width: '33%' }]} /></View>
                 </View>
                 <View style={[ls.blurredCardSmall, { flex: 1 }]}>
                   <View style={ls.blurOverlay} />
-                  <Text style={{ fontSize: 12, fontWeight: '600', color: '#fca5a5', marginBottom: 8 }}>Hurts ↑</Text>
+                  <Text style={{ fontSize: 14, fontWeight: '600', color: '#be123c', marginBottom: 8 }}>Hurts ↑</Text>
                   <View style={ls.blurBar}><View style={[ls.blurBarFillRed, { width: '80%' }]} /></View>
                   <View style={[ls.blurBar, { marginTop: 4 }]}><View style={[ls.blurBarFillRed, { width: '60%' }]} /></View>
                   <View style={[ls.blurBar, { marginTop: 4 }]}><View style={[ls.blurBarFillRed, { width: '40%' }]} /></View>
@@ -632,7 +632,7 @@ export default function InsightsScreen() {
                     {eveningDone ? 'Completed today' : '2 min · Mood, energy, activities'}
                   </Text>
                 </View>
-                {!eveningDone && <Text style={{ fontSize: 12, color: '#d6d3d1' }}>7 PM</Text>}
+                {!eveningDone && <Text style={{ fontSize: 14, color: '#78716c' }}>7 PM</Text>}
                 {eveningDone && (
                   <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: '#22c55e', alignItems: 'center', justifyContent: 'center' }}>
                     <Text style={{ fontSize: 12, color: '#fff', fontWeight: '600' }}>✓</Text>
@@ -647,7 +647,7 @@ export default function InsightsScreen() {
                 <Text style={styles.sectionTitle}>What we're seeing so far</Text>
                 <View style={ls.earlySignalCard}>
                   <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
-                    <Text style={{ color: '#f59e0b' }}>✦</Text>
+                    <Text style={{ color: '#b45309' }}>✦</Text>
                     <View style={{ flex: 1 }}>
                       <Text style={ls.earlySignalTitle}>Early signal</Text>
                       <Text style={ls.earlySignalDesc}>{earlySignalText}</Text>
@@ -690,7 +690,7 @@ export default function InsightsScreen() {
                           <Text style={ls.symptomRawName}>{s.emoji} {s.displayName}</Text>
                           <Text style={ls.symptomRawDays}>{s.daysLogged} days logged</Text>
                         </View>
-                        <Text style={{ fontSize: 11, color: '#d6d3d1' }}>Building data...</Text>
+                        <Text style={{ fontSize: 14, color: '#78716c' }}>Building data...</Text>
                       </View>
                     );
                   })}
@@ -779,7 +779,7 @@ export default function InsightsScreen() {
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Your peer group (preview)</Text>
               <View style={ls.peerGroupCard}>
-                <Text style={{ fontSize: 12, color: '#a8a29e', marginBottom: 12 }}>
+                <Text style={{ fontSize: 14, color: '#78716c', marginBottom: 12 }}>
                   Based on your profile, we'll match you with:
                 </Text>
                 {[
@@ -798,8 +798,8 @@ export default function InsightsScreen() {
                   </View>
                 ))}
                 <View style={ls.peerGroupDivider} />
-                <Text style={{ fontSize: 12, color: '#a8a29e', lineHeight: 18 }}>
-                  <Text style={{ fontWeight: '600', color: '#78716c' }}>12,847 women</Text> in your cohort · All data is fully anonymous
+                <Text style={{ fontSize: 14, color: '#78716c', lineHeight: 18 }}>
+                  <Text style={{ fontWeight: '600', color: '#44403c' }}>12,847 women</Text> in your cohort · All data is fully anonymous
                 </Text>
               </View>
             </View>
@@ -818,14 +818,14 @@ export default function InsightsScreen() {
                       {i === 0 && (
                         <>
                           <Text style={ls.blurBenchmarkOverlayText}>Unlocks in {14 - totalDays} days</Text>
-                          <Text style={{ fontSize: 11, color: '#d6d3d1' }}>We'll place you on this scale</Text>
+                          <Text style={{ fontSize: 14, color: '#78716c' }}>We'll place you on this scale</Text>
                         </>
                       )}
                     </View>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                      <Text style={{ fontSize: 12, fontWeight: '600', color: '#a8a29e' }}>{bm.name}</Text>
+                      <Text style={{ fontSize: 14, fontWeight: '600', color: '#78716c' }}>{bm.name}</Text>
                       <View style={ls.blurBadge}>
-                        <Text style={{ fontSize: 10, color: '#a8a29e' }}>? of women</Text>
+                        <Text style={{ fontSize: 12, color: '#78716c' }}>? of women</Text>
                       </View>
                     </View>
                     <View style={ls.blurPopBar}>
@@ -834,9 +834,9 @@ export default function InsightsScreen() {
                     </View>
                     {i === 0 && (
                       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 }}>
-                        <Text style={{ fontSize: 10, color: '#e7e5e4' }}>Less frequent</Text>
-                        <Text style={{ fontSize: 10, color: '#e7e5e4' }}>You</Text>
-                        <Text style={{ fontSize: 10, color: '#e7e5e4' }}>More frequent</Text>
+                        <Text style={{ fontSize: 14, color: '#78716c' }}>Less frequent</Text>
+                        <Text style={{ fontSize: 14, color: '#78716c' }}>You</Text>
+                        <Text style={{ fontSize: 14, color: '#78716c' }}>More frequent</Text>
                       </View>
                     )}
                   </View>
@@ -850,7 +850,7 @@ export default function InsightsScreen() {
               <View style={{ gap: 8 }}>
                 <View style={ls.communityFactGreen}>
                   <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-start' }}>
-                    <Text style={{ color: '#059669', fontSize: 14 }}>↓</Text>
+                    <Text style={{ color: '#047857', fontSize: 14 }}>↓</Text>
                     <Text style={ls.communityFactText}>
                       <Text style={{ fontWeight: '600', color: '#1c1917' }}>82% of women</Text> in early perimenopause experience hot flashes. You're not alone in this.
                     </Text>
@@ -858,7 +858,7 @@ export default function InsightsScreen() {
                 </View>
                 <View style={ls.communityFactGreen}>
                   <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-start' }}>
-                    <Text style={{ color: '#059669', fontSize: 14 }}>↓</Text>
+                    <Text style={{ color: '#047857', fontSize: 14 }}>↓</Text>
                     <Text style={ls.communityFactText}>
                       Pause members who tracked consistently for 8 weeks saw symptom severity drop by{' '}
                       <Text style={{ fontWeight: '600', color: '#1c1917' }}>an average of 31%</Text>.
@@ -867,7 +867,7 @@ export default function InsightsScreen() {
                 </View>
                 <View style={ls.communityFactAmber}>
                   <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-start' }}>
-                    <Text style={{ color: '#d97706', fontSize: 14 }}>✦</Text>
+                    <Text style={{ color: '#b45309', fontSize: 14 }}>✦</Text>
                     <Text style={ls.communityFactText}>
                       The #1 trigger across all Pause users?{' '}
                       <Text style={{ fontWeight: '600', color: '#1c1917' }}>Poor sleep</Text>. It shows up in 73% of correlation reports.
@@ -964,7 +964,7 @@ export default function InsightsScreen() {
                         <Text style={styles.correlationFactor}>{c.humanLabel}</Text>
                         <Text style={styles.correlationArrow}>
                           {formatSymptomName(c.factor)} → {formatSymptomName(c.symptom)}{' '}
-                          <Text style={{ color: c.direction === 'negative' ? '#059669' : '#dc2626' }}>
+                          <Text style={{ color: c.direction === 'negative' ? '#047857' : '#dc2626' }}>
                             {c.direction === 'negative' ? `↓${pct}%` : `↑${pct}%`}
                           </Text>
                           {lagLabel}
@@ -985,7 +985,7 @@ export default function InsightsScreen() {
               {symptomTrends.length > 0 ? (
                 <View style={{ gap: 8 }}>
                   {symptomTrends.map((s) => {
-                    const trendColor = s.trendPct < 0 ? '#059669' : s.trendPct > 0 ? '#d97706' : '#a8a29e';
+                    const trendColor = s.trendPct < 0 ? '#047857' : s.trendPct > 0 ? '#b45309' : '#78716c';
                     const trendLabel = s.trendPct < 0
                       ? `↓ ${Math.abs(s.trendPct)}%`
                       : s.trendPct > 0
@@ -1026,7 +1026,7 @@ export default function InsightsScreen() {
                             />
                           ))}
                         </View>
-                        <Text style={{ color: '#d6d3d1', fontSize: 16 }}>›</Text>
+                        <Text style={{ color: '#78716c', fontSize: 16 }}>›</Text>
                       </AnimatedPressable>
                     );
                   })}
@@ -1050,7 +1050,7 @@ export default function InsightsScreen() {
                       <View key={h.label} style={styles.hhItem}>
                         <View style={styles.hhRow}>
                           <Text style={styles.hhName}>{h.label}</Text>
-                          <Text style={[styles.hhPct, { color: '#059669' }]}>{h.pct}%</Text>
+                          <Text style={[styles.hhPct, { color: '#047857' }]}>{h.pct}%</Text>
                         </View>
                         <View style={styles.hhBarBg}>
                           <View style={[styles.hhBarFill, { width: `${h.pct}%`, backgroundColor: '#059669' }]} />
@@ -1168,7 +1168,7 @@ export default function InsightsScreen() {
               <Text style={styles.sectionTitle}>Your symptoms vs. others</Text>
               <View style={{ gap: 12 }}>
                 {(benchmarkData?.symptoms || []).map((bm) => {
-                  const badgeColor = bm.label === 'Very common' ? '#059669' : bm.label === 'Common' ? '#d97706' : '#a8a29e';
+                  const badgeColor = bm.label === 'Very common' ? '#047857' : bm.label === 'Common' ? '#b45309' : '#78716c';
                   const userPct = bm.percentilePosition;
                   const emoji = SYMPTOM_EMOJI[bm.name.toLowerCase().replace(/\s+/g, '_')] || '•';
                   return (
@@ -1252,7 +1252,7 @@ export default function InsightsScreen() {
                 ].map((m, i) => (
                   <View key={i} style={styles.milestoneRow}>
                     <View style={[styles.milestoneCheck, m.done && styles.milestoneCheckDone]}>
-                      <Text style={{ fontSize: 10, color: m.done ? '#fff' : '#d6d3d1' }}>✓</Text>
+                      <Text style={{ fontSize: 10, color: m.done ? '#fff' : '#78716c' }}>✓</Text>
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={[styles.milestoneLabel, m.done && styles.milestoneLabelDone]}>{m.label}</Text>
@@ -1282,14 +1282,14 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   headerTitle: { fontSize: 22, fontWeight: '700', color: '#1c1917' },
-  headerSub: { fontSize: 12, color: '#a8a29e', marginTop: 2 },
+  headerSub: { fontSize: 14, color: '#78716c', marginTop: 2 },
   reportButton: {
     backgroundColor: '#1c1917',
     borderRadius: 20,
     paddingHorizontal: 14,
     paddingVertical: 8,
   },
-  reportButtonText: { fontSize: 12, color: '#ffffff', fontWeight: '500' },
+  reportButtonText: { fontSize: 14, color: '#ffffff', fontWeight: '500' },
 
   // Tab switcher
   tabRow: {
@@ -1313,7 +1313,7 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 2,
   },
-  tabText: { fontSize: 13, fontWeight: '500', color: '#78716c' },
+  tabText: { fontSize: 14, fontWeight: '500', color: '#78716c' },
   tabTextActive: { color: '#1c1917', fontWeight: '600' },
 
   // Period pills
@@ -1326,7 +1326,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f4',
   },
   periodPillActive: { backgroundColor: '#1c1917' },
-  periodText: { fontSize: 13, fontWeight: '500', color: '#78716c' },
+  periodText: { fontSize: 14, fontWeight: '500', color: '#78716c' },
   periodTextActive: { color: '#ffffff' },
 
   loadingContainer: { flex: 1, alignItems: 'center', paddingTop: 60 },
@@ -1340,11 +1340,11 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     marginTop: 20,
   },
-  emptyCtaText: { fontSize: 13, fontWeight: '600', color: '#ffffff' },
+  emptyCtaText: { fontSize: 16, fontWeight: '600', color: '#ffffff' },
 
   // Sections
   section: { marginBottom: 20 },
-  sectionTitle: { fontSize: 14, fontWeight: '600', color: '#1c1917', marginBottom: 10 },
+  sectionTitle: { fontSize: 16, fontWeight: '600', color: '#1c1917', marginBottom: 10 },
   sectionHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1357,7 +1357,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 3,
   },
-  qualityBadgeText: { fontSize: 10, fontWeight: '600', color: '#d97706' },
+  qualityBadgeText: { fontSize: 12, fontWeight: '600', color: '#b45309' },
 
   // Weekly story card (dark)
   storyCard: {
@@ -1366,8 +1366,8 @@ const styles = StyleSheet.create({
     padding: 20,
     marginBottom: 20,
   },
-  storyLabel: { fontSize: 11, color: '#78716c', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
-  storyNarrative: { fontSize: 14, color: '#ffffff', lineHeight: 20, marginBottom: 16 },
+  storyLabel: { fontSize: 12, color: '#a8a29e', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
+  storyNarrative: { fontSize: 16, color: '#ffffff', lineHeight: 22, marginBottom: 16 },
   storyDays: { flexDirection: 'row', gap: 10 },
   storyDayCard: {
     flex: 1,
@@ -1377,8 +1377,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   storyDayEmoji: { fontSize: 20, marginBottom: 4 },
-  storyDayLabel: { fontSize: 10, color: '#78716c', marginBottom: 2 },
-  storyDayValue: { fontSize: 12, color: '#ffffff', fontWeight: '500' },
+  storyDayLabel: { fontSize: 14, color: '#a8a29e', marginBottom: 2 },
+  storyDayValue: { fontSize: 14, color: '#ffffff', fontWeight: '500' },
 
   // Correlation cards
   correlationCard: {
@@ -1394,9 +1394,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#fef2f2',
     borderColor: '#fecaca',
   },
-  correlationFactor: { fontSize: 13, fontWeight: '600', color: '#1c1917' },
-  correlationArrow: { fontSize: 12, color: '#44403c', marginTop: 4 },
-  correlationConfidence: { fontSize: 11, color: '#a8a29e', marginTop: 6 },
+  correlationFactor: { fontSize: 16, fontWeight: '600', color: '#1c1917' },
+  correlationArrow: { fontSize: 14, color: '#44403c', marginTop: 4 },
+  correlationConfidence: { fontSize: 14, color: '#78716c', marginTop: 6 },
 
   // Symptom trend cards
   symptomCard: {
@@ -1412,10 +1412,10 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 1,
   },
-  symptomName: { fontSize: 13, fontWeight: '500', color: '#1c1917' },
+  symptomName: { fontSize: 14, fontWeight: '500', color: '#1c1917' },
   symptomMeta: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2 },
-  symptomTrend: { fontSize: 12 },
-  symptomDays: { fontSize: 11, color: '#a8a29e' },
+  symptomTrend: { fontSize: 14 },
+  symptomDays: { fontSize: 14, color: '#78716c' },
   sparkline: {
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -1438,14 +1438,14 @@ const styles = StyleSheet.create({
   },
   helpsCard: { backgroundColor: '#f0fdf4' },
   hurtsCard: { backgroundColor: '#fef2f2' },
-  helpsHurtsLabel: { fontSize: 12, fontWeight: '600', color: '#1c1917', marginBottom: 10 },
+  helpsHurtsLabel: { fontSize: 14, fontWeight: '600', color: '#1c1917', marginBottom: 10 },
   hhItem: { marginBottom: 8 },
   hhRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-  hhName: { fontSize: 11, color: '#44403c' },
-  hhPct: { fontSize: 11, fontWeight: '600' },
+  hhName: { fontSize: 14, color: '#44403c' },
+  hhPct: { fontSize: 14, fontWeight: '600' },
   hhBarBg: { height: 4, backgroundColor: 'rgba(0,0,0,0.06)', borderRadius: 2 },
   hhBarFill: { height: 4, borderRadius: 2 },
-  hhEmpty: { fontSize: 11, color: '#a8a29e', fontStyle: 'italic' },
+  hhEmpty: { fontSize: 14, color: '#78716c', fontStyle: 'italic' },
 
   // Sleep analysis
   sleepCard: {
@@ -1471,9 +1471,9 @@ const styles = StyleSheet.create({
     left: -3,
   },
   sleepRingScore: { fontSize: 16, fontWeight: '700', color: '#ffffff' },
-  sleepLabel: { fontSize: 11, color: '#78716c' },
-  sleepValue: { fontSize: 13, color: '#ffffff', fontWeight: '500', marginTop: 2 },
-  sleepHint: { fontSize: 11, color: '#78716c', marginTop: 2 },
+  sleepLabel: { fontSize: 14, color: '#a8a29e' },
+  sleepValue: { fontSize: 14, color: '#ffffff', fontWeight: '500', marginTop: 2 },
+  sleepHint: { fontSize: 14, color: '#a8a29e', marginTop: 2 },
   sleepBarsRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -1491,7 +1491,7 @@ const styles = StyleSheet.create({
     borderRadius: 3,
     minHeight: 4,
   },
-  sleepBarLabel: { fontSize: 9, color: '#78716c', marginTop: 4 },
+  sleepBarLabel: { fontSize: 14, color: '#a8a29e', marginTop: 4 },
 
   // Expect card
   expectCard: {
@@ -1502,12 +1502,12 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 20,
   },
-  expectLabel: { fontSize: 13, fontWeight: '600', color: '#1c1917', marginBottom: 6 },
-  expectDesc: { fontSize: 12, color: '#78716c', lineHeight: 18 },
+  expectLabel: { fontSize: 16, fontWeight: '600', color: '#1c1917', marginBottom: 6 },
+  expectDesc: { fontSize: 14, color: '#78716c', lineHeight: 20 },
 
   // ─── Am I Normal tab styles ──────────────────
   compGroupTitle: { fontSize: 16, fontWeight: '600', color: '#ffffff', marginBottom: 4 },
-  compGroupSub: { fontSize: 12, color: '#a8a29e', marginBottom: 12 },
+  compGroupSub: { fontSize: 14, color: '#a8a29e', marginBottom: 12 },
   compTraits: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   compTraitPill: {
     backgroundColor: '#292524',
@@ -1515,7 +1515,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
   },
-  compTraitText: { fontSize: 11, color: '#d6d3d1' },
+  compTraitText: { fontSize: 14, color: '#d6d3d1' },
 
   // Benchmark cards
   benchmarkCard: {
@@ -1534,10 +1534,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
-  benchmarkName: { fontSize: 14, fontWeight: '600', color: '#1c1917' },
+  benchmarkName: { fontSize: 16, fontWeight: '600', color: '#1c1917' },
   benchmarkBadge: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
-  benchmarkBadgeText: { fontSize: 10, fontWeight: '600' },
-  benchmarkUserStat: { fontSize: 12, color: '#78716c', marginBottom: 12 },
+  benchmarkBadgeText: { fontSize: 12, fontWeight: '600' },
+  benchmarkUserStat: { fontSize: 14, color: '#78716c', marginBottom: 12 },
   populationBarContainer: { marginBottom: 10 },
   populationBar: {
     height: 8,
@@ -1566,7 +1566,7 @@ const styles = StyleSheet.create({
     borderColor: '#ffffff',
   },
   youLabel: {
-    fontSize: 9,
+    fontSize: 14,
     color: '#1c1917',
     fontWeight: '600',
     marginTop: 2,
@@ -1576,8 +1576,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginTop: 6,
   },
-  populationLabelText: { fontSize: 9, color: '#a8a29e' },
-  benchmarkDetail: { fontSize: 11, color: '#a8a29e', lineHeight: 16 },
+  populationLabelText: { fontSize: 14, color: '#78716c' },
+  benchmarkDetail: { fontSize: 14, color: '#78716c', lineHeight: 20 },
 
   // Normalization fact cards
   factCard: {
@@ -1590,8 +1590,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#f5f5f4',
   },
-  factTitle: { fontSize: 13, fontWeight: '600', color: '#1c1917', marginBottom: 4 },
-  factDesc: { fontSize: 12, color: '#78716c', lineHeight: 17 },
+  factTitle: { fontSize: 16, fontWeight: '600', color: '#1c1917', marginBottom: 4 },
+  factDesc: { fontSize: 14, color: '#78716c', lineHeight: 20 },
 
   // Milestone card
   milestoneCard: {
@@ -1612,9 +1612,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   milestoneCheckDone: { backgroundColor: '#059669' },
-  milestoneLabel: { fontSize: 13, color: '#a8a29e' },
+  milestoneLabel: { fontSize: 14, color: '#78716c' },
   milestoneLabelDone: { color: '#1c1917', fontWeight: '500' },
-  milestoneSub: { fontSize: 11, color: '#d6d3d1', marginTop: 1 },
+  milestoneSub: { fontSize: 14, color: '#78716c', marginTop: 1 },
 
   // Generic card
   card: {
@@ -1627,7 +1627,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 1,
   },
-  cardHint: { fontSize: 13, color: '#a8a29e', textAlign: 'center' },
+  cardHint: { fontSize: 14, color: '#78716c', textAlign: 'center' },
 });
 
 // ─── Learning State Styles ──────────────────────────────
@@ -1639,7 +1639,7 @@ const ls = StyleSheet.create({
     padding: 20,
     marginBottom: 20,
   },
-  heroTitle: { fontSize: 14, fontWeight: '600', color: '#ffffff', marginBottom: 6, textAlign: 'center' },
+  heroTitle: { fontSize: 16, fontWeight: '600', color: '#ffffff', marginBottom: 6, textAlign: 'center' },
   heroDesc: { fontSize: 12, color: '#78716c', lineHeight: 18, textAlign: 'center', marginBottom: 16 },
   heroEncouragement: { fontSize: 12, fontWeight: '500', color: '#2dd4bf', textAlign: 'center', marginTop: 8 },
 

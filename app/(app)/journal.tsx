@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
 
   header: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 12 },
   title: { fontSize: 22, fontWeight: '700', color: '#1c1917' },
-  subtitle: { fontSize: 12, color: '#a8a29e', marginTop: 2 },
+  subtitle: { fontSize: 14, color: '#78716c', marginTop: 2 },
 
   /* Streak card */
   streakCard: {
@@ -312,7 +312,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 14,
   },
-  streakLabel: { fontSize: 12, color: '#78716c' },
+  streakLabel: { fontSize: 14, color: '#a8a29e' },
   streakValue: { fontSize: 24, fontWeight: '300', color: '#ffffff', marginTop: 2 },
   streakBadge: {
     width: 52,
@@ -327,7 +327,7 @@ const styles = StyleSheet.create({
 
   weekRow: { flexDirection: 'row', justifyContent: 'space-between' },
   weekDay: { alignItems: 'center', gap: 4 },
-  weekDayLabel: { fontSize: 11, color: '#78716c' },
+  weekDayLabel: { fontSize: 14, color: '#a8a29e' },
   dotRow: { flexDirection: 'row', gap: 2 },
   dot: { width: 10, height: 10, borderRadius: 5 },
   dotAm: { backgroundColor: '#fbbf24' },
@@ -337,7 +337,7 @@ const styles = StyleSheet.create({
   legend: { flexDirection: 'row', gap: 16, marginTop: 10 },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   legendDot: { width: 8, height: 8, borderRadius: 4 },
-  legendText: { fontSize: 11, color: '#78716c' },
+  legendText: { fontSize: 14, color: '#a8a29e' },
 
   /* Morning card */
   morningCard: {
@@ -357,8 +357,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  morningIconText: { fontSize: 22, color: '#d97706' },
-  morningTime: { fontSize: 11, color: '#d97706', fontWeight: '500', marginTop: 4 },
+  morningIconText: { fontSize: 22, color: '#b45309' },
+  morningTime: { fontSize: 14, color: '#b45309', fontWeight: '500', marginTop: 4 },
 
   /* Evening card */
   eveningCard: {
@@ -384,8 +384,8 @@ const styles = StyleSheet.create({
   cardDone: { opacity: 0.6 },
 
   journalCardRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  journalCardTitle: { fontSize: 14, fontWeight: '600', color: '#1c1917' },
-  journalCardDesc: { fontSize: 12, color: '#78716c', marginTop: 2 },
+  journalCardTitle: { fontSize: 16, fontWeight: '600', color: '#1c1917' },
+  journalCardDesc: { fontSize: 16, color: '#78716c', marginTop: 2 },
 
   startBadge: {
     backgroundColor: '#fbbf24',
@@ -393,7 +393,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
   },
-  startBadgeText: { fontSize: 12, fontWeight: '700', color: '#1c1917' },
+  startBadgeText: { fontSize: 16, fontWeight: '700', color: '#1c1917' },
 
   checkCircleDone: {
     width: 28,
@@ -424,9 +424,9 @@ const styles = StyleSheet.create({
     borderColor: '#fef3c7',
   },
   insightRow: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
-  insightStar: { fontSize: 18, color: '#f59e0b' },
-  insightTitle: { fontSize: 12, fontWeight: '600', color: '#1c1917', marginBottom: 4 },
-  insightText: { fontSize: 12, color: '#78716c', lineHeight: 18 },
+  insightStar: { fontSize: 18, color: '#b45309' },
+  insightTitle: { fontSize: 16, fontWeight: '600', color: '#1c1917', marginBottom: 4 },
+  insightText: { fontSize: 16, color: '#78716c', lineHeight: 22 },
 
   /* Link cards */
   linkCard: {
@@ -453,7 +453,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   linkIconText: { fontSize: 14, color: '#78716c' },
-  linkTitle: { fontSize: 12, fontWeight: '600', color: '#1c1917' },
-  linkDesc: { fontSize: 11, color: '#a8a29e', marginTop: 1 },
-  linkArrow: { fontSize: 18, color: '#d6d3d1' },
+  linkTitle: { fontSize: 16, fontWeight: '600', color: '#1c1917' },
+  linkDesc: { fontSize: 14, color: '#78716c', marginTop: 1 },
+  linkArrow: { fontSize: 18, color: '#78716c' },
 });

@@ -1531,7 +1531,7 @@ export default function QuickLogScreen() {
       <SafeAreaView style={styles.container}>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <ActivityIndicator size="large" color="#1c1917" />
-          <Text style={{ fontSize: 13, color: '#a8a29e', marginTop: 12 }}>Loading your entry...</Text>
+          <Text style={{ fontSize: 14, color: '#78716c', marginTop: 12 }}>Loading your entry...</Text>
         </View>
       </SafeAreaView>
     );
@@ -1628,9 +1628,9 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   navSide: { paddingVertical: 4 },
-  navBackText: { fontSize: 13, color: '#a8a29e' },
-  navStep: { fontSize: 13, color: '#a8a29e', fontWeight: '500' },
-  navSkipText: { fontSize: 13, color: '#a8a29e' },
+  navBackText: { fontSize: 14, color: '#78716c' },
+  navStep: { fontSize: 14, color: '#78716c', fontWeight: '500' },
+  navSkipText: { fontSize: 14, color: '#78716c' },
 
   /* Progress bars */
   progressRow: {
@@ -1657,12 +1657,12 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   stepSubtitle: {
-    fontSize: 13,
-    color: '#a8a29e',
+    fontSize: 14,
+    color: '#78716c',
     marginBottom: 24,
   },
   sectionLabel: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     color: '#78716c',
     marginBottom: 10,
@@ -1687,8 +1687,8 @@ const styles = StyleSheet.create({
   selectEmoji: { fontSize: 22, width: 32, textAlign: 'center' },
   selectLabel: { fontSize: 14, fontWeight: '500', color: '#1c1917' },
   selectLabelSelected: { color: '#ffffff' },
-  selectSublabel: { fontSize: 12, color: '#a8a29e', marginTop: 1 },
-  selectSublabelSelected: { color: '#78716c' },
+  selectSublabel: { fontSize: 14, color: '#78716c', marginTop: 1 },
+  selectSublabelSelected: { color: '#a8a29e' },
   selectCheck: { fontSize: 14, color: '#ffffff', fontWeight: '600' },
   qualityCards: { gap: 8, marginBottom: 20 },
 
@@ -1720,7 +1720,7 @@ const styles = StyleSheet.create({
   sleepHourButtonActive: {
     backgroundColor: '#1c1917',
   },
-  sleepHourLabel: { fontSize: 13, fontWeight: '500', color: '#78716c' },
+  sleepHourLabel: { fontSize: 14, fontWeight: '500', color: '#78716c' },
   sleepHourLabelActive: { color: '#ffffff', fontWeight: '700' },
   sleepHoursAdjust: {
     flexDirection: 'row',
@@ -1756,7 +1756,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f4',
   },
   emojiPillEmoji: { fontSize: 14 },
-  emojiPillText: { fontSize: 13, fontWeight: '500', color: '#78716c' },
+  emojiPillText: { fontSize: 14, fontWeight: '500', color: '#78716c' },
   pillSelected: { backgroundColor: '#1c1917' },
   pillTextSelected: { color: '#ffffff' },
 
@@ -1770,7 +1770,7 @@ const styles = StyleSheet.create({
     borderColor: '#e7e5e4',
     borderStyle: 'dashed',
   },
-  addCustomPillText: { fontSize: 13, color: '#a8a29e' },
+  addCustomPillText: { fontSize: 14, color: '#78716c' },
   customInputRow: {
     flexDirection: 'row',
     gap: 8,
@@ -1782,7 +1782,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    fontSize: 13,
+    fontSize: 14,
     color: '#1c1917',
     borderWidth: 1,
     borderColor: '#e7e5e4',
@@ -1793,7 +1793,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     justifyContent: 'center',
   },
-  customInputAddText: { color: '#ffffff', fontSize: 13, fontWeight: '600' },
+  customInputAddText: { color: '#ffffff', fontSize: 14, fontWeight: '600' },
 
   /* Severity */
   severitySection: { marginTop: 20 },
@@ -1805,7 +1805,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#f5f5f4',
   },
-  severitySymptomLabel: { fontSize: 13, color: '#1c1917', flex: 1 },
+  severitySymptomLabel: { fontSize: 14, color: '#1c1917', flex: 1 },
   severityButtons: { flexDirection: 'row', gap: 6 },
   severityButton: {
     paddingHorizontal: 12,
@@ -1814,7 +1814,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f4',
   },
   severityButtonSelected: { backgroundColor: '#1c1917' },
-  severityButtonText: { fontSize: 12, color: '#78716c', fontWeight: '500' },
+  severityButtonText: { fontSize: 14, color: '#78716c', fontWeight: '500' },
   severityButtonTextSelected: { color: '#ffffff' },
 
   /* Period tracker */
@@ -1837,7 +1837,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fb7185',
   },
   periodHeaderText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     color: '#1c1917',
   },
@@ -1853,7 +1853,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   feelingGoodEmoji: { fontSize: 20 },
-  feelingGoodText: { fontSize: 13, color: '#166534', fontWeight: '500' },
+  feelingGoodText: { fontSize: 14, color: '#166534', fontWeight: '500' },
 
   /* Energy */
   energyRow: {
@@ -1869,7 +1869,7 @@ const styles = StyleSheet.create({
   },
   energyButtonSelected: { backgroundColor: '#1c1917' },
   energyEmoji: { fontSize: 24, marginBottom: 4 },
-  energyLabel: { fontSize: 13, color: '#78716c', fontWeight: '500' },
+  energyLabel: { fontSize: 14, color: '#78716c', fontWeight: '500' },
   energyLabelSelected: { color: '#ffffff' },
 
   /* Mood */
@@ -1890,7 +1890,7 @@ const styles = StyleSheet.create({
     transform: [{ scale: 1.08 }],
   },
   moodEmoji: { fontSize: 30, marginBottom: 6 },
-  moodLabel: { fontSize: 12, color: '#a8a29e' },
+  moodLabel: { fontSize: 14, color: '#78716c' },
   moodLabelSelected: { color: '#ffffff', fontWeight: '500' },
 
   /* Morning callback card */
@@ -1902,8 +1902,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#fef3c7',
   },
-  callbackTitle: { fontSize: 13, fontWeight: '600', color: '#92400e', marginBottom: 6 },
-  callbackText: { fontSize: 12, color: '#78716c', marginBottom: 2 },
+  callbackTitle: { fontSize: 14, fontWeight: '600', color: '#92400e', marginBottom: 6 },
+  callbackText: { fontSize: 14, color: '#78716c', marginBottom: 2 },
 
   /* Comparison */
   comparisonSection: { marginBottom: 16 },
@@ -1912,7 +1912,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#f5f5f4',
   },
-  comparisonSymptom: { fontSize: 13, color: '#1c1917', marginBottom: 8 },
+  comparisonSymptom: { fontSize: 14, color: '#1c1917', marginBottom: 8 },
   comparisonButtons: { flexDirection: 'row', gap: 8 },
   comparisonButton: {
     flex: 1,
@@ -1925,8 +1925,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f4',
   },
   comparisonButtonSelected: { backgroundColor: '#1c1917' },
-  comparisonButtonEmoji: { fontSize: 12 },
-  comparisonButtonLabel: { fontSize: 12, color: '#78716c', fontWeight: '500' },
+  comparisonButtonEmoji: { fontSize: 14 },
+  comparisonButtonLabel: { fontSize: 14, color: '#78716c', fontWeight: '500' },
   comparisonButtonLabelSelected: { color: '#ffffff' },
 
   /* Notes / text input */
@@ -1935,7 +1935,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     minHeight: 80,
-    fontSize: 13,
+    fontSize: 14,
     color: '#1c1917',
     borderWidth: 1,
     borderColor: '#f5f5f4',
@@ -1950,7 +1950,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
   },
-  promptChipText: { fontSize: 12, color: '#78716c' },
+  promptChipText: { fontSize: 14, color: '#78716c' },
 
   /* Meds step */
   medsEmptyCard: {
@@ -1964,15 +1964,15 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   medsEmptyEmoji: { fontSize: 32, marginBottom: 12 },
-  medsEmptyTitle: { fontSize: 14, fontWeight: '600', color: '#1c1917', marginBottom: 6 },
-  medsEmptyDesc: { fontSize: 12, color: '#a8a29e', textAlign: 'center', lineHeight: 18, marginBottom: 16, paddingHorizontal: 16 },
+  medsEmptyTitle: { fontSize: 16, fontWeight: '600', color: '#1c1917', marginBottom: 6 },
+  medsEmptyDesc: { fontSize: 16, color: '#78716c', textAlign: 'center', lineHeight: 22, marginBottom: 16, paddingHorizontal: 16 },
   medsAddButton: {
     backgroundColor: '#1c1917',
     borderRadius: 14,
     paddingHorizontal: 20,
     paddingVertical: 12,
   },
-  medsAddButtonText: { color: '#ffffff', fontSize: 13, fontWeight: '600' },
+  medsAddButtonText: { color: '#ffffff', fontSize: 14, fontWeight: '600' },
 
   medCard: {
     flexDirection: 'row',
@@ -1999,8 +1999,8 @@ const styles = StyleSheet.create({
   medIconAmber: { backgroundColor: '#fef3c7' },
   medIconText: { fontSize: 14, color: '#ffffff' },
   medName: { fontSize: 14, fontWeight: '500', color: '#1c1917' },
-  medNameTaken: { color: '#a8a29e', textDecorationLine: 'line-through' },
-  medDose: { fontSize: 12, color: '#a8a29e', marginTop: 1 },
+  medNameTaken: { color: '#78716c', textDecorationLine: 'line-through' },
+  medDose: { fontSize: 14, color: '#78716c', marginTop: 1 },
   medCheck: {
     width: 24,
     height: 24,
@@ -2015,14 +2015,14 @@ const styles = StyleSheet.create({
     borderColor: '#22c55e',
   },
   medCheckText: { fontSize: 12, color: '#ffffff', fontWeight: '700' },
-  medsSkipText: { fontSize: 12, color: '#a8a29e', textDecorationLine: 'underline' },
+  medsSkipText: { fontSize: 14, color: '#78716c', textDecorationLine: 'underline' },
   medsInfoCard: {
     backgroundColor: '#fafaf9',
     borderRadius: 14,
     padding: 14,
     marginTop: 16,
   },
-  medsInfoText: { fontSize: 12, color: '#78716c', lineHeight: 18 },
+  medsInfoText: { fontSize: 16, color: '#78716c', lineHeight: 22 },
 
   /* Footer */
   footer: {
@@ -2077,7 +2077,7 @@ const styles = StyleSheet.create({
   },
   celebStat: { alignItems: 'center', gap: 4 },
   celebStatValue: { fontSize: 24 },
-  celebStatLabel: { fontSize: 11, color: '#78716c' },
+  celebStatLabel: { fontSize: 14, color: '#a8a29e' },
   celebSummary: {
     backgroundColor: 'rgba(255,255,255,0.08)',
     borderRadius: 16,
@@ -2085,7 +2085,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     width: '100%',
   },
-  celebSummaryText: { fontSize: 13, color: '#d6d3d1', marginBottom: 4 },
+  celebSummaryText: { fontSize: 14, color: '#d6d3d1', marginBottom: 4 },
   celebQuoteWrap: { paddingHorizontal: 16, alignItems: 'center' },
   celebQuoteText: {
     fontSize: 16,
@@ -2096,7 +2096,7 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     marginBottom: 8,
   },
-  celebQuoteAuthor: { fontSize: 12, color: '#78716c' },
+  celebQuoteAuthor: { fontSize: 14, color: '#a8a29e' },
   celebDoneButton: {
     backgroundColor: '#ffffff',
     borderRadius: 16,

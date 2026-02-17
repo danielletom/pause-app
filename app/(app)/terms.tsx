@@ -82,18 +82,18 @@ const styles = StyleSheet.create({
 
   header: { marginBottom: 24 },
   title: { fontSize: 22, fontWeight: '700', color: '#1c1917', marginBottom: 4 },
-  subtitle: { fontSize: 13, color: '#a8a29e' },
+  subtitle: { fontSize: 14, color: '#78716c' },
 
   sectionsContainer: { gap: 20, marginBottom: 32 },
   section: {},
   sectionHeading: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
     color: '#1c1917',
     marginBottom: 6,
   },
   sectionBody: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#78716c',
     lineHeight: 22,
   },
@@ -109,14 +109,14 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   footerName: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '600',
     color: '#1c1917',
     marginBottom: 4,
   },
   footerDetail: {
-    fontSize: 13,
-    color: '#a8a29e',
+    fontSize: 14,
+    color: '#78716c',
     lineHeight: 20,
   },
 });

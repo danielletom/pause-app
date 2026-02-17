@@ -405,7 +405,7 @@ export default function SymptomLogScreen() {
         value={note}
         onChangeText={setNote}
         placeholder="How you're feeling, what helped..."
-        placeholderTextColor="#a8a29e"
+        placeholderTextColor="#78716c"
         style={styles.noteInput}
         multiline
         numberOfLines={4}
@@ -506,9 +506,9 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   navSide: { width: 60 },
-  navBackText: { fontSize: 13, color: '#a8a29e' },
-  navStep: { fontSize: 13, fontWeight: '500', color: '#78716c' },
-  navSkipText: { fontSize: 13, color: '#a8a29e', textAlign: 'right' },
+  navBackText: { fontSize: 14, color: '#78716c' },
+  navStep: { fontSize: 14, fontWeight: '500', color: '#78716c' },
+  navSkipText: { fontSize: 14, color: '#78716c', textAlign: 'right' },
 
   // Scroll content
   scrollContent: { paddingHorizontal: 24, paddingBottom: 20, paddingTop: 8 },
@@ -526,7 +526,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f4',
   },
   symptomPillActive: { backgroundColor: '#1c1917' },
-  symptomPillText: { fontSize: 13, fontWeight: '500', color: '#44403c' },
+  symptomPillText: { fontSize: 14, fontWeight: '500', color: '#44403c' },
   symptomPillTextActive: { color: '#ffffff' },
 
   // Severity — per-symptom rows matching morning check-in
@@ -539,7 +539,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#f5f5f4',
   },
-  severitySymptomLabel: { fontSize: 13, color: '#1c1917', flex: 1 },
+  severitySymptomLabel: { fontSize: 14, color: '#1c1917', flex: 1 },
   severityButtons: { flexDirection: 'row', gap: 6 },
   severityButton: {
     paddingHorizontal: 12,
@@ -548,7 +548,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f4',
   },
   severityButtonSelected: { backgroundColor: '#1c1917' },
-  severityButtonText: { fontSize: 12, color: '#44403c', fontWeight: '500' },
+  severityButtonText: { fontSize: 14, color: '#44403c', fontWeight: '500' },
   severityButtonTextSelected: { color: '#ffffff' },
 
   // Mood
@@ -562,7 +562,7 @@ const styles = StyleSheet.create({
   },
   moodItemActive: { backgroundColor: '#1c1917', transform: [{ scale: 1.05 }] },
   moodEmoji: { fontSize: 26 },
-  moodLabel: { fontSize: 12, color: '#57534e' },
+  moodLabel: { fontSize: 14, color: '#57534e' },
   moodLabelActive: { color: '#ffffff', fontWeight: '500' },
 
   // Trigger pills — improved contrast
@@ -575,7 +575,7 @@ const styles = StyleSheet.create({
     borderColor: '#e7e5e4',
   },
   triggerPillActive: { backgroundColor: '#1c1917', borderColor: '#1c1917' },
-  triggerPillText: { fontSize: 13, fontWeight: '500', color: '#44403c' },
+  triggerPillText: { fontSize: 14, fontWeight: '500', color: '#44403c' },
   triggerPillTextActive: { color: '#ffffff' },
   addCustomTriggerPill: {
     borderRadius: 20,
@@ -585,7 +585,7 @@ const styles = StyleSheet.create({
     borderColor: '#d6d3d1',
     borderStyle: 'dashed',
   },
-  addCustomTriggerText: { fontSize: 13, fontWeight: '500', color: '#78716c' },
+  addCustomTriggerText: { fontSize: 14, fontWeight: '500', color: '#78716c' },
   customTriggerRow: {
     flexDirection: 'row',
     gap: 8,
@@ -608,7 +608,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     justifyContent: 'center',
   },
-  customTriggerAddText: { color: '#ffffff', fontSize: 13, fontWeight: '600' },
+  customTriggerAddText: { color: '#ffffff', fontSize: 14, fontWeight: '600' },
 
   // Note input — improved clarity
   noteInput: {
@@ -638,8 +638,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   nextButtonDisabled: { backgroundColor: '#e7e5e4' },
-  nextButtonText: { fontSize: 14, fontWeight: '600', color: '#ffffff' },
-  nextButtonTextDisabled: { color: '#a8a29e' },
+  nextButtonText: { fontSize: 16, fontWeight: '600', color: '#ffffff' },
+  nextButtonTextDisabled: { color: '#78716c' },
 
   // Saved confirmation
   savedContainer: {
@@ -657,10 +657,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 16,
   },
-  checkMark: { fontSize: 28, color: '#059669', fontWeight: '700' },
+  checkMark: { fontSize: 28, color: '#047857', fontWeight: '700' },
   savedTitle: { fontSize: 22, fontWeight: '700', color: '#1c1917', marginBottom: 4 },
-  savedSub: { fontSize: 13, color: '#a8a29e', marginBottom: 8, textAlign: 'center' },
-  savedHint: { fontSize: 12, color: '#d6d3d1', marginBottom: 24 },
+  savedSub: { fontSize: 14, color: '#78716c', marginBottom: 8, textAlign: 'center' },
+  savedHint: { fontSize: 14, color: '#78716c', marginBottom: 24 },
   doneButton: {
     backgroundColor: '#1c1917',
     borderRadius: 16,
@@ -668,5 +668,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 48,
     alignItems: 'center',
   },
-  doneButtonText: { fontSize: 14, fontWeight: '600', color: '#ffffff' },
+  doneButtonText: { fontSize: 16, fontWeight: '600', color: '#ffffff' },
 });

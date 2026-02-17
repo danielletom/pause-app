@@ -221,7 +221,7 @@ export default function MedsScreen() {
   // Icon color for med type
   const getMedIcon = (type: string | null) => {
     if (type === 'hrt') return { bg: '#fce4ec', color: '#e91e63', symbol: '◎' };
-    if (type === 'supplement') return { bg: '#fff8e1', color: '#f59e0b', symbol: '⬡' };
+    if (type === 'supplement') return { bg: '#fff8e1', color: '#b45309', symbol: '⬡' };
     return { bg: '#f5f5f4', color: '#78716c', symbol: '●' };
   };
 
@@ -336,7 +336,7 @@ export default function MedsScreen() {
                             </View>
                           ) : (
                             <View style={styles.checkEmpty}>
-                              <Ionicons name="ellipse-outline" size={24} color="#d6d3d1" />
+                              <Ionicons name="ellipse-outline" size={24} color="#78716c" />
                             </View>
                           )}
                         </AnimatedPressable>
@@ -346,7 +346,7 @@ export default function MedsScreen() {
                 ) : (
                   <View style={styles.emptyState}>
                     <View style={styles.emptyIcon}>
-                      <Ionicons name="leaf-outline" size={36} color="#a8a29e" />
+                      <Ionicons name="leaf-outline" size={36} color="#78716c" />
                     </View>
                     <Text style={styles.emptyTitle}>No supplements yet</Text>
                     <Text style={styles.emptyDesc}>Add your supplements to track daily adherence</Text>
@@ -436,7 +436,7 @@ export default function MedsScreen() {
                             </View>
                           ) : (
                             <View style={styles.checkEmpty}>
-                              <Ionicons name="ellipse-outline" size={24} color="#d6d3d1" />
+                              <Ionicons name="ellipse-outline" size={24} color="#78716c" />
                             </View>
                           )}
                         </AnimatedPressable>
@@ -446,7 +446,7 @@ export default function MedsScreen() {
                 ) : (
                   <View style={styles.emptyState}>
                     <View style={styles.emptyIcon}>
-                      <Ionicons name="medkit-outline" size={36} color="#a8a29e" />
+                      <Ionicons name="medkit-outline" size={36} color="#78716c" />
                     </View>
                     <Text style={styles.emptyTitle}>No medications yet</Text>
                     <Text style={styles.emptyDesc}>Add your medications and supplements to track adherence</Text>
@@ -498,7 +498,7 @@ export default function MedsScreen() {
                               </View>
                             ) : (
                               <View style={styles.checkEmpty}>
-                                <Ionicons name="ellipse-outline" size={24} color="#d6d3d1" />
+                                <Ionicons name="ellipse-outline" size={24} color="#78716c" />
                               </View>
                             )}
                           </AnimatedPressable>
@@ -509,7 +509,7 @@ export default function MedsScreen() {
                 ) : (
                   <View style={styles.emptyState}>
                     <View style={styles.emptyIcon}>
-                      <Ionicons name="shield-checkmark-outline" size={36} color="#a8a29e" />
+                      <Ionicons name="shield-checkmark-outline" size={36} color="#78716c" />
                     </View>
                     <Text style={styles.emptyTitle}>No HRT medications</Text>
                     <Text style={styles.emptyDesc}>
@@ -560,7 +560,7 @@ export default function MedsScreen() {
                 {/* Placeholder for recent labs */}
                 <View style={styles.emptyState}>
                   <View style={styles.emptyIcon}>
-                    <Ionicons name="flask-outline" size={36} color="#a8a29e" />
+                    <Ionicons name="flask-outline" size={36} color="#78716c" />
                   </View>
                   <Text style={styles.emptyTitle}>No lab results yet</Text>
                   <Text style={styles.emptyDesc}>
@@ -670,7 +670,7 @@ export default function MedsScreen() {
             <TextInput
               style={styles.formInput}
               placeholder="e.g. Estradiol, Vitamin D"
-              placeholderTextColor="#d6d3d1"
+              placeholderTextColor="#78716c"
               value={newName}
               onChangeText={setNewName}
             />
@@ -680,7 +680,7 @@ export default function MedsScreen() {
             <TextInput
               style={styles.formInput}
               placeholder="e.g. 0.5mg, 1000 IU"
-              placeholderTextColor="#d6d3d1"
+              placeholderTextColor="#78716c"
               value={newDose}
               onChangeText={setNewDose}
             />
@@ -726,7 +726,7 @@ export default function MedsScreen() {
                 <TextInput
                   style={styles.formInput}
                   placeholder="Or describe: e.g. Every 3 days"
-                  placeholderTextColor="#d6d3d1"
+                  placeholderTextColor="#78716c"
                   value={customFrequency}
                   onChangeText={setCustomFrequency}
                 />
@@ -753,7 +753,7 @@ export default function MedsScreen() {
               <TextInput
                 style={[styles.formInput, { marginTop: 8 }]}
                 placeholder="e.g. 8:30 AM, 2:00 PM"
-                placeholderTextColor="#d6d3d1"
+                placeholderTextColor="#78716c"
                 value={customTime}
                 onChangeText={setCustomTime}
               />
@@ -777,7 +777,7 @@ export default function MedsScreen() {
               <TextInput
                 style={[styles.formInput, { marginTop: 10 }]}
                 placeholder="Phone number for SMS reminders"
-                placeholderTextColor="#d6d3d1"
+                placeholderTextColor="#78716c"
                 value={smsPhone}
                 onChangeText={setSmsPhone}
                 keyboardType="phone-pad"
@@ -898,18 +898,18 @@ const styles = StyleSheet.create({
   // Header
   header: { marginBottom: 12 },
   title: { fontSize: 22, fontWeight: '700', color: '#1c1917' },
-  subtitle: { fontSize: 12, color: '#a8a29e', marginTop: 2 },
+  subtitle: { fontSize: 14, color: '#78716c', marginTop: 2 },
 
   // Tab pills (horizontal scroll)
   tabScroll: { marginBottom: 16, marginHorizontal: -24 },
   tabRow: { paddingHorizontal: 24, gap: 8 },
   tabPill: {
-    paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20,
+    paddingHorizontal: 16, paddingVertical: 12, borderRadius: 20,
     backgroundColor: '#ffffff',
     borderWidth: 1, borderColor: '#f5f5f4',
   },
   tabPillActive: { backgroundColor: '#1c1917', borderColor: '#1c1917' },
-  tabPillText: { fontSize: 13, fontWeight: '500', color: '#78716c' },
+  tabPillText: { fontSize: 14, fontWeight: '500', color: '#78716c' },
   tabPillTextActive: { color: '#ffffff' },
 
   loadingContainer: { paddingTop: 60, alignItems: 'center' },
@@ -921,12 +921,12 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: '#e7e5e4', borderStyle: 'dashed',
   },
   pauseUpsellBody: {
-    fontSize: 13, color: '#78716c', lineHeight: 19, marginBottom: 14,
+    fontSize: 16, color: '#78716c', lineHeight: 22, marginBottom: 14,
   },
   pauseUpsellBtn: {
     backgroundColor: '#1c1917', borderRadius: 12, paddingVertical: 12, alignItems: 'center',
   },
-  pauseUpsellBtnText: { fontSize: 13, fontWeight: '600', color: '#ffffff' },
+  pauseUpsellBtnText: { fontSize: 16, fontWeight: '600', color: '#ffffff' },
   pauseSupplementHeader: {
     flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12,
   },
@@ -940,22 +940,22 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   pauseLogoDotInner: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#ffffff' },
-  pauseSupplementName: { fontSize: 14, fontWeight: '700', color: '#1c1917' },
-  pauseSupplementDesc: { fontSize: 12, color: '#a8a29e', marginTop: 1 },
+  pauseSupplementName: { fontSize: 16, fontWeight: '700', color: '#1c1917' },
+  pauseSupplementDesc: { fontSize: 14, color: '#78716c', marginTop: 1 },
   pausePlusBadge: {
     backgroundColor: '#f5f5f4', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3,
   },
-  pausePlusBadgeText: { fontSize: 10, fontWeight: '600', color: '#78716c' },
+  pausePlusBadgeText: { fontSize: 12, fontWeight: '600', color: '#78716c' },
 
   // Upsell card
   upsellCard: {
     backgroundColor: '#fffbeb', borderRadius: 16, padding: 16,
     flexDirection: 'row', gap: 12, borderWidth: 1, borderColor: '#fef3c7',
   },
-  upsellIcon: { fontSize: 18, color: '#f59e0b' },
-  upsellTitle: { fontSize: 12, fontWeight: '600', color: '#1c1917', marginBottom: 4 },
-  upsellDesc: { fontSize: 12, color: '#78716c', lineHeight: 17 },
-  upsellLink: { fontSize: 12, fontWeight: '600', color: '#1c1917', marginTop: 8, textDecorationLine: 'underline' },
+  upsellIcon: { fontSize: 18, color: '#b45309' },
+  upsellTitle: { fontSize: 16, fontWeight: '600', color: '#1c1917', marginBottom: 4 },
+  upsellDesc: { fontSize: 14, color: '#78716c', lineHeight: 20 },
+  upsellLink: { fontSize: 14, fontWeight: '600', color: '#1c1917', marginTop: 8, textDecorationLine: 'underline' },
 
   // ── Current tab: Adherence card ──
   adherenceCard: {
@@ -967,7 +967,7 @@ const styles = StyleSheet.create({
   adherencePercent: { fontSize: 22, fontWeight: '700', color: '#1c1917' },
   adherenceBar: { height: 6, backgroundColor: '#e7e5e4', borderRadius: 3, marginBottom: 8 },
   adherenceFill: { height: 6, backgroundColor: '#059669', borderRadius: 3 },
-  adherenceSub: { fontSize: 12, color: '#a8a29e' },
+  adherenceSub: { fontSize: 14, color: '#78716c' },
 
   // ── Med cards (shared) ──
   medsList: { gap: 8 },
@@ -981,16 +981,16 @@ const styles = StyleSheet.create({
   },
   medIconText: { fontSize: 16 },
   medNameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  medName: { fontSize: 14, fontWeight: '500', color: '#1c1917' },
-  medDetail: { fontSize: 12, color: '#a8a29e', marginTop: 1 },
-  medAddedDate: { fontSize: 11, color: '#d6d3d1', marginTop: 2 },
-  medAdherence: { fontSize: 12, color: '#a8a29e', marginTop: 2 },
-  medAdherenceTaken: { color: '#059669' },
+  medName: { fontSize: 16, fontWeight: '500', color: '#1c1917' },
+  medDetail: { fontSize: 14, color: '#78716c', marginTop: 1 },
+  medAddedDate: { fontSize: 14, color: '#78716c', marginTop: 2 },
+  medAdherence: { fontSize: 14, color: '#78716c', marginTop: 2 },
+  medAdherenceTaken: { color: '#047857' },
   smsBadge: {
     backgroundColor: '#f5f5f4', borderRadius: 8, paddingHorizontal: 6, paddingVertical: 2,
   },
-  smsBadgeText: { fontSize: 10, color: '#78716c' },
-  chevron: { fontSize: 20, color: '#d6d3d1' },
+  smsBadgeText: { fontSize: 12, color: '#78716c' },
+  chevron: { fontSize: 20, color: '#78716c' },
   takenBadge: {
     width: 32, height: 32, borderRadius: 16,
     backgroundColor: '#ecfdf5', alignItems: 'center', justifyContent: 'center',
@@ -1010,18 +1010,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff', borderRadius: 14, paddingVertical: 14,
     borderWidth: 1, borderColor: '#e7e5e4', borderStyle: 'dashed',
   },
-  addMedBtnText: { fontSize: 14, fontWeight: '500', color: '#78716c' },
+  addMedBtnText: { fontSize: 16, fontWeight: '500', color: '#78716c' },
   addMedBtnSmall: {
     marginTop: 16, paddingHorizontal: 20, paddingVertical: 10,
     borderRadius: 20, backgroundColor: '#1c1917',
   },
-  addMedBtnSmallText: { fontSize: 13, fontWeight: '600', color: '#ffffff' },
+  addMedBtnSmallText: { fontSize: 16, fontWeight: '600', color: '#ffffff' },
 
   // ── HRT tab ──
   card: {
     backgroundColor: '#ffffff', borderRadius: 16, padding: 18,
   },
-  cardTitle: { fontSize: 13, fontWeight: '600', color: '#1c1917', marginBottom: 12 },
+  cardTitle: { fontSize: 16, fontWeight: '600', color: '#1c1917', marginBottom: 12 },
   timeline: { gap: 16 },
   timelineItem: { flexDirection: 'row', gap: 12 },
   timelineDot: {
@@ -1031,20 +1031,20 @@ const styles = StyleSheet.create({
     position: 'absolute', left: 3.5, top: 16, width: 1, height: 28, backgroundColor: '#e7e5e4',
   },
   timelineContent: { flex: 1 },
-  timelineDate: { fontSize: 12, fontWeight: '500', color: '#1c1917' },
-  timelineEvent: { fontSize: 12, color: '#a8a29e', marginTop: 1 },
+  timelineDate: { fontSize: 14, fontWeight: '500', color: '#1c1917' },
+  timelineEvent: { fontSize: 14, color: '#78716c', marginTop: 1 },
   chartPlaceholder: {
     height: 80, backgroundColor: '#f5f5f4', borderRadius: 12,
     alignItems: 'center', justifyContent: 'center',
   },
-  chartPlaceholderText: { fontSize: 12, color: '#d6d3d1' },
+  chartPlaceholderText: { fontSize: 14, color: '#78716c' },
 
   // ── Labs tab ──
   labsHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 },
   premiumBadge: {
     backgroundColor: '#f5f5f4', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3,
   },
-  premiumBadgeText: { fontSize: 10, fontWeight: '600', color: '#78716c' },
+  premiumBadgeText: { fontSize: 12, fontWeight: '600', color: '#78716c' },
   uploadGrid: { flexDirection: 'row', gap: 10, marginBottom: 10 },
   uploadOption: {
     flex: 1, alignItems: 'center', gap: 8, padding: 16,
@@ -1054,9 +1054,9 @@ const styles = StyleSheet.create({
     width: 40, height: 40, borderRadius: 20, backgroundColor: '#1c1917',
     alignItems: 'center', justifyContent: 'center',
   },
-  uploadOptionTitle: { fontSize: 13, fontWeight: '500', color: '#1c1917' },
-  uploadOptionDesc: { fontSize: 11, color: '#a8a29e', textAlign: 'center' },
-  uploadNote: { fontSize: 11, color: '#d6d3d1', textAlign: 'center' },
+  uploadOptionTitle: { fontSize: 16, fontWeight: '500', color: '#1c1917' },
+  uploadOptionDesc: { fontSize: 14, color: '#78716c', textAlign: 'center' },
+  uploadNote: { fontSize: 14, color: '#78716c', textAlign: 'center' },
 
   // ── Weekly adherence chart ──
   weekChart: {
@@ -1066,8 +1066,8 @@ const styles = StyleSheet.create({
   weekChartHeader: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14,
   },
-  weekChartTitle: { fontSize: 13, fontWeight: '600', color: '#1c1917' },
-  weekChartAvg: { fontSize: 12, fontWeight: '500', color: '#059669' },
+  weekChartTitle: { fontSize: 16, fontWeight: '600', color: '#1c1917' },
+  weekChartAvg: { fontSize: 14, fontWeight: '500', color: '#047857' },
   weekBarsRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 6 },
   weekBarCol: { flex: 1, alignItems: 'center' },
   weekBarTrack: {
@@ -1075,7 +1075,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fafaf9', borderRadius: 6, marginBottom: 6,
   },
   weekBarFill: { width: '100%', minHeight: 4 },
-  weekBarLabel: { fontSize: 11, color: '#a8a29e', fontWeight: '400' },
+  weekBarLabel: { fontSize: 14, color: '#78716c', fontWeight: '400' },
   weekBarLabelToday: { color: '#1c1917', fontWeight: '600' },
   weekBarDot: {
     width: 4, height: 4, borderRadius: 2, backgroundColor: '#1c1917', marginTop: 3,
@@ -1090,7 +1090,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center', marginBottom: 16,
   },
   emptyTitle: { fontSize: 16, fontWeight: '600', color: '#1c1917', marginBottom: 6 },
-  emptyDesc: { fontSize: 13, color: '#78716c', textAlign: 'center', lineHeight: 18 },
+  emptyDesc: { fontSize: 14, color: '#78716c', textAlign: 'center', lineHeight: 20 },
 
   // ── Modal ──
   modalContainer: { flex: 1, backgroundColor: '#fafaf9' },
@@ -1102,7 +1102,7 @@ const styles = StyleSheet.create({
   modalCancel: { fontSize: 15, color: '#78716c' },
   modalTitle: { fontSize: 17, fontWeight: '600', color: '#1c1917' },
   modalContent: { padding: 24, paddingBottom: 40 },
-  formLabel: { fontSize: 14, fontWeight: '600', color: '#1c1917', marginBottom: 8, marginTop: 16 },
+  formLabel: { fontSize: 16, fontWeight: '600', color: '#1c1917', marginBottom: 8, marginTop: 16 },
   formInput: {
     backgroundColor: '#ffffff', borderRadius: 12, padding: 14,
     fontSize: 15, color: '#1c1917',
@@ -1110,15 +1110,15 @@ const styles = StyleSheet.create({
   },
   typeRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
   typePill: {
-    paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20,
+    paddingHorizontal: 16, paddingVertical: 12, borderRadius: 20,
     backgroundColor: '#ffffff',
     shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.03, shadowRadius: 4, elevation: 1,
   },
   typePillActive: { backgroundColor: '#1c1917' },
-  typePillText: { fontSize: 13, fontWeight: '500', color: '#78716c' },
+  typePillText: { fontSize: 14, fontWeight: '500', color: '#78716c' },
   typePillTextActive: { color: '#ffffff' },
   dayPill: {
-    paddingHorizontal: 12, paddingVertical: 10, borderRadius: 20,
+    paddingHorizontal: 12, paddingVertical: 12, borderRadius: 20,
     backgroundColor: '#ffffff',
     shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.03, shadowRadius: 4, elevation: 1,
   },
@@ -1129,8 +1129,8 @@ const styles = StyleSheet.create({
     marginTop: 24, paddingTop: 20,
     borderTopWidth: 1, borderTopColor: '#f5f5f4',
   },
-  smsToggleLabel: { fontSize: 14, fontWeight: '500', color: '#1c1917' },
-  smsToggleDesc: { fontSize: 12, color: '#a8a29e', marginTop: 2 },
+  smsToggleLabel: { fontSize: 16, fontWeight: '500', color: '#1c1917' },
+  smsToggleDesc: { fontSize: 14, color: '#78716c', marginTop: 2 },
   toggle: {
     width: 48, height: 28, borderRadius: 14,
     backgroundColor: '#e7e5e4', padding: 2,
@@ -1150,17 +1150,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10,
     borderWidth: 1, borderColor: '#f5f5f4',
   },
-  suggestChipText: { fontSize: 13, fontWeight: '500', color: '#1c1917' },
-  suggestChipDose: { fontSize: 11, color: '#a8a29e', marginTop: 2 },
+  suggestChipText: { fontSize: 16, fontWeight: '500', color: '#1c1917' },
+  suggestChipDose: { fontSize: 14, color: '#78716c', marginTop: 2 },
   matchList: { gap: 4, marginBottom: 8, marginTop: 8 },
   matchItem: {
     backgroundColor: '#ffffff', borderRadius: 12, padding: 14,
     flexDirection: 'row', alignItems: 'center',
     borderWidth: 1, borderColor: '#f5f5f4',
   },
-  matchName: { fontSize: 14, fontWeight: '500', color: '#1c1917' },
-  matchMeta: { fontSize: 12, color: '#a8a29e', marginTop: 1 },
-  matchType: { fontSize: 11, fontWeight: '600', color: '#78716c', textTransform: 'capitalize' },
+  matchName: { fontSize: 16, fontWeight: '500', color: '#1c1917' },
+  matchMeta: { fontSize: 14, color: '#78716c', marginTop: 1 },
+  matchType: { fontSize: 14, fontWeight: '600', color: '#78716c', textTransform: 'capitalize' },
 
   modalFooter: { paddingHorizontal: 24, paddingBottom: 40, paddingTop: 12 },
   modalSaveBtn: {

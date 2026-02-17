@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
     color: '#1c1917',
   },
   valueLabel: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
   },
   track: {

@@ -23,7 +23,7 @@ export default function BackButton({ label = 'Back', light = false, onPress }: B
   };
 
   return (
-    <AnimatedPressable onPress={handlePress} scaleDown={0.95}>
+    <AnimatedPressable onPress={handlePress} scaleDown={0.95} style={styles.container}>
       <Text style={[styles.text, light && styles.textLight]}>
         ← {label}
       </Text>
@@ -32,12 +32,18 @@ export default function BackButton({ label = 'Back', light = false, onPress }: B
 }
 
 const styles = StyleSheet.create({
+  container: {
+    paddingVertical: 10,
+    paddingRight: 16,
+    minHeight: 44,
+    justifyContent: 'center',
+  },
   text: {
-    fontSize: 13,
-    color: '#a8a29e',
+    fontSize: 16,
+    color: '#78716c',
     fontWeight: '500',
   },
   textLight: {
-    color: '#78716c',
+    color: 'rgba(255,255,255,0.8)',
   },
 });

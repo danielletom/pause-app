@@ -468,15 +468,15 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   introDesc: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#78716c',
     textAlign: 'center',
     lineHeight: 22,
     marginBottom: 8,
   },
   socialProof: {
-    fontSize: 12,
-    color: '#d6d3d1',
+    fontSize: 14,
+    color: '#78716c',
     textAlign: 'center',
   },
 
@@ -497,7 +497,7 @@ const styles = StyleSheet.create({
 
   // ─── Breathing ──────────────────
   endSessionButton: { position: 'absolute', top: 16, left: 0, padding: 8 },
-  endSessionText: { fontSize: 13, color: '#57534e' },
+  endSessionText: { fontSize: 14, color: '#a8a29e' },
 
   circleContainer: {
     alignItems: 'center',
@@ -515,15 +515,15 @@ const styles = StyleSheet.create({
     color: '#ffffff',
   },
   phaseHint: {
-    fontSize: 12,
-    color: '#57534e',
+    fontSize: 14,
+    color: '#a8a29e',
     letterSpacing: 1,
     textTransform: 'uppercase',
   },
   countdownText: {
     fontSize: 28,
     fontWeight: '300',
-    color: '#44403c',
+    color: '#a8a29e',
     marginTop: 20,
     fontVariant: ['tabular-nums'],
   },
@@ -544,8 +544,8 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   cycleText: {
-    fontSize: 12,
-    color: '#57534e',
+    fontSize: 14,
+    color: '#a8a29e',
   },
   finishEarlyButton: {
     backgroundColor: '#0d9488',
@@ -580,7 +580,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   doneDesc: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#78716c',
     textAlign: 'center',
     marginBottom: 24,
@@ -589,8 +589,8 @@ const styles = StyleSheet.create({
   // Rating
   ratingSection: { alignSelf: 'stretch', marginBottom: 20 },
   ratingQuestion: {
-    fontSize: 13,
-    color: '#a8a29e',
+    fontSize: 14,
+    color: '#78716c',
     textAlign: 'center',
     marginBottom: 12,
   },
@@ -605,8 +605,8 @@ const styles = StyleSheet.create({
   ratingPillSelected: {
     backgroundColor: '#ccfbf1',
   },
-  ratingPillText: { fontSize: 11, color: '#78716c', fontWeight: '500' },
-  ratingThanks: { fontSize: 14, color: '#a8a29e', textAlign: 'center' },
+  ratingPillText: { fontSize: 14, color: '#78716c', fontWeight: '500' },
+  ratingThanks: { fontSize: 14, color: '#78716c', textAlign: 'center' },
 
   // Upsell — dark card per wireframe
   upsellCard: {
@@ -616,15 +616,15 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
     marginBottom: 8,
   },
-  upsellLabel: { fontSize: 12, color: '#78716c' },
+  upsellLabel: { fontSize: 14, color: '#a8a29e' },
   upsellTitle: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#ffffff',
     fontWeight: '500',
     marginTop: 4,
   },
   upsellLink: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#fbbf24',
     fontWeight: '500',
     marginTop: 6,
@@ -646,7 +646,7 @@ const styles = StyleSheet.create({
   },
   ghostButtonText: {
     color: '#78716c',
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '500',
   },
 });

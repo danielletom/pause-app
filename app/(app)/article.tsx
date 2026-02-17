@@ -55,7 +55,7 @@ export default function ArticleScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <Text style={{ color: '#a8a29e', fontSize: 15 }}>Article not found</Text>
+          <Text style={{ color: '#78716c', fontSize: 15 }}>Article not found</Text>
         </View>
       </SafeAreaView>
     );
@@ -126,7 +126,7 @@ const markdownStyles = StyleSheet.create({
   paragraph: { marginBottom: 14, lineHeight: 24 },
   strong: { fontWeight: '700', color: '#1c1917' },
   listItem: { marginBottom: 6 },
-  listUnorderedItemIcon: { color: '#a8a29e', fontSize: 8, marginTop: 8, marginRight: 8 },
+  listUnorderedItemIcon: { color: '#78716c', fontSize: 8, marginTop: 8, marginRight: 8 },
   bullet_list: { marginBottom: 14 },
 });
 
@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
   },
   stickyTitle: {
     flex: 1,
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     color: '#1c1917',
     textAlign: 'center',
@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
   },
 
   header: { marginBottom: 20, paddingHorizontal: 24 },
-  metaText: { fontSize: 12, color: '#a8a29e', marginBottom: 8 },
+  metaText: { fontSize: 14, color: '#78716c', marginBottom: 8 },
   title: { fontSize: 22, fontWeight: '700', color: '#1c1917', lineHeight: 30 },
 
   body: { paddingHorizontal: 24 },
@@ -176,11 +176,11 @@ const styles = StyleSheet.create({
     marginHorizontal: 24,
     marginTop: 20,
   },
-  ctaText: { fontSize: 12, color: '#78716c' },
+  ctaText: { fontSize: 16, color: '#78716c' },
 
   disclaimer: {
-    fontSize: 12,
-    color: '#d6d3d1',
+    fontSize: 14,
+    color: '#78716c',
     fontStyle: 'italic',
     marginTop: 24,
     marginHorizontal: 24,

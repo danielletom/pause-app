@@ -383,8 +383,8 @@ const styles = StyleSheet.create({
   },
   dividerText: {
     marginHorizontal: 14,
-    fontSize: 13,
-    color: '#a8a29e',
+    fontSize: 14,
+    color: '#78716c',
   },
   primaryButton: {
     backgroundColor: '#44403c',

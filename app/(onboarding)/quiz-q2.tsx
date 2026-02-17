@@ -61,6 +61,8 @@ export default function QuizQ2Screen() {
                 styles.option,
                 selected === option && styles.optionSelected,
               ]}
+              accessibilityRole="radio"
+              accessibilityLabel={option}
             >
               <Text
                 style={[
@@ -94,8 +96,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   questionNum: {
-    fontSize: 13,
-    color: '#a8a29e',
+    fontSize: 14,
+    color: '#78716c',
     fontWeight: '500',
   },
   scrollContent: {

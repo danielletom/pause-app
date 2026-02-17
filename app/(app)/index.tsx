@@ -536,7 +536,7 @@ export default function HomeScreen() {
             >
               <View style={styles.journalCardRow}>
                 <View style={styles.journalMorningIcon}>
-                  <Text style={{ fontSize: 18, color: '#d97706' }}>☀</Text>
+                  <Text style={{ fontSize: 18, color: '#b45309' }}>☀</Text>
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.journalCardTitle}>
@@ -563,7 +563,7 @@ export default function HomeScreen() {
                   <Text style={{ fontSize: 18, color: '#6366f1' }}>☽</Text>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.journalCardTitle, !eveningDone && isToday && hour < 19 && { color: '#78716c' }]}>
+                  <Text style={[styles.journalCardTitle, !eveningDone && isToday && hour < 19 && { color: '#57534e' }]}>
                     {eveningDone ? 'Evening ✓' : 'Evening reflection'}
                   </Text>
                   <Text style={styles.journalCardDesc}>
@@ -618,7 +618,7 @@ export default function HomeScreen() {
                           styles.medRowIcon,
                           med.type === 'supplement' ? { backgroundColor: '#fef3c7' } : { backgroundColor: '#1c1917' },
                         ]}>
-                          <Text style={{ fontSize: 12, color: med.type === 'supplement' ? '#d97706' : '#fff' }}>
+                          <Text style={{ fontSize: 12, color: med.type === 'supplement' ? '#b45309' : '#fff' }}>
                             {med.type === 'supplement' ? '⬡' : '◎'}
                           </Text>
                         </View>
@@ -734,7 +734,7 @@ export default function HomeScreen() {
                     <View style={{ flex: 1 }}>
                       <Text style={styles.trendName}>
                         Sleep{' '}
-                        <Text style={{ color: '#818cf8', fontWeight: '700' }}>
+                        <Text style={{ color: '#4f46e5', fontWeight: '700' }}>
                           {sleepLog.sleepHours}h
                         </Text>
                       </Text>
@@ -743,7 +743,7 @@ export default function HomeScreen() {
                         {sleepLog.sleepQuality ? ` · ${sleepLog.sleepQuality}` : ''}
                       </Text>
                     </View>
-                    <Text style={{ fontSize: 11, color: '#a8a29e' }}>Edit →</Text>
+                    <Text style={{ fontSize: 14, color: '#78716c' }}>Edit →</Text>
                   </AnimatedPressable>
                 )}
               </View>
@@ -905,7 +905,7 @@ export default function HomeScreen() {
                             <Text style={styles.summaryEmoji}>🌙</Text>
                             <Text style={[styles.summaryTitle, { fontWeight: '700' }]}>Evening reflection</Text>
                           </View>
-                          <Text style={{ fontSize: 12, color: '#78716c', marginTop: 4 }}>
+                          <Text style={{ fontSize: 14, color: '#78716c', marginTop: 4 }}>
                             Ready when you are — 4 steps · under 2 min
                           </Text>
                         </AnimatedPressable>
@@ -994,7 +994,7 @@ export default function HomeScreen() {
 
                   {/* Tomorrow's forecast insight */}
                   <View style={styles.tonightInsight}>
-                    <Text style={{ fontSize: 12, color: '#059669', marginTop: 2 }}>💡</Text>
+                    <Text style={{ fontSize: 14, color: '#047857', marginTop: 2 }}>💡</Text>
                     <Text style={styles.tonightInsightText}>
                       <Text style={{ fontWeight: '500', color: '#44403c' }}>Tomorrow's forecast: </Text>
                       Sleep 7+ hours tonight and your readiness could hit 78. Your body responds well to early wind-downs.
@@ -1013,13 +1013,13 @@ export default function HomeScreen() {
               >
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                   <View style={styles.wellnessEntryIcon}>
-                    <Text style={{ fontSize: 14, fontWeight: '700', color: '#d97706' }}>✦</Text>
+                    <Text style={{ fontSize: 14, fontWeight: '700', color: '#b45309' }}>✦</Text>
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.wellnessEntryTitle}>Wellness Centre</Text>
                     <Text style={styles.wellnessEntrySubtitle}>Your program, meditations, podcasts & guides</Text>
                   </View>
-                  <Text style={{ fontSize: 18, color: '#d6d3d1' }}>›</Text>
+                  <Text style={{ fontSize: 18, color: '#78716c' }}>›</Text>
                 </View>
                 <View style={styles.wellnessProgressBg}>
                   <View style={[styles.wellnessProgressFill, { width: '18%' }]} />
@@ -1124,7 +1124,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     marginBottom: 20,
   },
-  dateText: { fontSize: 12, color: '#a8a29e', fontWeight: '300', marginBottom: 2 },
+  dateText: { fontSize: 14, color: '#78716c', fontWeight: '300', marginBottom: 2 },
   greeting: { fontSize: 24, fontWeight: '700', color: '#1c1917' },
   avatar: {
     width: 40,
@@ -1153,13 +1153,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#1c1917',
   },
   weekStripDay: {
-    fontSize: 11,
-    color: '#a8a29e',
+    fontSize: 14,
+    color: '#78716c',
     fontWeight: '400',
     marginBottom: 3,
   },
   weekStripDaySelected: {
-    color: '#78716c',
+    color: '#a8a29e',
   },
   weekStripNum: {
     fontSize: 15,
@@ -1199,8 +1199,8 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   weekLegendText: {
-    fontSize: 10,
-    color: '#a8a29e',
+    fontSize: 14,
+    color: '#78716c',
   },
 
   // Readiness score
@@ -1213,8 +1213,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   readinessLabel: {
-    fontSize: 10,
-    color: '#78716c',
+    fontSize: 12,
+    color: '#a8a29e',
     letterSpacing: 1,
     fontWeight: '300',
     textTransform: 'uppercase',
@@ -1226,8 +1226,8 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   readinessHint: {
-    fontSize: 12,
-    color: '#78716c',
+    fontSize: 14,
+    color: '#a8a29e',
     marginTop: 4,
   },
   readinessRingOuter: {
@@ -1253,13 +1253,13 @@ const styles = StyleSheet.create({
     color: '#ffffff',
   },
   readinessRingLabel: {
-    fontSize: 10,
-    color: '#78716c',
+    fontSize: 12,
+    color: '#a8a29e',
     marginTop: 4,
   },
 
   readinessActivity: {
-    fontSize: 13,
+    fontSize: 16,
     fontWeight: '600',
     marginTop: 8,
   },
@@ -1270,12 +1270,12 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   readinessStatText: {
-    fontSize: 10,
-    color: '#78716c',
+    fontSize: 12,
+    color: '#a8a29e',
   },
   readinessStatDot: {
-    fontSize: 10,
-    color: '#78716c',
+    fontSize: 12,
+    color: '#a8a29e',
   },
 
   // Journal card
@@ -1309,13 +1309,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   journalCardTitle: {
-    fontSize: 13,
+    fontSize: 16,
     fontWeight: '600',
     color: '#1c1917',
   },
   journalCardDesc: {
-    fontSize: 11,
-    color: '#a8a29e',
+    fontSize: 14,
+    color: '#78716c',
     marginTop: 1,
   },
   nowBadge: {
@@ -1325,7 +1325,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
   },
   nowBadgeText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
     color: '#1c1917',
   },
@@ -1352,9 +1352,9 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   journalStreakText: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '600',
-    color: '#d97706',
+    color: '#b45309',
   },
 
   // Today's meds
@@ -1384,17 +1384,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   medRowName: {
-    fontSize: 12,
+    fontSize: 16,
     fontWeight: '500',
     color: '#1c1917',
   },
   medRowNameTaken: {
-    color: '#a8a29e',
+    color: '#78716c',
     textDecorationLine: 'line-through',
   },
   medRowDose: {
-    fontSize: 11,
-    color: '#a8a29e',
+    fontSize: 14,
+    color: '#78716c',
     marginTop: 1,
   },
   medRowCheck: {
@@ -1417,8 +1417,8 @@ const styles = StyleSheet.create({
     borderTopColor: '#f5f5f4',
   },
   medsSummaryText: {
-    fontSize: 11,
-    color: '#a8a29e',
+    fontSize: 14,
+    color: '#78716c',
   },
 
   // SOS + Check-in row
@@ -1448,13 +1448,13 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   checkinTitle: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '600',
     color: '#ffffff',
   },
   checkinSub: {
-    fontSize: 11,
-    color: '#78716c',
+    fontSize: 14,
+    color: '#a8a29e',
     marginTop: 2,
   },
   checkinArrow: {
@@ -1473,8 +1473,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  sosTitle: { fontSize: 12, fontWeight: '600', color: '#115e59' },
-  sosSubtitle: { fontSize: 11, color: '#5eead4' },
+  sosTitle: { fontSize: 14, fontWeight: '600', color: '#115e59' },
+  sosSubtitle: { fontSize: 14, color: '#5eead4' },
 
   // Sections
   section: { marginBottom: 20 },
@@ -1484,8 +1484,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
-  sectionTitle: { fontSize: 14, fontWeight: '600', color: '#1c1917', marginBottom: 2 },
-  seeAll: { fontSize: 12, color: '#a8a29e', fontWeight: '300' },
+  sectionTitle: { fontSize: 16, fontWeight: '600', color: '#1c1917', marginBottom: 2 },
+  seeAll: { fontSize: 14, color: '#78716c', fontWeight: '300' },
 
   // Trend grid
   trendGrid: {
@@ -1517,14 +1517,14 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   trendName: {
-    fontSize: 12,
+    fontSize: 16,
     fontWeight: '500',
     color: '#44403c',
     marginLeft: 6,
   },
   trendSubtext: {
-    fontSize: 11,
-    color: '#a8a29e',
+    fontSize: 14,
+    color: '#78716c',
     marginTop: 1,
   },
 
@@ -1539,7 +1539,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 1,
   },
-  cardHintText: { fontSize: 13, color: '#a8a29e', textAlign: 'center' },
+  cardHintText: { fontSize: 16, color: '#78716c', textAlign: 'center' },
 
   // Insight nudge
   insightCard: {
@@ -1553,9 +1553,9 @@ const styles = StyleSheet.create({
     gap: 12,
     marginBottom: 16,
   },
-  insightStar: { fontSize: 18, color: '#f59e0b' },
-  insightTitle: { fontSize: 14, fontWeight: '500', color: '#44403c' },
-  insightDesc: { fontSize: 12, color: '#78716c', marginTop: 4, lineHeight: 18 },
+  insightStar: { fontSize: 18, color: '#b45309' },
+  insightTitle: { fontSize: 16, fontWeight: '500', color: '#44403c' },
+  insightDesc: { fontSize: 14, color: '#78716c', marginTop: 4, lineHeight: 20 },
 
   // Plan icons
   planIcon: {
@@ -1565,8 +1565,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  planTitle: { fontSize: 13, fontWeight: '500', color: '#44403c' },
-  planSubtitle: { fontSize: 11, color: '#a8a29e', marginTop: 1 },
+  planTitle: { fontSize: 16, fontWeight: '500', color: '#44403c' },
+  planSubtitle: { fontSize: 14, color: '#78716c', marginTop: 1 },
   planCheckbox: {
     width: 20,
     height: 20,
@@ -1604,7 +1604,7 @@ const styles = StyleSheet.create({
   },
   emptyIcon: { marginBottom: 14 },
   emptyTitle: { fontSize: 18, fontWeight: '700', color: '#1c1917', marginBottom: 6 },
-  emptyDesc: { fontSize: 13, color: '#78716c', textAlign: 'center', lineHeight: 20, marginBottom: 20 },
+  emptyDesc: { fontSize: 16, color: '#78716c', textAlign: 'center', lineHeight: 22, marginBottom: 20 },
   emptyButton: {
     backgroundColor: '#1c1917',
     borderRadius: 16,
@@ -1634,8 +1634,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   summaryEmoji: { fontSize: 16 },
-  summaryTitle: { fontSize: 14, fontWeight: '600', color: '#1c1917', flex: 1 },
-  summaryTime: { fontSize: 11, color: '#a8a29e' },
+  summaryTitle: { fontSize: 16, fontWeight: '600', color: '#1c1917', flex: 1 },
+  summaryTime: { fontSize: 14, color: '#78716c' },
   summaryChips: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -1648,9 +1648,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
   },
-  summaryChipText: { fontSize: 11, color: '#78716c' },
+  summaryChipText: { fontSize: 14, color: '#78716c' },
   summaryGratitude: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#78716c',
     marginTop: 8,
     fontStyle: 'italic',
@@ -1677,8 +1677,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  learnMeta: { fontSize: 11, color: '#a8a29e', marginBottom: 4 },
-  learnTitle: { fontSize: 12, fontWeight: '500', color: '#44403c', lineHeight: 17 },
+  learnMeta: { fontSize: 14, color: '#78716c', marginBottom: 4 },
+  learnTitle: { fontSize: 16, fontWeight: '500', color: '#44403c', lineHeight: 22 },
 
   // Meds empty state
   medsEmptyCard: {
@@ -1690,18 +1690,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   medsEmptyIcon: { fontSize: 28, marginBottom: 8 },
-  medsEmptyTitle: { fontSize: 14, fontWeight: '600', color: '#1c1917', marginBottom: 4 },
-  medsEmptyDesc: { fontSize: 12, color: '#a8a29e', textAlign: 'center', marginBottom: 14, lineHeight: 18 },
+  medsEmptyTitle: { fontSize: 16, fontWeight: '600', color: '#1c1917', marginBottom: 4 },
+  medsEmptyDesc: { fontSize: 14, color: '#78716c', textAlign: 'center', marginBottom: 14, lineHeight: 20 },
   medsEmptyButton: {
     backgroundColor: '#f5f5f4',
     borderRadius: 12,
     paddingHorizontal: 20,
     paddingVertical: 10,
   },
-  medsEmptyButtonText: { fontSize: 13, fontWeight: '600', color: '#1c1917' },
+  medsEmptyButtonText: { fontSize: 16, fontWeight: '600', color: '#1c1917' },
 
   // Tonight's Plan — enhanced
-  tonightWeekLabel: { fontSize: 11, color: '#d97706', fontWeight: '500' },
+  tonightWeekLabel: { fontSize: 14, color: '#b45309', fontWeight: '500' },
   programLessonCard: {
     backgroundColor: '#fffbeb',
     borderRadius: 16,
@@ -1723,9 +1723,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   programLessonIconText: { fontSize: 14, fontWeight: '700', color: '#ffffff' },
-  programLessonTitle: { fontSize: 12, fontWeight: '500', color: '#1c1917' },
-  programLessonDur: { fontSize: 11, color: '#a8a29e', marginTop: 1 },
-  programLessonWeek: { fontSize: 11, color: '#d97706', marginTop: 2 },
+  programLessonTitle: { fontSize: 16, fontWeight: '500', color: '#1c1917' },
+  programLessonDur: { fontSize: 14, color: '#78716c', marginTop: 1 },
+  programLessonWeek: { fontSize: 14, color: '#b45309', marginTop: 2 },
   tonightPlayBtn: {
     width: 32,
     height: 32,
@@ -1755,7 +1755,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
-  tonightTagText: { fontSize: 10, color: '#a8a29e' },
+  tonightTagText: { fontSize: 14, color: '#78716c' },
   tonightInsight: {
     backgroundColor: '#f5f5f4',
     borderRadius: 16,
@@ -1765,9 +1765,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   tonightInsightText: {
-    fontSize: 11,
+    fontSize: 14,
     color: '#78716c',
-    lineHeight: 16,
+    lineHeight: 20,
     flex: 1,
   },
 
@@ -1793,8 +1793,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  wellnessEntryTitle: { fontSize: 14, fontWeight: '500', color: '#1c1917' },
-  wellnessEntrySubtitle: { fontSize: 11, color: '#a8a29e', marginTop: 1 },
+  wellnessEntryTitle: { fontSize: 16, fontWeight: '500', color: '#1c1917' },
+  wellnessEntrySubtitle: { fontSize: 14, color: '#78716c', marginTop: 1 },
   wellnessProgressBg: {
     height: 4,
     backgroundColor: '#f5f5f4',
@@ -1806,5 +1806,5 @@ const styles = StyleSheet.create({
     backgroundColor: '#fbbf24',
     borderRadius: 2,
   },
-  wellnessProgressText: { fontSize: 10, color: '#d6d3d1', marginTop: 4 },
+  wellnessProgressText: { fontSize: 14, color: '#78716c', marginTop: 4 },
 });

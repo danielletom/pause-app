@@ -89,7 +89,7 @@ export default function LearnScreen() {
         </Text>
       </View>
       <View style={styles.articleArrow}>
-        <Text style={{ color: '#a8a29e', fontSize: 16 }}>›</Text>
+        <Text style={{ color: '#78716c', fontSize: 16 }}>›</Text>
       </View>
     </AnimatedPressable>
   );
@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fafaf9' },
   header: { paddingHorizontal: 24, paddingTop: 8, marginBottom: 16 },
   title: { fontSize: 24, fontWeight: '700', color: '#1c1917' },
-  subtitle: { fontSize: 13, color: '#a8a29e', marginTop: 4 },
+  subtitle: { fontSize: 14, color: '#78716c', marginTop: 4 },
 
   filterStrip: { marginBottom: 12, maxHeight: 44 },
   filterContent: { paddingHorizontal: 24, gap: 8 },
@@ -167,12 +167,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f4',
   },
   filterPillActive: { backgroundColor: '#1c1917' },
-  filterText: { fontSize: 13, fontWeight: '500', color: '#78716c' },
+  filterText: { fontSize: 14, fontWeight: '500', color: '#78716c' },
   filterTextActive: { color: '#ffffff' },
 
   loadingContainer: { flex: 1, alignItems: 'center', paddingTop: 60 },
   emptyContainer: { flex: 1, alignItems: 'center', paddingTop: 60 },
-  emptyText: { fontSize: 15, color: '#a8a29e' },
+  emptyText: { fontSize: 15, color: '#78716c' },
 
   listContent: { paddingHorizontal: 24, paddingBottom: 120, gap: 10 },
 
@@ -199,8 +199,8 @@ const styles = StyleSheet.create({
   },
   articleImageEmoji: { fontSize: 24 },
   articleContent: { flex: 1 },
-  articleMeta: { fontSize: 11, color: '#a8a29e', marginBottom: 4 },
-  articleTitle: { fontSize: 14, fontWeight: '600', color: '#1c1917', lineHeight: 20 },
+  articleMeta: { fontSize: 14, color: '#78716c', marginBottom: 4 },
+  articleTitle: { fontSize: 16, fontWeight: '600', color: '#1c1917', lineHeight: 22 },
   articleArrow: {
     width: 24,
     height: 24,

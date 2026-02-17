@@ -66,11 +66,12 @@ export default function AboutYouScreen() {
               <TextInput
                 style={styles.input}
                 placeholder="Your first name"
-                placeholderTextColor="#a8a29e"
+                placeholderTextColor="#78716c"
                 value={name}
                 onChangeText={setName}
                 autoCapitalize="words"
                 textContentType="givenName"
+                accessibilityLabel="First name"
               />
             </View>
 
@@ -79,11 +80,12 @@ export default function AboutYouScreen() {
               <TextInput
                 style={styles.input}
                 placeholder="MM/DD/YYYY"
-                placeholderTextColor="#a8a29e"
+                placeholderTextColor="#78716c"
                 value={dob}
                 onChangeText={(text) => setDob(formatDateInput(text))}
                 keyboardType="number-pad"
                 maxLength={10}
+                accessibilityLabel="Date of birth"
               />
               <Text style={styles.hint}>
                 Used for age-based comparisons and benchmarks
@@ -123,7 +125,7 @@ const styles = StyleSheet.create({
   },
   subheading: {
     fontSize: 14,
-    color: '#a8a29e',
+    color: '#78716c',
     marginBottom: 28,
     lineHeight: 20,
   },
@@ -134,7 +136,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   label: {
-    fontSize: 13,
+    fontSize: 16,
     fontWeight: '500',
     color: '#44403c',
   },
@@ -150,7 +152,7 @@ const styles = StyleSheet.create({
   },
   hint: {
     fontSize: 12,
-    color: '#d6d3d1',
+    color: '#a8a29e',
     marginTop: 2,
   },
   footer: {
