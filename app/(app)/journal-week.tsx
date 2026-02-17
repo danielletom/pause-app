@@ -326,7 +326,7 @@ const styles = StyleSheet.create({
   },
   streakFlame: { fontSize: 28 },
   streakCount: { fontSize: 20, fontWeight: '700', color: '#ffffff' },
-  streakLabel: { fontSize: 14, color: '#a8a29e', marginTop: 2 },
+  streakLabel: { fontSize: 14, color: '#78716c', marginTop: 2 },
 
   /* Day cards */
   dayCard: {

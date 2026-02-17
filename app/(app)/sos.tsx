@@ -497,7 +497,7 @@ const styles = StyleSheet.create({
 
   // ─── Breathing ──────────────────
   endSessionButton: { position: 'absolute', top: 16, left: 0, padding: 8 },
-  endSessionText: { fontSize: 14, color: '#a8a29e' },
+  endSessionText: { fontSize: 14, color: '#78716c' },
 
   circleContainer: {
     alignItems: 'center',
@@ -516,14 +516,14 @@ const styles = StyleSheet.create({
   },
   phaseHint: {
     fontSize: 14,
-    color: '#a8a29e',
+    color: '#78716c',
     letterSpacing: 1,
     textTransform: 'uppercase',
   },
   countdownText: {
     fontSize: 28,
     fontWeight: '300',
-    color: '#a8a29e',
+    color: '#78716c',
     marginTop: 20,
     fontVariant: ['tabular-nums'],
   },
@@ -545,7 +545,7 @@ const styles = StyleSheet.create({
   },
   cycleText: {
     fontSize: 14,
-    color: '#a8a29e',
+    color: '#78716c',
   },
   finishEarlyButton: {
     backgroundColor: '#0d9488',
@@ -556,7 +556,7 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
   },
-  finishEarlyText: { color: '#ffffff', fontSize: 15, fontWeight: '600' },
+  finishEarlyText: { color: '#ffffff', fontSize: 16, fontWeight: '600' },
 
   // ─── Done ───────────────────────
   doneCheckCircle: {
@@ -616,7 +616,7 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
     marginBottom: 8,
   },
-  upsellLabel: { fontSize: 14, color: '#a8a29e' },
+  upsellLabel: { fontSize: 14, color: '#78716c' },
   upsellTitle: {
     fontSize: 16,
     color: '#ffffff',

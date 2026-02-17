@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
   },
   subheading: {
     fontSize: 14,
-    color: '#a8a29e',
+    color: '#78716c',
     lineHeight: 22,
     marginBottom: 28,
   },
@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
     marginBottom: 3,
   },
   stepDesc: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#78716c',
     lineHeight: 19,
   },

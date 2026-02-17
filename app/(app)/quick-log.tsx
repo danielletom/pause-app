@@ -725,7 +725,7 @@ export default function QuickLogScreen() {
                 <TextInput
                   style={styles.customInput}
                   placeholder="What disrupted your sleep..."
-                  placeholderTextColor="#a8a29e"
+                  placeholderTextColor="#78716c"
                   value={customDisruptionText}
                   onChangeText={setCustomDisruptionText}
                   autoFocus
@@ -867,7 +867,7 @@ export default function QuickLogScreen() {
                 <TextInput
                   style={styles.customInput}
                   placeholder="What else is happening..."
-                  placeholderTextColor="#a8a29e"
+                  placeholderTextColor="#78716c"
                   value={customStressorText}
                   onChangeText={setCustomStressorText}
                   autoFocus
@@ -915,7 +915,7 @@ export default function QuickLogScreen() {
             <TextInput
               style={styles.notesInput}
               placeholder="What's making you smile today?"
-              placeholderTextColor="#a8a29e"
+              placeholderTextColor="#78716c"
               value={gratitudeText}
               onChangeText={setGratitudeText}
               multiline
@@ -942,7 +942,7 @@ export default function QuickLogScreen() {
             <TextInput
               style={styles.notesInput}
               placeholder="I want to..."
-              placeholderTextColor="#a8a29e"
+              placeholderTextColor="#78716c"
               value={intentionText}
               onChangeText={setIntentionText}
               multiline
@@ -1136,7 +1136,7 @@ export default function QuickLogScreen() {
             <TextInput
               style={styles.notesInput}
               placeholder="What was a highlight?"
-              placeholderTextColor="#a8a29e"
+              placeholderTextColor="#78716c"
               value={highlightText}
               onChangeText={setHighlightText}
               multiline
@@ -1163,7 +1163,7 @@ export default function QuickLogScreen() {
             <TextInput
               style={styles.notesInput}
               placeholder="Optional — no judgment here"
-              placeholderTextColor="#a8a29e"
+              placeholderTextColor="#78716c"
               value={learnedText}
               onChangeText={setLearnedText}
               multiline
@@ -1394,7 +1394,7 @@ export default function QuickLogScreen() {
             <TextInput
               style={styles.customInput}
               placeholder="Symptom name..."
-              placeholderTextColor="#a8a29e"
+              placeholderTextColor="#78716c"
               value={customSymptomText}
               onChangeText={setCustomSymptomText}
               autoFocus
@@ -1688,7 +1688,7 @@ const styles = StyleSheet.create({
   selectLabel: { fontSize: 14, fontWeight: '500', color: '#1c1917' },
   selectLabelSelected: { color: '#ffffff' },
   selectSublabel: { fontSize: 14, color: '#78716c', marginTop: 1 },
-  selectSublabelSelected: { color: '#a8a29e' },
+  selectSublabelSelected: { color: '#78716c' },
   selectCheck: { fontSize: 14, color: '#ffffff', fontWeight: '600' },
   qualityCards: { gap: 8, marginBottom: 20 },
 
@@ -1738,7 +1738,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   sleepAdjustBtnText: { fontSize: 20, fontWeight: '500', color: '#1c1917' },
-  sleepAdjustLabel: { fontSize: 15, fontWeight: '600', color: '#1c1917', minWidth: 70, textAlign: 'center' },
+  sleepAdjustLabel: { fontSize: 16, fontWeight: '600', color: '#1c1917', minWidth: 70, textAlign: 'center' },
 
   /* Pill grid */
   pillGrid: {
@@ -2037,7 +2037,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  nextButtonText: { color: '#ffffff', fontSize: 15, fontWeight: '600' },
+  nextButtonText: { color: '#ffffff', fontSize: 16, fontWeight: '600' },
 
   /* Celebration */
   celebContainer: {
@@ -2065,7 +2065,7 @@ const styles = StyleSheet.create({
   celebTitle: { fontSize: 26, fontWeight: '700', color: '#ffffff', marginBottom: 8 },
   celebSubtitle: {
     fontSize: 14,
-    color: '#a8a29e',
+    color: '#78716c',
     textAlign: 'center',
     lineHeight: 20,
     marginBottom: 24,
@@ -2077,7 +2077,7 @@ const styles = StyleSheet.create({
   },
   celebStat: { alignItems: 'center', gap: 4 },
   celebStatValue: { fontSize: 24 },
-  celebStatLabel: { fontSize: 14, color: '#a8a29e' },
+  celebStatLabel: { fontSize: 14, color: '#78716c' },
   celebSummary: {
     backgroundColor: 'rgba(255,255,255,0.08)',
     borderRadius: 16,
@@ -2085,18 +2085,18 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     width: '100%',
   },
-  celebSummaryText: { fontSize: 14, color: '#d6d3d1', marginBottom: 4 },
+  celebSummaryText: { fontSize: 14, color: '#a8a29e', marginBottom: 4 },
   celebQuoteWrap: { paddingHorizontal: 16, alignItems: 'center' },
   celebQuoteText: {
     fontSize: 16,
     fontWeight: '300',
-    color: '#d6d3d1',
+    color: '#a8a29e',
     textAlign: 'center',
     lineHeight: 24,
     fontStyle: 'italic',
     marginBottom: 8,
   },
-  celebQuoteAuthor: { fontSize: 14, color: '#a8a29e' },
+  celebQuoteAuthor: { fontSize: 14, color: '#78716c' },
   celebDoneButton: {
     backgroundColor: '#ffffff',
     borderRadius: 16,
@@ -2105,5 +2105,5 @@ const styles = StyleSheet.create({
     marginBottom: 50,
     width: '100%',
   },
-  celebDoneText: { fontSize: 15, fontWeight: '600', color: '#1c1917' },
+  celebDoneText: { fontSize: 16, fontWeight: '600', color: '#1c1917' },
 });

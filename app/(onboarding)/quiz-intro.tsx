@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
   },
   hint: {
     fontSize: 12,
-    color: '#a8a29e',
+    color: '#78716c',
   },
   footer: {
     paddingHorizontal: 24,

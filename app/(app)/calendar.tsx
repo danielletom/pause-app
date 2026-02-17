@@ -422,7 +422,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   adherencePct: { fontSize: 28, fontWeight: '700', color: '#ffffff' },
-  adherenceLabel: { fontSize: 14, color: '#a8a29e' },
+  adherenceLabel: { fontSize: 14, color: '#78716c' },
   adherenceRows: { gap: 8, marginBottom: 14 },
   adherenceRow: {
     flexDirection: 'row',
@@ -430,7 +430,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   adherenceDotBig: { width: 8, height: 8, borderRadius: 4 },
-  adherenceRowLabel: { fontSize: 14, color: '#a8a29e', flex: 1 },
+  adherenceRowLabel: { fontSize: 14, color: '#78716c', flex: 1 },
   adherenceRowValue: { fontSize: 14, fontWeight: '600', color: '#ffffff' },
   progressBg: {
     height: 6, backgroundColor: '#292524',

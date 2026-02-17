@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fafaf9',
   },
   optionLabel: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
     color: '#1c1917',
     marginBottom: 2,

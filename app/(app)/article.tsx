@@ -55,7 +55,7 @@ export default function ArticleScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <Text style={{ color: '#78716c', fontSize: 15 }}>Article not found</Text>
+          <Text style={{ color: '#78716c', fontSize: 16 }}>Article not found</Text>
         </View>
       </SafeAreaView>
     );
@@ -120,7 +120,7 @@ export default function ArticleScreen() {
 }
 
 const markdownStyles = StyleSheet.create({
-  body: { color: '#44403c', fontSize: 15, lineHeight: 24 },
+  body: { color: '#44403c', fontSize: 16, lineHeight: 24 },
   heading2: { color: '#1c1917', fontSize: 20, fontWeight: '700', marginTop: 24, marginBottom: 12 },
   heading3: { color: '#1c1917', fontSize: 17, fontWeight: '600', marginTop: 20, marginBottom: 10 },
   paragraph: { marginBottom: 14, lineHeight: 24 },

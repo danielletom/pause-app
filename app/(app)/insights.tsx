@@ -736,7 +736,7 @@ export default function InsightsScreen() {
                   <Text style={ls.heroTitle}>Building your benchmark</Text>
                   <Text style={[ls.heroDesc, { marginBottom: 0 }]}>
                     {14 - totalDays} more day{14 - totalDays > 1 ? 's' : ''} and we can compare your experience to{' '}
-                    <Text style={{ color: '#a8a29e' }}>12,847 other women</Text> in perimenopause.
+                    <Text style={{ color: '#78716c' }}>12,847 other women</Text> in perimenopause.
                   </Text>
                 </View>
               </View>
@@ -755,7 +755,7 @@ export default function InsightsScreen() {
               </View>
               <View style={ls.dotGridLabels}>
                 <Text style={ls.dotGridLabelText}>Day 1</Text>
-                <Text style={[ls.dotGridLabelText, { color: '#a8a29e', fontWeight: '500' }]}>Day {totalDays} ←</Text>
+                <Text style={[ls.dotGridLabelText, { color: '#78716c', fontWeight: '500' }]}>Day {totalDays} ←</Text>
                 <Text style={ls.dotGridLabelText}>Day 14</Text>
               </View>
             </View>
@@ -1366,7 +1366,7 @@ const styles = StyleSheet.create({
     padding: 20,
     marginBottom: 20,
   },
-  storyLabel: { fontSize: 12, color: '#a8a29e', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
+  storyLabel: { fontSize: 12, color: '#78716c', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
   storyNarrative: { fontSize: 16, color: '#ffffff', lineHeight: 22, marginBottom: 16 },
   storyDays: { flexDirection: 'row', gap: 10 },
   storyDayCard: {
@@ -1377,7 +1377,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   storyDayEmoji: { fontSize: 20, marginBottom: 4 },
-  storyDayLabel: { fontSize: 14, color: '#a8a29e', marginBottom: 2 },
+  storyDayLabel: { fontSize: 14, color: '#78716c', marginBottom: 2 },
   storyDayValue: { fontSize: 14, color: '#ffffff', fontWeight: '500' },
 
   // Correlation cards
@@ -1471,9 +1471,9 @@ const styles = StyleSheet.create({
     left: -3,
   },
   sleepRingScore: { fontSize: 16, fontWeight: '700', color: '#ffffff' },
-  sleepLabel: { fontSize: 14, color: '#a8a29e' },
+  sleepLabel: { fontSize: 14, color: '#78716c' },
   sleepValue: { fontSize: 14, color: '#ffffff', fontWeight: '500', marginTop: 2 },
-  sleepHint: { fontSize: 14, color: '#a8a29e', marginTop: 2 },
+  sleepHint: { fontSize: 14, color: '#78716c', marginTop: 2 },
   sleepBarsRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -1491,7 +1491,7 @@ const styles = StyleSheet.create({
     borderRadius: 3,
     minHeight: 4,
   },
-  sleepBarLabel: { fontSize: 14, color: '#a8a29e', marginTop: 4 },
+  sleepBarLabel: { fontSize: 14, color: '#78716c', marginTop: 4 },
 
   // Expect card
   expectCard: {
@@ -1507,7 +1507,7 @@ const styles = StyleSheet.create({
 
   // ─── Am I Normal tab styles ──────────────────
   compGroupTitle: { fontSize: 16, fontWeight: '600', color: '#ffffff', marginBottom: 4 },
-  compGroupSub: { fontSize: 14, color: '#a8a29e', marginBottom: 12 },
+  compGroupSub: { fontSize: 14, color: '#78716c', marginBottom: 12 },
   compTraits: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   compTraitPill: {
     backgroundColor: '#292524',
@@ -1515,7 +1515,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
   },
-  compTraitText: { fontSize: 14, color: '#d6d3d1' },
+  compTraitText: { fontSize: 14, color: '#a8a29e' },
 
   // Benchmark cards
   benchmarkCard: {
@@ -1672,7 +1672,7 @@ const ls = StyleSheet.create({
     justifyContent: 'center',
   },
   progressRingNumberSmall: { fontSize: 20, fontWeight: '300', color: '#ffffff' },
-  progressRingOfSmall: { fontSize: 11, color: '#78716c' },
+  progressRingOfSmall: { fontSize: 12, color: '#78716c' },
 
   // Day dots (patterns learning)
   dayDotsRow: {
@@ -1691,9 +1691,9 @@ const ls = StyleSheet.create({
   },
   dayDotFilled: { backgroundColor: '#2dd4bf' },
   dayDotEmpty: { borderWidth: 1, borderColor: '#44403c' },
-  dayDotText: { fontSize: 11, color: '#44403c' },
+  dayDotText: { fontSize: 12, color: '#44403c' },
   dayDotTextFilled: { color: '#ffffff', fontWeight: '500' },
-  dayDotLetter: { fontSize: 10, color: '#44403c' },
+  dayDotLetter: { fontSize: 12, color: '#44403c' },
 
   // 14-day dot grid (normal learning)
   dotGrid: {
@@ -1712,7 +1712,7 @@ const ls = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
-  dotGridLabelText: { fontSize: 11, color: '#44403c' },
+  dotGridLabelText: { fontSize: 12, color: '#44403c' },
 
   // Blurred preview cards
   blurredCard: {
@@ -1751,15 +1751,15 @@ const ls = StyleSheet.create({
     marginBottom: 6,
   },
   blurOverlayText: { fontSize: 12, fontWeight: '500', color: '#78716c' },
-  blurLabel: { fontSize: 10, color: '#a8a29e', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 },
-  blurContent: { fontSize: 13, color: '#d6d3d1', lineHeight: 18 },
+  blurLabel: { fontSize: 12, color: '#78716c', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 },
+  blurContent: { fontSize: 14, color: '#a8a29e', lineHeight: 18 },
   blurBar: { height: 4, backgroundColor: '#e7e5e4', borderRadius: 2, marginTop: 8 },
   blurBarFill: { height: 4, borderRadius: 2, backgroundColor: '#d6d3d1' },
   blurBarFillGreen: { height: 4, borderRadius: 2, backgroundColor: '#a7f3d0' },
   blurBarFillRed: { height: 4, borderRadius: 2, backgroundColor: '#fecaca' },
 
   // Subtitle text
-  subtitleText: { fontSize: 12, color: '#a8a29e', marginBottom: 12, lineHeight: 18 },
+  subtitleText: { fontSize: 12, color: '#78716c', marginBottom: 12, lineHeight: 18 },
 
   // CTA cards (morning/evening)
   ctaCard: {
@@ -1779,15 +1779,15 @@ const ls = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  ctaTitle: { fontSize: 13, fontWeight: '500', color: '#1c1917' },
-  ctaDesc: { fontSize: 11, color: '#a8a29e', marginTop: 2 },
+  ctaTitle: { fontSize: 14, fontWeight: '500', color: '#1c1917' },
+  ctaDesc: { fontSize: 12, color: '#78716c', marginTop: 2 },
   ctaBadge: {
     backgroundColor: '#fbbf24',
     borderRadius: 10,
     paddingHorizontal: 8,
     paddingVertical: 3,
   },
-  ctaBadgeText: { fontSize: 10, fontWeight: '700', color: '#1c1917' },
+  ctaBadgeText: { fontSize: 12, fontWeight: '700', color: '#1c1917' },
 
   // Early signal
   earlySignalCard: {
@@ -1822,8 +1822,8 @@ const ls = StyleSheet.create({
     width: 5,
     borderRadius: 2,
   },
-  symptomRawName: { fontSize: 13, fontWeight: '500', color: '#1c1917' },
-  symptomRawDays: { fontSize: 11, color: '#a8a29e', marginTop: 2 },
+  symptomRawName: { fontSize: 14, fontWeight: '500', color: '#1c1917' },
+  symptomRawDays: { fontSize: 12, color: '#78716c', marginTop: 2 },
 
   // Motivation card (dark footer)
   motivationCard: {
@@ -1833,8 +1833,8 @@ const ls = StyleSheet.create({
     marginBottom: 20,
     alignItems: 'center',
   },
-  motivationLabel: { fontSize: 11, color: '#78716c', marginBottom: 6 },
-  motivationText: { fontSize: 13, color: '#ffffff', lineHeight: 20, textAlign: 'center' },
+  motivationLabel: { fontSize: 12, color: '#78716c', marginBottom: 6 },
+  motivationText: { fontSize: 14, color: '#ffffff', lineHeight: 20, textAlign: 'center' },
 
   // ─── Am I Normal learning styles ───────────────
 
@@ -1856,7 +1856,7 @@ const ls = StyleSheet.create({
     justifyContent: 'center',
     flexShrink: 0,
   },
-  explainerTitle: { fontSize: 13, fontWeight: '600', color: '#1c1917', marginBottom: 4 },
+  explainerTitle: { fontSize: 14, fontWeight: '600', color: '#1c1917', marginBottom: 4 },
   explainerDesc: { fontSize: 12, color: '#78716c', lineHeight: 18 },
 
   // Peer group preview
@@ -1881,8 +1881,8 @@ const ls = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  peerGroupTitle: { fontSize: 13, fontWeight: '500', color: '#1c1917' },
-  peerGroupSub: { fontSize: 11, color: '#a8a29e', marginTop: 1 },
+  peerGroupTitle: { fontSize: 14, fontWeight: '500', color: '#1c1917' },
+  peerGroupSub: { fontSize: 12, color: '#78716c', marginTop: 1 },
   peerGroupDivider: {
     height: 1,
     backgroundColor: '#f5f5f4',
@@ -1968,7 +1968,7 @@ const ls = StyleSheet.create({
     marginBottom: 16,
     alignItems: 'center',
   },
-  journeyLabel: { fontSize: 10, color: '#78716c', letterSpacing: 1, marginBottom: 12 },
+  journeyLabel: { fontSize: 12, color: '#78716c', letterSpacing: 1, marginBottom: 12 },
   journeyRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1977,7 +1977,7 @@ const ls = StyleSheet.create({
   },
   journeyStat: { flex: 1, alignItems: 'center' },
   journeyStatNumber: { fontSize: 18, fontWeight: '700', color: '#ffffff' },
-  journeyStatLabel: { fontSize: 10, color: '#78716c', marginTop: 2 },
+  journeyStatLabel: { fontSize: 12, color: '#78716c', marginTop: 2 },
   journeyDivider: { width: 1, height: 32, backgroundColor: '#292524' },
   journeyDesc: { fontSize: 12, color: '#78716c', lineHeight: 18, textAlign: 'center' },
 

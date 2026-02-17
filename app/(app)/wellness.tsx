@@ -383,9 +383,11 @@ const styles = StyleSheet.create({
   tabContainer: { paddingHorizontal: 24, gap: 8 },
   tab: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 10,
     borderRadius: 20,
     backgroundColor: '#f5f5f4',
+    minHeight: 44,
+    justifyContent: 'center',
   },
   tabActive: {
     backgroundColor: '#1c1917',

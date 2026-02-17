@@ -151,7 +151,7 @@ export default function SignInScreen() {
               <TextInput
                 style={styles.input}
                 placeholder="your@email.com"
-                placeholderTextColor="#a8a29e"
+                placeholderTextColor="#78716c"
                 value={email}
                 onChangeText={setEmail}
                 autoCapitalize="none"
@@ -166,7 +166,7 @@ export default function SignInScreen() {
               <TextInput
                 style={styles.input}
                 placeholder="••••••••"
-                placeholderTextColor="#a8a29e"
+                placeholderTextColor="#78716c"
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry
@@ -209,7 +209,7 @@ export default function SignInScreen() {
               onPress={useTestAccount}
               activeOpacity={0.7}
             >
-              <Ionicons name="flask-outline" size={14} color="#a8a29e" />
+              <Ionicons name="flask-outline" size={14} color="#78716c" />
               <Text style={styles.testAccountText}>Use test account</Text>
             </TouchableOpacity>
           )}
@@ -375,7 +375,7 @@ const styles = StyleSheet.create({
   },
   signInButtonText: {
     color: '#ffffff',
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
   },
 

@@ -46,7 +46,7 @@ export default function ProfileMenuItem({
         </View>
         <Text style={styles.subtitle}>{subtitle}</Text>
       </View>
-      <Ionicons name="chevron-forward" size={16} color="#d6d3d1" />
+      <Ionicons name="chevron-forward" size={16} color="#a8a29e" />
     </AnimatedPressable>
   );
 }

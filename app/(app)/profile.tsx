@@ -228,9 +228,9 @@ const styles = StyleSheet.create({
     padding: 20,
     marginBottom: 10,
   },
-  subLabel: { fontSize: 14, color: '#a8a29e', marginBottom: 6 },
+  subLabel: { fontSize: 14, color: '#78716c', marginBottom: 6 },
   subTitle: { fontSize: 16, fontWeight: '500', color: '#ffffff', marginBottom: 2 },
-  subDesc: { fontSize: 16, color: '#a8a29e', marginBottom: 16 },
+  subDesc: { fontSize: 16, color: '#78716c', marginBottom: 16 },
   subButtonPrimary: {
     backgroundColor: '#ffffff',
     borderRadius: 12,

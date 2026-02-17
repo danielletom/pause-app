@@ -312,7 +312,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 14,
   },
-  streakLabel: { fontSize: 14, color: '#a8a29e' },
+  streakLabel: { fontSize: 14, color: '#78716c' },
   streakValue: { fontSize: 24, fontWeight: '300', color: '#ffffff', marginTop: 2 },
   streakBadge: {
     width: 52,
@@ -327,7 +327,7 @@ const styles = StyleSheet.create({
 
   weekRow: { flexDirection: 'row', justifyContent: 'space-between' },
   weekDay: { alignItems: 'center', gap: 4 },
-  weekDayLabel: { fontSize: 14, color: '#a8a29e' },
+  weekDayLabel: { fontSize: 14, color: '#78716c' },
   dotRow: { flexDirection: 'row', gap: 2 },
   dot: { width: 10, height: 10, borderRadius: 5 },
   dotAm: { backgroundColor: '#fbbf24' },
@@ -337,7 +337,7 @@ const styles = StyleSheet.create({
   legend: { flexDirection: 'row', gap: 16, marginTop: 10 },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   legendDot: { width: 8, height: 8, borderRadius: 4 },
-  legendText: { fontSize: 14, color: '#a8a29e' },
+  legendText: { fontSize: 14, color: '#78716c' },
 
   /* Morning card */
   morningCard: {

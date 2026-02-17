@@ -421,7 +421,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   pricingDurationSelected: {
-    color: '#a8a29e',
+    color: '#78716c',
   },
   pricingPrice: {
     fontSize: 22,
@@ -437,7 +437,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   pricingPerSelected: {
-    color: '#a8a29e',
+    color: '#78716c',
   },
   pricingTotal: {
     fontSize: 14,

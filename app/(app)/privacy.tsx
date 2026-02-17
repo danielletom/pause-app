@@ -148,13 +148,13 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   footerName: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#78716c',
     marginBottom: 2,
   },
   footerDetail: {
-    fontSize: 13,
-    color: '#a8a29e',
+    fontSize: 14,
+    color: '#78716c',
     lineHeight: 20,
   },
 });

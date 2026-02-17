@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   tagline: {
-    fontSize: 15,
+    fontSize: 16,
     color: '#78716c',
     textAlign: 'center',
     lineHeight: 22,

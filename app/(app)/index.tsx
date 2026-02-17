@@ -967,7 +967,7 @@ export default function HomeScreen() {
                       </View>
                     </View>
                     <View style={styles.tonightPlayBtnLight}>
-                      <Text style={{ fontSize: 10, color: '#a8a29e' }}>▶</Text>
+                      <Text style={{ fontSize: 10, color: '#78716c' }}>▶</Text>
                     </View>
                   </AnimatedPressable>
 
@@ -1159,10 +1159,10 @@ const styles = StyleSheet.create({
     marginBottom: 3,
   },
   weekStripDaySelected: {
-    color: '#a8a29e',
+    color: '#78716c',
   },
   weekStripNum: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
     color: '#1c1917',
     marginBottom: 4,
@@ -1214,7 +1214,7 @@ const styles = StyleSheet.create({
   },
   readinessLabel: {
     fontSize: 12,
-    color: '#a8a29e',
+    color: '#78716c',
     letterSpacing: 1,
     fontWeight: '300',
     textTransform: 'uppercase',
@@ -1227,7 +1227,7 @@ const styles = StyleSheet.create({
   },
   readinessHint: {
     fontSize: 14,
-    color: '#a8a29e',
+    color: '#78716c',
     marginTop: 4,
   },
   readinessRingOuter: {
@@ -1254,7 +1254,7 @@ const styles = StyleSheet.create({
   },
   readinessRingLabel: {
     fontSize: 12,
-    color: '#a8a29e',
+    color: '#78716c',
     marginTop: 4,
   },
 
@@ -1271,11 +1271,11 @@ const styles = StyleSheet.create({
   },
   readinessStatText: {
     fontSize: 12,
-    color: '#a8a29e',
+    color: '#78716c',
   },
   readinessStatDot: {
     fontSize: 12,
-    color: '#a8a29e',
+    color: '#78716c',
   },
 
   // Journal card
@@ -1454,7 +1454,7 @@ const styles = StyleSheet.create({
   },
   checkinSub: {
     fontSize: 14,
-    color: '#a8a29e',
+    color: '#78716c',
     marginTop: 2,
   },
   checkinArrow: {
@@ -1611,7 +1611,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 32,
   },
-  emptyButtonText: { color: '#ffffff', fontSize: 15, fontWeight: '600' },
+  emptyButtonText: { color: '#ffffff', fontSize: 16, fontWeight: '600' },
 
   // Summary cards
   summaryCard: {

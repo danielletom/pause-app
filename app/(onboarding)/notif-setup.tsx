@@ -131,7 +131,7 @@ export default function NotifSetupScreen() {
             <TextInput
               style={styles.phoneInput}
               placeholder="(555) 555-1234"
-              placeholderTextColor="#a8a29e"
+              placeholderTextColor="#78716c"
               value={notifs.phone}
               onChangeText={setPhone}
               keyboardType="phone-pad"
@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    fontSize: 15,
+    fontSize: 16,
     color: '#1c1917',
   },
   timeSection: {

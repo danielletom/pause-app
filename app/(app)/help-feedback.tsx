@@ -387,7 +387,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 10,
   },
-  primaryButtonText: { fontSize: 15, fontWeight: '600', color: '#ffffff' },
+  primaryButtonText: { fontSize: 16, fontWeight: '600', color: '#ffffff' },
 
   // Note
   noteText: { fontSize: 12, color: '#78716c', textAlign: 'center', marginBottom: 16 },

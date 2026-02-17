@@ -316,7 +316,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
-  primaryButtonText: { fontSize: 15, fontWeight: '600', color: '#ffffff' },
+  primaryButtonText: { fontSize: 16, fontWeight: '600', color: '#ffffff' },
 
   // Exporting card
   exportingCard: {
@@ -329,7 +329,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   exportingIcon: { fontSize: 28, color: '#047857', marginBottom: 10 },
-  exportingTitle: { fontSize: 15, fontWeight: '600', color: '#1c1917', marginBottom: 4 },
+  exportingTitle: { fontSize: 16, fontWeight: '600', color: '#1c1917', marginBottom: 4 },
   exportingDesc: { fontSize: 14, color: '#78716c', marginBottom: 16 },
   progressBarBg: {
     width: '100%',

@@ -155,7 +155,7 @@ export default function AboutMeScreen() {
             value={dateOfBirth}
             onChangeText={setDateOfBirth}
             placeholder="YYYY-MM-DD"
-            placeholderTextColor="#a8a29e"
+            placeholderTextColor="#78716c"
             autoCapitalize="none"
           />
           {computedAge !== null && (
@@ -174,7 +174,7 @@ export default function AboutMeScreen() {
               value={heightFeet}
               onChangeText={setHeightFeet}
               placeholder="5"
-              placeholderTextColor="#a8a29e"
+              placeholderTextColor="#78716c"
               keyboardType="numeric"
               maxLength={1}
             />
@@ -184,7 +184,7 @@ export default function AboutMeScreen() {
               value={heightInches}
               onChangeText={setHeightInches}
               placeholder="6"
-              placeholderTextColor="#a8a29e"
+              placeholderTextColor="#78716c"
               keyboardType="numeric"
               maxLength={2}
             />
@@ -201,7 +201,7 @@ export default function AboutMeScreen() {
               value={weight}
               onChangeText={setWeight}
               placeholder="148"
-              placeholderTextColor="#a8a29e"
+              placeholderTextColor="#78716c"
               keyboardType="numeric"
               maxLength={3}
             />
@@ -364,7 +364,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   saveButtonText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
     color: '#ffffff',
   },

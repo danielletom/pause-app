@@ -162,9 +162,11 @@ const styles = StyleSheet.create({
   filterContent: { paddingHorizontal: 24, gap: 8 },
   filterPill: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 10,
     borderRadius: 20,
     backgroundColor: '#f5f5f4',
+    minHeight: 44,
+    justifyContent: 'center',
   },
   filterPillActive: { backgroundColor: '#1c1917' },
   filterText: { fontSize: 14, fontWeight: '500', color: '#78716c' },
@@ -172,7 +174,7 @@ const styles = StyleSheet.create({
 
   loadingContainer: { flex: 1, alignItems: 'center', paddingTop: 60 },
   emptyContainer: { flex: 1, alignItems: 'center', paddingTop: 60 },
-  emptyText: { fontSize: 15, color: '#78716c' },
+  emptyText: { fontSize: 16, color: '#78716c' },
 
   listContent: { paddingHorizontal: 24, paddingBottom: 120, gap: 10 },
 

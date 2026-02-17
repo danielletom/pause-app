@@ -89,7 +89,7 @@ export default function EditProfileScreen() {
             value={firstName}
             onChangeText={setFirstName}
             placeholder="First name"
-            placeholderTextColor="#a8a29e"
+            placeholderTextColor="#78716c"
             autoCapitalize="words"
           />
         </View>
@@ -102,7 +102,7 @@ export default function EditProfileScreen() {
             value={lastName}
             onChangeText={setLastName}
             placeholder="Last name"
-            placeholderTextColor="#a8a29e"
+            placeholderTextColor="#78716c"
             autoCapitalize="words"
           />
         </View>
@@ -114,7 +114,7 @@ export default function EditProfileScreen() {
             style={[styles.input, { opacity: 0.5 }]}
             value={email}
             editable={false}
-            placeholderTextColor="#a8a29e"
+            placeholderTextColor="#78716c"
           />
         </View>
 
@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 32,
   },
-  saveButtonText: { fontSize: 15, fontWeight: '600', color: '#ffffff' },
+  saveButtonText: { fontSize: 16, fontWeight: '600', color: '#ffffff' },
 
   // Delete section
   deleteSection: { alignItems: 'center', marginTop: 8 },
@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   deleteCardTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     color: '#1c1917',
     marginBottom: 8,
