@@ -23,52 +23,68 @@ const CONTENT_TABS = [
   { key: 'recipes', label: 'Recipes' },
 ];
 
-/* ─── Lessons — standalone audio + meditations (NOT Pause Pod episodes) ── */
-const LESSONS = [
-  { title: 'Hormones 101', dur: '10 min', icon: '🔬', bgColor: '#fef3c7', iconColor: '#b45309', cat: 'Basics' },
-  { title: 'Night Sweat Toolkit', dur: '12 min', icon: '☽', bgColor: '#e0e7ff', iconColor: '#6366f1', cat: 'Sleep' },
-  { title: 'Brain Fog Strategies', dur: '10 min', icon: '💭', bgColor: '#d1fae5', iconColor: '#047857', cat: 'Mind' },
-  { title: 'Hot Flash Triggers', dur: '10 min', icon: '🔥', bgColor: '#ffe4e6', iconColor: '#be123c', cat: 'Symptoms' },
-];
-
-const LESSONS_GRID = [
-  { title: 'Body Scan for Sleep', dur: '15 min', type: 'Meditation' },
-  { title: 'Anxiety Grounding', dur: '10 min', type: 'Meditation' },
-  { title: 'Morning Energy Boost', dur: '10 min', type: 'Audio' },
-  { title: 'The Supplement Guide', dur: '12 min', type: 'Audio' },
-];
-
-/* ─── Medication & Supplements ── */
-const MEDICATION = [
-  { title: 'The Pause Supplement: What\'s In It & Why', dur: '5 min read', icon: '◉', bgColor: '#1c1917', iconColor: '#ffffff', tag: 'supplement' },
-  { title: 'HRT Explained: Types, Benefits & Risks', dur: '7 min read', icon: '💊', bgColor: '#ffe4e6', iconColor: '#be123c', tag: 'HRT' },
-  { title: 'What to Ask Your Doctor About HRT', dur: '4 min read', icon: '📋', bgColor: '#fef3c7', iconColor: '#b45309', tag: 'doctor' },
-  { title: 'Supplements That Actually Help (& Don\'t)', dur: '6 min read', icon: '🌿', bgColor: '#d1fae5', iconColor: '#047857', tag: 'supplements' },
-];
-
-/* ─── Practical Guides — checklists, scripts, PDFs ── */
-const GUIDES = [
-  { title: 'Menopause Shopping List', type: 'PDF', icon: '🛒' },
-  { title: 'What to Ask Your Doctor', type: 'Script', icon: '📋' },
-  { title: 'Bedroom Cooling Checklist', type: 'Checklist', icon: '❄' },
-  { title: 'Workplace Menopause Kit', type: 'PDF', icon: '💼' },
-];
-
-/* ─── Recipes ── */
-const RECIPES = [
-  { title: 'Anti-Inflammatory Golden Bowl', time: '25 min', icon: '🥗', bgColor: '#fef3c7', iconColor: '#b45309', benefit: 'Reduces joint pain' },
-  { title: 'Cooling Cucumber Mint Smoothie', time: '5 min', icon: '🥒', bgColor: '#ccfbf1', iconColor: '#0d9488', benefit: 'Hot flash relief' },
-  { title: 'Magnesium-Rich Overnight Oats', time: '10 min', icon: '🫐', bgColor: '#e0e7ff', iconColor: '#6366f1', benefit: 'Better sleep' },
-  { title: 'Bone-Building Sardine Toast', time: '10 min', icon: '🐟', bgColor: '#d1fae5', iconColor: '#047857', benefit: 'Bone density' },
-];
-
-/* ─── Focused Programs ── */
+/* ─── Focused Programs (static — these are curated program entries) ── */
 const FOCUSED_PROGRAMS = [
   { title: 'Better Sleep', icon: '☽', bgColor: '#e0e7ff', iconColor: '#6366f1' },
   { title: 'Hot Flash Relief', icon: '❄', bgColor: '#ccfbf1', iconColor: '#0f766e' },
   { title: 'Mood & Calm', icon: '◉', bgColor: '#d1fae5', iconColor: '#047857' },
   { title: 'Movement', icon: '♡', bgColor: '#ffe4e6', iconColor: '#be123c' },
 ];
+
+/* ─── Visual mapping for content cards (category → colors/icons) ── */
+const CATEGORY_STYLES: Record<string, { icon: string; bgColor: string; iconColor: string }> = {
+  sleep: { icon: '☽', bgColor: '#e0e7ff', iconColor: '#6366f1' },
+  'hot flashes': { icon: '🔥', bgColor: '#ffe4e6', iconColor: '#be123c' },
+  mood: { icon: '◉', bgColor: '#d1fae5', iconColor: '#047857' },
+  nutrition: { icon: '🥗', bgColor: '#fef3c7', iconColor: '#b45309' },
+  basics: { icon: '🔬', bgColor: '#fef3c7', iconColor: '#b45309' },
+  mind: { icon: '💭', bgColor: '#d1fae5', iconColor: '#047857' },
+  symptoms: { icon: '🔥', bgColor: '#ffe4e6', iconColor: '#be123c' },
+  hrt: { icon: '💊', bgColor: '#ffe4e6', iconColor: '#be123c' },
+  supplements: { icon: '🌿', bgColor: '#d1fae5', iconColor: '#047857' },
+  doctor: { icon: '📋', bgColor: '#fef3c7', iconColor: '#b45309' },
+  medication: { icon: '💊', bgColor: '#ffe4e6', iconColor: '#be123c' },
+  recipes: { icon: '🥗', bgColor: '#fef3c7', iconColor: '#b45309' },
+  default: { icon: '✦', bgColor: '#f5f5f4', iconColor: '#78716c' },
+};
+
+function getCategoryStyle(category: string | null | undefined) {
+  if (!category) return CATEGORY_STYLES.default;
+  return CATEGORY_STYLES[category.toLowerCase()] || CATEGORY_STYLES.default;
+}
+
+/* ─── Format guide type labels from API format field ── */
+function formatLabel(format: string | null | undefined): string {
+  switch (format) {
+    case 'audio': return 'Audio';
+    case 'pdf': return 'PDF';
+    case 'text': return 'Article';
+    default: return 'Guide';
+  }
+}
+
+/* ─── Duration display ── */
+function durationText(minutes: number | null | undefined, format?: string): string {
+  if (!minutes) return '';
+  if (format === 'text' || format === 'pdf') return `${minutes} min read`;
+  return `${minutes} min`;
+}
+
+/* ─── Types for API content items ── */
+type ContentItem = {
+  id: number;
+  title: string;
+  slug: string | null;
+  contentType: string;
+  format: string;
+  description: string | null;
+  audioUrl: string | null;
+  thumbnailUrl: string | null;
+  durationMinutes: number | null;
+  category: string | null;
+  tags: string[] | null;
+  sortOrder: number;
+};
 
 export default function WellnessScreen() {
   const router = useRouter();
@@ -82,25 +98,65 @@ export default function WellnessScreen() {
   } | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Fetch program progress from API
+  // Content from API
+  const [lessons, setLessons] = useState<ContentItem[]>([]);
+  const [meditations, setMeditations] = useState<ContentItem[]>([]);
+  const [medicationArticles, setMedicationArticles] = useState<ContentItem[]>([]);
+  const [guides, setGuides] = useState<ContentItem[]>([]);
+  const [recipes, setRecipes] = useState<ContentItem[]>([]);
+  const [contentLoading, setContentLoading] = useState(true);
+
+  // Fetch program progress + all content library sections
   useFocusEffect(
     useCallback(() => {
       (async () => {
         try {
           setLoading(true);
+          setContentLoading(true);
           const token = await getToken();
-          const data = await apiRequest('/api/program/progress', token).catch(() => null);
-          if (data) {
-            setProgramProgress(data);
-          }
+
+          // Fetch everything in parallel
+          const [
+            progressData,
+            lessonsData,
+            meditationsData,
+            medicationData,
+            guidesData,
+            recipesData,
+          ] = await Promise.all([
+            apiRequest('/api/program/progress', token).catch(() => null),
+            apiRequest('/api/content?type=lesson', token).catch(() => []),
+            apiRequest('/api/content?type=meditation', token).catch(() => []),
+            apiRequest('/api/content?type=article&category=medication', token).catch(() => []),
+            apiRequest('/api/content?type=guide', token).catch(() => []),
+            apiRequest('/api/content?type=article&category=recipes', token).catch(() => []),
+          ]);
+
+          if (progressData) setProgramProgress(progressData);
+
+          // Lessons: standalone lessons (exclude program episodes — those have programWeek set)
+          const standaloneLessons = Array.isArray(lessonsData)
+            ? lessonsData.filter((l: any) => !l.programWeek)
+            : [];
+          setLessons(standaloneLessons);
+          setMeditations(Array.isArray(meditationsData) ? meditationsData : []);
+          setMedicationArticles(Array.isArray(medicationData) ? medicationData : []);
+          setGuides(Array.isArray(guidesData) ? guidesData : []);
+          setRecipes(Array.isArray(recipesData) ? recipesData : []);
         } catch {
-          // Default state is fine
+          // Default states are fine — UI handles empty arrays gracefully
         } finally {
           setLoading(false);
+          setContentLoading(false);
         }
       })();
     }, [])
   );
+
+  // Merge lessons + meditations for the Lessons tab
+  const allLessons = [...lessons, ...meditations];
+  const featuredLessons = allLessons.slice(0, 6);
+  const gridLessons = allLessons.slice(6, 10);
 
   const showLessons = activeTab === 'all' || activeTab === 'lessons';
   const showMedication = activeTab === 'all' || activeTab === 'medication';
@@ -192,47 +248,68 @@ export default function WellnessScreen() {
           <View style={styles.sectionBlock}>
             <View style={styles.sectionHeaderRow}>
               <Text style={styles.sectionLabel}>Lessons</Text>
-              <Text style={styles.sectionCount}>24+ lessons</Text>
+              <Text style={styles.sectionCount}>
+                {allLessons.length > 0 ? `${allLessons.length} lessons` : 'Loading...'}
+              </Text>
             </View>
-            {/* Horizontal scroll of featured lessons */}
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={{ marginHorizontal: -24, marginBottom: 10 }}
-              contentContainerStyle={{ paddingHorizontal: 24, gap: 10 }}
-            >
-              {LESSONS.map((l) => (
-                <AnimatedPressable
-                  key={l.title}
-                  onPress={() => { hapticLight(); /* Future: navigate to audio player */ }}
-                  scaleDown={0.97}
-                  style={styles.lessonHorizCard}
+            {contentLoading ? (
+              <ActivityIndicator size="small" color="#78716c" style={{ marginVertical: 20 }} />
+            ) : allLessons.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyText}>Lessons coming soon</Text>
+              </View>
+            ) : (
+              <>
+                {/* Horizontal scroll of featured lessons */}
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={{ marginHorizontal: -24, marginBottom: 10 }}
+                  contentContainerStyle={{ paddingHorizontal: 24, gap: 10 }}
                 >
-                  <View style={[styles.lessonHorizImage, { backgroundColor: l.bgColor }]}>
-                    <Text style={{ fontSize: 24 }}>{l.icon}</Text>
+                  {featuredLessons.map((l) => {
+                    const style = getCategoryStyle(l.category);
+                    return (
+                      <AnimatedPressable
+                        key={l.id}
+                        onPress={() => { hapticLight(); router.push({ pathname: '/(app)/article', params: { id: l.id, source: 'content' } }); }}
+                        scaleDown={0.97}
+                        style={styles.lessonHorizCard}
+                      >
+                        <View style={[styles.lessonHorizImage, { backgroundColor: style.bgColor }]}>
+                          <Text style={{ fontSize: 24 }}>{style.icon}</Text>
+                        </View>
+                        <Text style={styles.lessonHorizTitle} numberOfLines={2}>{l.title}</Text>
+                        <Text style={styles.lessonHorizDur}>{durationText(l.durationMinutes, l.format)}</Text>
+                        {l.category && (
+                          <View style={styles.catBadge}>
+                            <Text style={styles.catBadgeText}>{l.category}</Text>
+                          </View>
+                        )}
+                      </AnimatedPressable>
+                    );
+                  })}
+                </ScrollView>
+                {/* 2x2 grid of more lessons */}
+                {gridLessons.length > 0 && (
+                  <View style={styles.grid}>
+                    {gridLessons.map((l) => (
+                      <AnimatedPressable
+                        key={l.id}
+                        onPress={() => { hapticLight(); router.push({ pathname: '/(app)/article', params: { id: l.id, source: 'content' } }); }}
+                        scaleDown={0.97}
+                        style={styles.lessonCard}
+                      >
+                        <Text style={styles.lessonTitle}>{l.title}</Text>
+                        <Text style={styles.lessonDur}>
+                          {l.contentType === 'meditation' ? 'Meditation' : 'Audio'} · {durationText(l.durationMinutes, l.format)}
+                        </Text>
+                      </AnimatedPressable>
+                    ))}
                   </View>
-                  <Text style={styles.lessonHorizTitle} numberOfLines={2}>{l.title}</Text>
-                  <Text style={styles.lessonHorizDur}>{l.dur}</Text>
-                  <View style={styles.catBadge}>
-                    <Text style={styles.catBadgeText}>{l.cat}</Text>
-                  </View>
-                </AnimatedPressable>
-              ))}
-            </ScrollView>
-            {/* 2x2 grid of more lessons */}
-            <View style={styles.grid}>
-              {LESSONS_GRID.map((l) => (
-                <AnimatedPressable
-                  key={l.title}
-                  onPress={() => { hapticLight(); /* Future: navigate to audio player */ }}
-                  scaleDown={0.97}
-                  style={styles.lessonCard}
-                >
-                  <Text style={styles.lessonTitle}>{l.title}</Text>
-                  <Text style={styles.lessonDur}>{l.type} · {l.dur}</Text>
-                </AnimatedPressable>
-              ))}
-            </View>
+                )}
+              </>
+            )}
           </View>
         )}
 
@@ -241,29 +318,46 @@ export default function WellnessScreen() {
           <View style={styles.sectionBlock}>
             <View style={styles.sectionHeaderRow}>
               <Text style={styles.sectionLabel}>Medication & Supplements</Text>
-              <Text style={styles.sectionCount}>12+ articles</Text>
+              <Text style={styles.sectionCount}>
+                {medicationArticles.length > 0 ? `${medicationArticles.length} articles` : 'Loading...'}
+              </Text>
             </View>
-            <View style={{ gap: 8 }}>
-              {MEDICATION.map((a) => (
-                <AnimatedPressable
-                  key={a.title}
-                  onPress={() => { hapticLight(); router.push('/(app)/article'); }}
-                  scaleDown={0.97}
-                  style={styles.medCard}
-                >
-                  <View style={[styles.medIcon, { backgroundColor: a.bgColor }]}>
-                    <Text style={{ fontSize: 14, color: a.iconColor }}>{a.icon}</Text>
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.medTitle} numberOfLines={2}>{a.title}</Text>
-                    <Text style={styles.medDur}>{a.dur}</Text>
-                  </View>
-                  <View style={styles.medTagBadge}>
-                    <Text style={styles.medTagText}>{a.tag}</Text>
-                  </View>
-                </AnimatedPressable>
-              ))}
-            </View>
+            {contentLoading ? (
+              <ActivityIndicator size="small" color="#78716c" style={{ marginVertical: 20 }} />
+            ) : medicationArticles.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyText}>Medication articles coming soon</Text>
+              </View>
+            ) : (
+              <View style={{ gap: 8 }}>
+                {medicationArticles.map((a) => {
+                  const style = getCategoryStyle(a.category);
+                  // Derive a tag from category or tags array
+                  const tagLabel = (a.tags as string[] | null)?.[0] || a.category || '';
+                  return (
+                    <AnimatedPressable
+                      key={a.id}
+                      onPress={() => { hapticLight(); router.push({ pathname: '/(app)/article', params: { id: a.id, source: 'content' } }); }}
+                      scaleDown={0.97}
+                      style={styles.medCard}
+                    >
+                      <View style={[styles.medIcon, { backgroundColor: style.bgColor }]}>
+                        <Text style={{ fontSize: 14, color: style.iconColor }}>{style.icon}</Text>
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.medTitle} numberOfLines={2}>{a.title}</Text>
+                        <Text style={styles.medDur}>{durationText(a.durationMinutes, a.format)}</Text>
+                      </View>
+                      {tagLabel ? (
+                        <View style={styles.medTagBadge}>
+                          <Text style={styles.medTagText}>{tagLabel}</Text>
+                        </View>
+                      ) : null}
+                    </AnimatedPressable>
+                  );
+                })}
+              </View>
+            )}
           </View>
         )}
 
@@ -272,25 +366,38 @@ export default function WellnessScreen() {
           <View style={styles.sectionBlock}>
             <View style={styles.sectionHeaderRow}>
               <Text style={styles.sectionLabel}>Practical Guides</Text>
-              <Text style={styles.sectionCount}>10+ guides</Text>
+              <Text style={styles.sectionCount}>
+                {guides.length > 0 ? `${guides.length} guides` : 'Loading...'}
+              </Text>
             </View>
-            <View style={{ gap: 8 }}>
-              {GUIDES.map((g) => (
-                <AnimatedPressable
-                  key={g.title}
-                  onPress={() => { hapticLight(); router.push('/(app)/article'); }}
-                  scaleDown={0.97}
-                  style={styles.guideCard}
-                >
-                  <Text style={{ fontSize: 18 }}>{g.icon}</Text>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.guideTitle}>{g.title}</Text>
-                    <Text style={styles.guideType}>{g.type}</Text>
-                  </View>
-                  <Text style={styles.chevron}>›</Text>
-                </AnimatedPressable>
-              ))}
-            </View>
+            {contentLoading ? (
+              <ActivityIndicator size="small" color="#78716c" style={{ marginVertical: 20 }} />
+            ) : guides.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyText}>Guides coming soon</Text>
+              </View>
+            ) : (
+              <View style={{ gap: 8 }}>
+                {guides.map((g) => {
+                  const style = getCategoryStyle(g.category);
+                  return (
+                    <AnimatedPressable
+                      key={g.id}
+                      onPress={() => { hapticLight(); router.push({ pathname: '/(app)/article', params: { id: g.id, source: 'content' } }); }}
+                      scaleDown={0.97}
+                      style={styles.guideCard}
+                    >
+                      <Text style={{ fontSize: 18 }}>{style.icon}</Text>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.guideTitle}>{g.title}</Text>
+                        <Text style={styles.guideType}>{formatLabel(g.format)}</Text>
+                      </View>
+                      <Text style={styles.chevron}>›</Text>
+                    </AnimatedPressable>
+                  );
+                })}
+              </View>
+            )}
           </View>
         )}
 
@@ -299,32 +406,51 @@ export default function WellnessScreen() {
           <View style={styles.sectionBlock}>
             <View style={styles.sectionHeaderRow}>
               <Text style={styles.sectionLabel}>Recipes</Text>
-              <Text style={styles.sectionCount}>20+ recipes</Text>
+              <Text style={styles.sectionCount}>
+                {recipes.length > 0 ? `${recipes.length} recipes` : 'Loading...'}
+              </Text>
             </View>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={{ marginHorizontal: -24 }}
-              contentContainerStyle={{ paddingHorizontal: 24, gap: 10 }}
-            >
-              {RECIPES.map((r) => (
-                <AnimatedPressable
-                  key={r.title}
-                  onPress={() => { hapticLight(); router.push('/(app)/article'); }}
-                  scaleDown={0.97}
-                  style={styles.recipeCard}
-                >
-                  <View style={[styles.recipeImage, { backgroundColor: r.bgColor }]}>
-                    <Text style={{ fontSize: 24 }}>{r.icon}</Text>
-                  </View>
-                  <Text style={styles.recipeTitle} numberOfLines={2}>{r.title}</Text>
-                  <Text style={styles.recipeDur}>{r.time} prep</Text>
-                  <View style={styles.recipeBenefit}>
-                    <Text style={styles.recipeBenefitText}>{r.benefit}</Text>
-                  </View>
-                </AnimatedPressable>
-              ))}
-            </ScrollView>
+            {contentLoading ? (
+              <ActivityIndicator size="small" color="#78716c" style={{ marginVertical: 20 }} />
+            ) : recipes.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyText}>Recipes coming soon</Text>
+              </View>
+            ) : (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={{ marginHorizontal: -24 }}
+                contentContainerStyle={{ paddingHorizontal: 24, gap: 10 }}
+              >
+                {recipes.map((r) => {
+                  const style = getCategoryStyle(r.category);
+                  // Extract benefit tag from tags array if available
+                  const benefitTag = (r.tags as string[] | null)?.[0] || r.description || '';
+                  return (
+                    <AnimatedPressable
+                      key={r.id}
+                      onPress={() => { hapticLight(); router.push({ pathname: '/(app)/article', params: { id: r.id, source: 'content' } }); }}
+                      scaleDown={0.97}
+                      style={styles.recipeCard}
+                    >
+                      <View style={[styles.recipeImage, { backgroundColor: style.bgColor }]}>
+                        <Text style={{ fontSize: 24 }}>{style.icon}</Text>
+                      </View>
+                      <Text style={styles.recipeTitle} numberOfLines={2}>{r.title}</Text>
+                      <Text style={styles.recipeDur}>
+                        {r.durationMinutes ? `${r.durationMinutes} min prep` : ''}
+                      </Text>
+                      {benefitTag ? (
+                        <View style={styles.recipeBenefit}>
+                          <Text style={styles.recipeBenefitText} numberOfLines={1}>{benefitTag}</Text>
+                        </View>
+                      ) : null}
+                    </AnimatedPressable>
+                  );
+                })}
+              </ScrollView>
+            )}
           </View>
         )}
 
@@ -460,6 +586,17 @@ const styles = StyleSheet.create({
   },
   sectionLabel: { fontSize: 16, fontWeight: '600', color: '#1c1917' },
   sectionCount: { fontSize: 14, color: '#78716c' },
+
+  /* Empty state */
+  emptyState: {
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: '#f5f5f4',
+    alignItems: 'center',
+  },
+  emptyText: { fontSize: 14, color: '#78716c', fontWeight: '500' },
 
   /* Lesson horizontal cards */
   lessonHorizCard: { width: 120 },

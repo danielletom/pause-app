@@ -19,10 +19,12 @@ interface Article {
   bodyMarkdown: string | null;
   category: string | null;
   readTime: number | null;
+  durationMinutes?: number | null;
+  format?: string | null;
 }
 
 export default function ArticleScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, source } = useLocalSearchParams<{ id: string; source?: string }>();
   const { getToken } = useAuth();
   const [article, setArticle] = useState<Article | null>(null);
   const [loading, setLoading] = useState(true);
@@ -31,7 +33,23 @@ export default function ArticleScreen() {
     (async () => {
       try {
         const token = await getToken();
-        const data = await apiRequest(`/api/articles/${id}`, token);
+        let data: any;
+
+        if (source === 'content') {
+          // Fetch from content API (lessons, guides, medication articles, recipes)
+          data = await apiRequest(`/api/content?id=${id}`, token);
+          // Map content fields to article shape
+          if (data) {
+            data = {
+              ...data,
+              readTime: data.durationMinutes || data.readTime || null,
+            };
+          }
+        } else {
+          // Default: fetch from articles API
+          data = await apiRequest(`/api/articles/${id}`, token);
+        }
+
         setArticle(data);
       } catch {
         // Non-critical
@@ -39,7 +57,7 @@ export default function ArticleScreen() {
         setLoading(false);
       }
     })();
-  }, [id, getToken]);
+  }, [id, source, getToken]);
 
   if (loading) {
     return (
@@ -93,7 +111,7 @@ export default function ArticleScreen() {
         {/* Header meta */}
         <View style={styles.header}>
           <Text style={styles.metaText}>
-            {article.category || 'General'}{article.readTime ? ` · ${article.readTime} min read` : ''}
+            {article.category || 'General'}{article.readTime ? ` · ${article.readTime} min read` : article.durationMinutes ? ` · ${article.durationMinutes} min` : ''}
           </Text>
           <Text style={styles.title}>{article.title}</Text>
         </View>
