@@ -28,6 +28,8 @@ export default function AppLayout() {
           paddingBottom: bottomPadding,
           paddingTop: 8,
           height: 56 + bottomPadding,
+          zIndex: 50,
+          elevation: 8,
         },
         tabBarLabelStyle: {
           fontSize: 12,
@@ -101,6 +103,7 @@ export default function AppLayout() {
       <Tabs.Screen name="privacy" options={{ href: null }} />
       <Tabs.Screen name="help-feedback" options={{ href: null }} />
       <Tabs.Screen name="export-data" options={{ href: null }} />
+      <Tabs.Screen name="custom-tracking" options={{ href: null }} />
       <Tabs.Screen name="calendar" options={{ href: null }} />
       <Tabs.Screen name="journal-am" options={{ href: null }} />
       <Tabs.Screen name="journal-pm" options={{ href: null }} />

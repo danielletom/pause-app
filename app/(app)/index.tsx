@@ -1108,38 +1108,6 @@ export default function HomeScreen() {
               </AnimatedPressable>
             )}
 
-            {/* Empty state — no log for selected day */}
-            {!hasLog && (
-              <View style={styles.emptyCard}>
-                <View style={styles.emptyIcon}>
-                  <Ionicons name="add-circle-outline" size={36} color="#f59e0b" />
-                </View>
-                <Text style={styles.emptyTitle}>
-                  {isToday ? 'No check-in yet today' : 'No log for this day'}
-                </Text>
-                <Text style={styles.emptyDesc}>
-                  {isToday
-                    ? 'Track your symptoms, mood, and sleep to see patterns over time.'
-                    : 'You can still add a past entry to fill in the gaps.'}
-                </Text>
-                <AnimatedPressable
-                  onPress={() => {
-                    hapticMedium();
-                    router.push({
-                      pathname: '/(app)/quick-log',
-                      params: { date: selectedDate, mode: 'morning' },
-                    });
-                  }}
-                  scaleDown={0.96}
-                  style={styles.emptyButton}
-                >
-                  <Text style={styles.emptyButtonText}>
-                    {isToday ? 'Start morning journal' : 'Log this day'}
-                  </Text>
-                </AnimatedPressable>
-              </View>
-            )}
-
             {/* Streak */}
             {streak > 0 && (
               <View style={[styles.card, { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 4 }]}>

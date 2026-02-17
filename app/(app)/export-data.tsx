@@ -17,6 +17,7 @@ const DATE_RANGES: [string, string][] = [
   ['90d', 'Last 90 days'],
   ['6m', 'Last 6 months'],
   ['all', 'All time'],
+  ['custom', 'Custom range'],
 ];
 
 const PDF_ITEMS = [
@@ -200,7 +201,7 @@ export default function ExportDataScreen() {
               {'\u2193'}
             </Animated.Text>
             <Text style={styles.exportingTitle}>Generating your export...</Text>
-            <Text style={styles.exportingDesc}>This takes about 10 seconds</Text>
+            <Text style={styles.exportingDesc}>This may take a minute for large exports</Text>
             <View style={styles.progressBarBg}>
               <Animated.View style={[styles.progressBarFill, { opacity: pulseAnim }]} />
             </View>
@@ -210,6 +211,9 @@ export default function ExportDataScreen() {
         {/* Email note */}
         <Text style={styles.emailNote}>
           Your export will be emailed to {email}
+        </Text>
+        <Text style={styles.emailNote}>
+          Large exports may take a few minutes to generate.{'\n'}Your data is always yours.
         </Text>
       </ScrollView>
     </SafeAreaView>
@@ -239,7 +243,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f4',
     borderRadius: 20,
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 10,
+    minHeight: 44,
+    justifyContent: 'center',
   },
   pillActive: { backgroundColor: '#1c1917' },
   pillText: { fontSize: 14, fontWeight: '500', color: '#78716c' },

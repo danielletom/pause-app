@@ -15,6 +15,7 @@ import { useAuth } from '@clerk/clerk-expo';
 import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import AnimatedPressable from '@/components/AnimatedPressable';
+import BackButton from '@/components/BackButton';
 import { hapticLight, hapticMedium, hapticSuccess, hapticSelection } from '@/lib/haptics';
 import { apiRequest } from '@/lib/api';
 
@@ -245,6 +246,7 @@ export default function MedsScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
+          <BackButton />
           <View>
             <Text style={styles.title}>Medications</Text>
             <Text style={styles.subtitle}>Track everything in one place</Text>

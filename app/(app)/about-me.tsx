@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
   // Fields
   fieldGroup: { marginBottom: 20 },
   label: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '600',
     color: '#1c1917',
     marginBottom: 8,
@@ -293,11 +293,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f4',
     borderRadius: 12,
     padding: 14,
-    fontSize: 14,
+    fontSize: 16,
     color: '#1c1917',
   },
   fieldHint: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#78716c',
     marginTop: 6,
     marginLeft: 2,
@@ -314,7 +314,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   unitText: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#78716c',
     fontWeight: '500',
   },
@@ -342,12 +342,14 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 8,
+    minHeight: 44,
+    justifyContent: 'center',
   },
   pillActive: {
     backgroundColor: '#1c1917',
   },
   pillText: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#78716c',
     fontWeight: '500',
   },
