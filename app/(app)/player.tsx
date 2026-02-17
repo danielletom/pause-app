@@ -1,21 +1,21 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
   SafeAreaView,
   StyleSheet,
   ActivityIndicator,
+  PanResponder,
+  Dimensions,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Audio } from 'expo-av';
 import { useAuth } from '@clerk/clerk-expo';
 import AnimatedPressable from '@/components/AnimatedPressable';
 import { hapticLight, hapticMedium } from '@/lib/haptics';
 import { apiRequest } from '@/lib/api';
+import { useAudio, Track } from '@/lib/audio-context';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://pause-api-seven.vercel.app';
-
-interface ContentItem {
+interface ContentData {
   id: number;
   title: string;
   description: string | null;
@@ -26,25 +26,40 @@ interface ContentItem {
   tags: string[];
 }
 
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const PROGRESS_HORIZONTAL_PADDING = 32;
+const PROGRESS_WIDTH = SCREEN_WIDTH - PROGRESS_HORIZONTAL_PADDING * 2;
+
 export default function PlayerScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { getToken } = useAuth();
+  const audio = useAudio();
 
-  const [content, setContent] = useState<ContentItem | null>(null);
+  const [contentData, setContentData] = useState<ContentData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [sound, setSound] = useState<Audio.Sound | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [position, setPosition] = useState(0);
-  const [duration, setDuration] = useState(0);
 
-  // Fetch content
+  // Fetch content data
   useEffect(() => {
     async function load() {
       try {
         const token = await getToken();
         const data = await apiRequest(`/api/content?id=${id}`, token);
-        setContent(data);
+        setContentData(data);
+
+        // Auto-play if not already playing this track
+        if (data.audioUrl && audio.track?.id !== data.id) {
+          const track: Track = {
+            id: data.id,
+            title: data.title,
+            description: data.description,
+            contentType: data.contentType,
+            audioUrl: data.audioUrl,
+            durationMinutes: data.durationMinutes,
+            category: data.category,
+          };
+          audio.play(track);
+        }
       } catch (err) {
         console.error('Failed to load content:', err);
       } finally {
@@ -54,68 +69,21 @@ export default function PlayerScreen() {
     if (id) load();
   }, [id]);
 
-  // Clean up audio on unmount
-  useEffect(() => {
-    return () => {
-      if (sound) {
-        sound.unloadAsync();
-      }
-    };
-  }, [sound]);
-
-  const onPlaybackStatusUpdate = useCallback((status: any) => {
-    if (status.isLoaded) {
-      setPosition(status.positionMillis || 0);
-      setDuration(status.durationMillis || 0);
-      setIsPlaying(status.isPlaying);
-      if (status.didJustFinish) {
-        setIsPlaying(false);
-        setPosition(0);
-      }
-    }
-  }, []);
-
-  const togglePlayPause = async () => {
-    hapticMedium();
-
-    if (!content?.audioUrl) return;
-
-    if (sound) {
-      if (isPlaying) {
-        await sound.pauseAsync();
-      } else {
-        await sound.playAsync();
-      }
-      return;
-    }
-
-    // First time — load and play
-    await Audio.setAudioModeAsync({
-      playsInSilentModeIOS: true,
-      staysActiveInBackground: true,
-    });
-
-    const audioUri = content.audioUrl.startsWith('http')
-      ? content.audioUrl
-      : `${API_URL}${content.audioUrl}`;
-
-    const { sound: newSound } = await Audio.Sound.createAsync(
-      { uri: audioUri },
-      { shouldPlay: true },
-      onPlaybackStatusUpdate
-    );
-
-    setSound(newSound);
-    setIsPlaying(true);
-  };
-
-  const seekBy = async (seconds: number) => {
-    hapticLight();
-    if (sound) {
-      const newPos = Math.max(0, Math.min(position + seconds * 1000, duration));
-      await sound.setPositionAsync(newPos);
-    }
-  };
+  // Scrubbing via pan gesture on progress bar
+  const panResponder = PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder: () => true,
+    onPanResponderGrant: (evt) => {
+      const x = evt.nativeEvent.locationX;
+      const ratio = Math.max(0, Math.min(x / PROGRESS_WIDTH, 1));
+      audio.seekTo(ratio * audio.duration);
+    },
+    onPanResponderMove: (evt) => {
+      const x = evt.nativeEvent.locationX;
+      const ratio = Math.max(0, Math.min(x / PROGRESS_WIDTH, 1));
+      audio.seekTo(ratio * audio.duration);
+    },
+  });
 
   const formatTime = (ms: number) => {
     const totalSeconds = Math.floor(ms / 1000);
@@ -124,7 +92,7 @@ export default function PlayerScreen() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const progress = duration > 0 ? position / duration : 0;
+  const progress = audio.duration > 0 ? audio.position / audio.duration : 0;
 
   if (loading) {
     return (
@@ -136,7 +104,7 @@ export default function PlayerScreen() {
     );
   }
 
-  if (!content) {
+  if (!contentData) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
@@ -146,25 +114,25 @@ export default function PlayerScreen() {
     );
   }
 
-  const typeLabel = content.contentType === 'podcast' ? 'The Pause Pod'
-    : content.contentType === 'meditation' ? 'Guided Meditation'
-    : content.contentType === 'lesson' ? 'Audio Lesson'
+  const typeLabel = contentData.contentType === 'podcast' ? 'The Pause Pod'
+    : contentData.contentType === 'meditation' ? 'Guided Meditation'
+    : contentData.contentType === 'lesson' ? 'Audio Lesson'
     : 'Audio';
 
-  const typeIcon = content.contentType === 'podcast' ? '🎙'
-    : content.contentType === 'meditation' ? '🧘'
-    : content.contentType === 'lesson' ? '📚'
+  const typeIcon = contentData.contentType === 'podcast' ? '🎙'
+    : contentData.contentType === 'meditation' ? '🧘'
+    : contentData.contentType === 'lesson' ? '📚'
     : '🎧';
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Back button */}
+      {/* Back / minimize button */}
       <AnimatedPressable
         onPress={() => { hapticLight(); router.back(); }}
         scaleDown={0.95}
         style={styles.backButton}
       >
-        <Text style={styles.backText}>‹ Back</Text>
+        <Text style={styles.backText}>⌄</Text>
       </AnimatedPressable>
 
       <View style={styles.content}>
@@ -178,41 +146,66 @@ export default function PlayerScreen() {
         {/* Title & info */}
         <View style={styles.info}>
           <Text style={styles.typeLabel}>{typeLabel}</Text>
-          <Text style={styles.title}>{content.title}</Text>
-          {content.description && (
+          <Text style={styles.title}>{contentData.title}</Text>
+          {contentData.description && (
             <Text style={styles.description} numberOfLines={2}>
-              {content.description}
+              {contentData.description}
             </Text>
           )}
-          {content.category && (
+          {contentData.category && (
             <View style={styles.categoryPill}>
-              <Text style={styles.categoryText}>{content.category}</Text>
+              <Text style={styles.categoryText}>{contentData.category}</Text>
             </View>
           )}
         </View>
 
-        {/* Progress bar */}
+        {/* Progress bar — fat and scrubbable */}
         <View style={styles.progressContainer}>
-          <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+          <View style={styles.progressBarWrapper} {...panResponder.panHandlers}>
+            <View style={styles.progressBar}>
+              <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+            </View>
+            {/* Scrub handle */}
+            <View
+              style={[
+                styles.scrubHandle,
+                { left: `${progress * 100}%` },
+              ]}
+            />
           </View>
           <View style={styles.timeRow}>
-            <Text style={styles.timeText}>{formatTime(position)}</Text>
-            <Text style={styles.timeText}>{duration > 0 ? formatTime(duration) : `${content.durationMinutes || '?'} min`}</Text>
+            <Text style={styles.timeText}>{formatTime(audio.position)}</Text>
+            <Text style={styles.timeText}>
+              {audio.duration > 0 ? formatTime(audio.duration) : `${contentData.durationMinutes || '?'} min`}
+            </Text>
           </View>
         </View>
 
         {/* Controls */}
         <View style={styles.controls}>
-          <AnimatedPressable onPress={() => seekBy(-15)} scaleDown={0.9} style={styles.seekButton}>
+          <AnimatedPressable
+            onPress={() => { hapticLight(); audio.seekBy(-15); }}
+            scaleDown={0.9}
+            style={styles.seekButton}
+          >
             <Text style={styles.seekText}>-15s</Text>
           </AnimatedPressable>
 
-          <AnimatedPressable onPress={togglePlayPause} scaleDown={0.95} style={styles.playPauseButton}>
-            <Text style={styles.playPauseIcon}>{isPlaying ? '❚❚' : '▶'}</Text>
+          <AnimatedPressable
+            onPress={() => { hapticMedium(); audio.togglePlayPause(); }}
+            scaleDown={0.95}
+            style={styles.playPauseButton}
+          >
+            <Text style={styles.playPauseIcon}>
+              {audio.isLoading ? '...' : audio.isPlaying ? '❚❚' : '▶'}
+            </Text>
           </AnimatedPressable>
 
-          <AnimatedPressable onPress={() => seekBy(30)} scaleDown={0.9} style={styles.seekButton}>
+          <AnimatedPressable
+            onPress={() => { hapticLight(); audio.seekBy(30); }}
+            scaleDown={0.9}
+            style={styles.seekButton}
+          >
             <Text style={styles.seekText}>+30s</Text>
           </AnimatedPressable>
         </View>
@@ -226,8 +219,8 @@ const styles = StyleSheet.create({
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   errorText: { fontSize: 14, color: '#a8a29e' },
 
-  backButton: { paddingHorizontal: 24, paddingVertical: 12 },
-  backText: { fontSize: 16, color: '#78716c', fontWeight: '500' },
+  backButton: { alignItems: 'center', paddingVertical: 8 },
+  backText: { fontSize: 28, color: '#a8a29e', fontWeight: '300' },
 
   content: { flex: 1, paddingHorizontal: 32, justifyContent: 'center' },
 
@@ -260,47 +253,65 @@ const styles = StyleSheet.create({
   },
   categoryText: { fontSize: 11, color: '#a8a29e', fontWeight: '500' },
 
-  progressContainer: { marginBottom: 24 },
+  progressContainer: { marginBottom: 28 },
+  progressBarWrapper: {
+    paddingVertical: 12, // extra touch target
+    justifyContent: 'center',
+  },
   progressBar: {
-    height: 4,
+    height: 8,
     backgroundColor: '#e7e5e4',
-    borderRadius: 2,
+    borderRadius: 4,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
     backgroundColor: '#1c1917',
-    borderRadius: 2,
+    borderRadius: 4,
+  },
+  scrubHandle: {
+    position: 'absolute',
+    top: 6,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#1c1917',
+    marginLeft: -10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
   },
   timeRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 6,
+    marginTop: 8,
   },
-  timeText: { fontSize: 11, color: '#a8a29e' },
+  timeText: { fontSize: 12, color: '#a8a29e', fontWeight: '500' },
 
   controls: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 24,
+    gap: 28,
   },
   seekButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     backgroundColor: '#f5f5f4',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  seekText: { fontSize: 11, fontWeight: '600', color: '#78716c' },
+  seekText: { fontSize: 12, fontWeight: '600', color: '#78716c' },
   playPauseButton: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     backgroundColor: '#1c1917',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  playPauseIcon: { fontSize: 18, color: '#ffffff' },
+  playPauseIcon: { fontSize: 20, color: '#ffffff' },
 });
