@@ -1,5 +1,8 @@
 import React from 'react';
 import { View, Text, SafeAreaView, ScrollView, StyleSheet } from 'react-native';
+import { useRouter } from 'expo-router';
+import AnimatedPressable from '@/components/AnimatedPressable';
+import { hapticLight } from '@/lib/haptics';
 import BackButton from '@/components/BackButton';
 
 const SECTIONS = [
@@ -38,6 +41,8 @@ const SECTIONS = [
 ];
 
 export default function TermsScreen() {
+  const router = useRouter();
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView
@@ -82,18 +87,18 @@ const styles = StyleSheet.create({
 
   header: { marginBottom: 24 },
   title: { fontSize: 22, fontWeight: '700', color: '#1c1917', marginBottom: 4 },
-  subtitle: { fontSize: 14, color: '#78716c' },
+  subtitle: { fontSize: 13, color: '#a8a29e' },
 
   sectionsContainer: { gap: 20, marginBottom: 32 },
   section: {},
   sectionHeading: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
     color: '#1c1917',
     marginBottom: 6,
   },
   sectionBody: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#78716c',
     lineHeight: 22,
   },
@@ -109,14 +114,14 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   footerName: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
     color: '#1c1917',
     marginBottom: 4,
   },
   footerDetail: {
-    fontSize: 14,
-    color: '#78716c',
+    fontSize: 13,
+    color: '#a8a29e',
     lineHeight: 20,
   },
 });

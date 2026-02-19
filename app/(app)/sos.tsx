@@ -17,8 +17,8 @@ import Animated, {
   runOnJS,
 } from 'react-native-reanimated';
 import AnimatedPressable from '@/components/AnimatedPressable';
-import BackButton from '@/components/BackButton';
 import { hapticMedium, hapticLight, hapticSelection } from '@/lib/haptics';
+import BackButton from '@/components/BackButton';
 import { apiRequest } from '@/lib/api';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -184,9 +184,7 @@ export default function SOSScreen() {
         <SafeAreaView style={styles.flex}>
           <View style={styles.centered}>
             {/* Back */}
-            <View style={styles.backButton}>
-              <BackButton />
-            </View>
+            <BackButton style={{ position: 'absolute', top: 16, left: 0 }} />
 
             {/* Large teal circle with snowflake */}
             <View style={styles.introCircle}>
@@ -442,9 +440,6 @@ const styles = StyleSheet.create({
   },
   darkContainer: { flex: 1, backgroundColor: '#0c0a09' },
 
-  // Back button
-  backButton: { position: 'absolute', top: 16, left: 0, padding: 8 },
-
   // ─── Intro ──────────────────────
   introCircle: {
     width: 96,
@@ -468,15 +463,15 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   introDesc: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#78716c',
     textAlign: 'center',
     lineHeight: 22,
     marginBottom: 8,
   },
   socialProof: {
-    fontSize: 14,
-    color: '#78716c',
+    fontSize: 12,
+    color: '#d6d3d1',
     textAlign: 'center',
   },
 
@@ -497,7 +492,7 @@ const styles = StyleSheet.create({
 
   // ─── Breathing ──────────────────
   endSessionButton: { position: 'absolute', top: 16, left: 0, padding: 8 },
-  endSessionText: { fontSize: 14, color: '#78716c' },
+  endSessionText: { fontSize: 13, color: '#57534e' },
 
   circleContainer: {
     alignItems: 'center',
@@ -515,15 +510,15 @@ const styles = StyleSheet.create({
     color: '#ffffff',
   },
   phaseHint: {
-    fontSize: 14,
-    color: '#78716c',
+    fontSize: 12,
+    color: '#57534e',
     letterSpacing: 1,
     textTransform: 'uppercase',
   },
   countdownText: {
     fontSize: 28,
     fontWeight: '300',
-    color: '#78716c',
+    color: '#44403c',
     marginTop: 20,
     fontVariant: ['tabular-nums'],
   },
@@ -544,8 +539,8 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   cycleText: {
-    fontSize: 14,
-    color: '#78716c',
+    fontSize: 12,
+    color: '#57534e',
   },
   finishEarlyButton: {
     backgroundColor: '#0d9488',
@@ -556,7 +551,7 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
   },
-  finishEarlyText: { color: '#ffffff', fontSize: 16, fontWeight: '600' },
+  finishEarlyText: { color: '#ffffff', fontSize: 15, fontWeight: '600' },
 
   // ─── Done ───────────────────────
   doneCheckCircle: {
@@ -580,7 +575,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   doneDesc: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#78716c',
     textAlign: 'center',
     marginBottom: 24,
@@ -589,8 +584,8 @@ const styles = StyleSheet.create({
   // Rating
   ratingSection: { alignSelf: 'stretch', marginBottom: 20 },
   ratingQuestion: {
-    fontSize: 14,
-    color: '#78716c',
+    fontSize: 13,
+    color: '#a8a29e',
     textAlign: 'center',
     marginBottom: 12,
   },
@@ -605,8 +600,8 @@ const styles = StyleSheet.create({
   ratingPillSelected: {
     backgroundColor: '#ccfbf1',
   },
-  ratingPillText: { fontSize: 14, color: '#78716c', fontWeight: '500' },
-  ratingThanks: { fontSize: 14, color: '#78716c', textAlign: 'center' },
+  ratingPillText: { fontSize: 11, color: '#78716c', fontWeight: '500' },
+  ratingThanks: { fontSize: 14, color: '#a8a29e', textAlign: 'center' },
 
   // Upsell — dark card per wireframe
   upsellCard: {
@@ -616,15 +611,15 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
     marginBottom: 8,
   },
-  upsellLabel: { fontSize: 14, color: '#78716c' },
+  upsellLabel: { fontSize: 12, color: '#78716c' },
   upsellTitle: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#ffffff',
     fontWeight: '500',
     marginTop: 4,
   },
   upsellLink: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#fbbf24',
     fontWeight: '500',
     marginTop: 6,
@@ -646,7 +641,7 @@ const styles = StyleSheet.create({
   },
   ghostButtonText: {
     color: '#78716c',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '500',
   },
 });

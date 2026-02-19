@@ -10,6 +10,7 @@ import {
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
 import AnimatedPressable from '@/components/AnimatedPressable';
+import BackButton from '@/components/BackButton';
 import { hapticLight } from '@/lib/haptics';
 import { apiRequest } from '@/lib/api';
 
@@ -87,9 +88,7 @@ export default function PeriodInsightsScreen() {
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.topBar}>
-          <AnimatedPressable onPress={() => { hapticLight(); router.back(); }} scaleDown={0.97}>
-            <Text style={styles.backBtn}>← Tracker</Text>
-          </AnimatedPressable>
+          <BackButton label="Tracker" />
           <Text style={styles.title}>Cycle Insights</Text>
           <Text style={styles.subtitle}>Based on your {completedCycles.length} tracked cycles</Text>
         </View>
@@ -270,7 +269,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fafaf9' },
   scrollContent: { paddingHorizontal: 24, paddingTop: 8, paddingBottom: 100 },
   topBar: { marginBottom: 16 },
-  backBtn: { fontSize: 12, color: '#a8a29e', marginBottom: 8 },
   title: { fontSize: 22, fontWeight: '700', color: '#1c1917' },
   subtitle: { fontSize: 12, color: '#a8a29e', marginTop: 2 },
 

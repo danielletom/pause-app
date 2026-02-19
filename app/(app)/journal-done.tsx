@@ -8,9 +8,9 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
+import BackButton from '@/components/BackButton';
 import { useAuth } from '@clerk/clerk-expo';
 import AnimatedPressable from '@/components/AnimatedPressable';
-import BackButton from '@/components/BackButton';
 import { hapticLight, hapticMedium } from '@/lib/haptics';
 import { apiRequest } from '@/lib/api';
 
@@ -145,9 +145,7 @@ export default function JournalDoneScreen() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.nav}>
-        <View style={styles.navBack}>
-          <BackButton />
-        </View>
+        <BackButton />
         <View style={styles.navSpacer} />
       </View>
 
@@ -319,6 +317,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   navBack: { paddingVertical: 4 },
+  navBackText: { fontSize: 13, color: '#a8a29e' },
   navSpacer: { width: 50 },
 
   /* Celebration header */
@@ -331,7 +330,7 @@ const styles = StyleSheet.create({
   celebEmoji: { fontSize: 56, marginBottom: 16 },
   celebTitle: { fontSize: 26, fontWeight: '700', color: '#1c1917', marginBottom: 8 },
   celebSubtitle: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#78716c',
     textAlign: 'center',
     lineHeight: 22,
@@ -354,7 +353,7 @@ const styles = StyleSheet.create({
   },
   streakFlame: { fontSize: 28 },
   streakCount: { fontSize: 18, fontWeight: '700', color: '#92400e' },
-  streakLabel: { fontSize: 14, color: '#b45309', marginTop: 2 },
+  streakLabel: { fontSize: 12, color: '#b45309', marginTop: 2 },
 
   /* Summary card */
   summaryCard: {
@@ -369,7 +368,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 1,
   },
-  summaryTitle: { fontSize: 16, fontWeight: '600', color: '#1c1917', marginBottom: 14 },
+  summaryTitle: { fontSize: 14, fontWeight: '600', color: '#1c1917', marginBottom: 14 },
   summaryRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -377,7 +376,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   summaryIcon: { fontSize: 16, width: 24 },
-  summaryText: { fontSize: 16, color: '#44403c', flex: 1, lineHeight: 20 },
+  summaryText: { fontSize: 13, color: '#44403c', flex: 1, lineHeight: 20 },
 
   /* Action buttons */
   actionButton: {
@@ -388,7 +387,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     alignItems: 'center',
   },
-  actionButtonText: { color: '#ffffff', fontSize: 16, fontWeight: '600' },
+  actionButtonText: { color: '#ffffff', fontSize: 15, fontWeight: '600' },
 
   secondaryButton: {
     marginHorizontal: 24,
@@ -400,7 +399,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e7e5e4',
   },
-  secondaryButtonText: { color: '#1c1917', fontSize: 16, fontWeight: '600' },
+  secondaryButtonText: { color: '#1c1917', fontSize: 15, fontWeight: '600' },
 
   /* Encourage card */
   encourageCard: {
@@ -412,7 +411,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#bbf7d0',
   },
-  encourageText: { fontSize: 14, color: '#166534', lineHeight: 20, textAlign: 'center' },
+  encourageText: { fontSize: 13, color: '#166534', lineHeight: 20, textAlign: 'center' },
 
   /* Incomplete state */
   incompleteState: {
@@ -423,8 +422,8 @@ const styles = StyleSheet.create({
   incompleteEmoji: { fontSize: 48, marginBottom: 16 },
   incompleteTitle: { fontSize: 18, fontWeight: '700', color: '#1c1917', marginBottom: 8 },
   incompleteDesc: {
-    fontSize: 14,
-    color: '#78716c',
+    fontSize: 13,
+    color: '#a8a29e',
     textAlign: 'center',
     lineHeight: 20,
   },

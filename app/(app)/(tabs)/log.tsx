@@ -13,6 +13,7 @@ import {
   Keyboard,
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
+import BackButton from '@/components/BackButton';
 import { useAuth } from '@clerk/clerk-expo';
 import AnimatedPressable from '@/components/AnimatedPressable';
 import { hapticLight, hapticMedium, hapticSelection, hapticSuccess } from '@/lib/haptics';
@@ -438,9 +439,7 @@ export default function SymptomLogScreen() {
 
         {/* Navigation header */}
         <View style={styles.nav}>
-          <AnimatedPressable onPress={handleBack} scaleDown={0.9} style={styles.navSide}>
-            <Text style={styles.navBackText}>← Back</Text>
-          </AnimatedPressable>
+          <BackButton onPress={handleBack} />
           <Text style={styles.navStep}>
             Step {step + 1} of {STEPS.length}
           </Text>

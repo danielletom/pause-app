@@ -14,6 +14,7 @@ import { useUser, useAuth } from '@clerk/clerk-expo';
 import AnimatedPressable from '@/components/AnimatedPressable';
 import BackButton from '@/components/BackButton';
 import { hapticLight, hapticMedium } from '@/lib/haptics';
+import BackButton from '@/components/BackButton';
 import { apiRequest } from '@/lib/api';
 import { useProfile } from '@/lib/useProfile';
 

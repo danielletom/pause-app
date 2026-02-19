@@ -1,5 +1,8 @@
 import React from 'react';
 import { View, Text, SafeAreaView, ScrollView, StyleSheet } from 'react-native';
+import { useRouter } from 'expo-router';
+import AnimatedPressable from '@/components/AnimatedPressable';
+import { hapticLight } from '@/lib/haptics';
 import BackButton from '@/components/BackButton';
 
 const SECTIONS = [
@@ -38,6 +41,8 @@ const SECTIONS = [
 ];
 
 export default function PrivacyScreen() {
+  const router = useRouter();
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView
@@ -93,7 +98,7 @@ const styles = StyleSheet.create({
 
   header: { marginBottom: 16 },
   title: { fontSize: 22, fontWeight: '700', color: '#1c1917', marginBottom: 4 },
-  subtitle: { fontSize: 14, color: '#78716c' },
+  subtitle: { fontSize: 13, color: '#a8a29e' },
 
   pipedaCard: {
     backgroundColor: '#fffbeb',
@@ -104,7 +109,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   pipedaText: {
-    fontSize: 16,
+    fontSize: 13,
     color: '#78716c',
     lineHeight: 20,
   },
@@ -112,13 +117,13 @@ const styles = StyleSheet.create({
   sectionsContainer: { gap: 20, marginBottom: 32 },
   section: {},
   sectionHeading: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
     color: '#1c1917',
     marginBottom: 6,
   },
   sectionBody: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#78716c',
     lineHeight: 22,
   },
@@ -134,9 +139,9 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   footerLabel: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
-    color: '#78716c',
+    color: '#a8a29e',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 4,
@@ -148,13 +153,13 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   footerName: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#78716c',
     marginBottom: 2,
   },
   footerDetail: {
-    fontSize: 14,
-    color: '#78716c',
+    fontSize: 13,
+    color: '#a8a29e',
     lineHeight: 20,
   },
 });

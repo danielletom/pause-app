@@ -14,6 +14,7 @@ import {
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
 import AnimatedPressable from '@/components/AnimatedPressable';
+import BackButton from '@/components/BackButton';
 import { hapticLight, hapticMedium, hapticSuccess, hapticSelection } from '@/lib/haptics';
 import { apiRequest } from '@/lib/api';
 import { useProfile } from '@/lib/useProfile';
@@ -1554,9 +1555,7 @@ export default function QuickLogScreen() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.nav}>
-        <AnimatedPressable onPress={handleBack} scaleDown={0.9} style={styles.navSide}>
-          <Text style={styles.navBackText}>← Back</Text>
-        </AnimatedPressable>
+        <BackButton onPress={handleBack} />
         <Text style={styles.navStep}>
           {isViewMode ? `${headerEmoji} Viewing ${isMorning ? 'morning' : 'evening'}` : `${headerEmoji} Step ${step + 1} of ${STEPS.length}`}
         </Text>

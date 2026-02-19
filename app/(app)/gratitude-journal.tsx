@@ -6,6 +6,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
 import { Ionicons } from '@expo/vector-icons';
 import AnimatedPressable from '@/components/AnimatedPressable';
+import BackButton from '@/components/BackButton';
 import { hapticMedium, hapticLight, hapticSelection } from '@/lib/haptics';
 import { apiRequest } from '@/lib/api';
 
@@ -108,9 +109,7 @@ export default function GratitudeJournalScreen() {
     return (
       <SafeAreaView style={s.container}>
         <View style={s.topBar}>
-          <AnimatedPressable onPress={() => { hapticLight(); router.back(); }} scaleDown={0.95}>
-            <Text style={s.backBtn}>← Back</Text>
-          </AnimatedPressable>
+          <BackButton />
         </View>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 }}>
           <Text style={{ fontSize: 48, marginBottom: 16 }}>✦</Text>
@@ -135,9 +134,7 @@ export default function GratitudeJournalScreen() {
       <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={s.topBar}>
-          <AnimatedPressable onPress={() => { hapticLight(); router.back(); }} scaleDown={0.95}>
-            <Text style={s.backBtn}>← Back to journal</Text>
-          </AnimatedPressable>
+          <BackButton label="Back to journal" />
         </View>
         <View style={s.hero}>
           <Text style={s.heroLabel}>YOUR GRATITUDE</Text>
@@ -252,8 +249,6 @@ const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fafaf9' },
   scroll: { paddingHorizontal: 24, paddingBottom: 120 },
   topBar: { paddingTop: 8, marginBottom: 4 },
-  backBtn: { fontSize: 12, color: '#a8a29e' },
-
   hero: { marginBottom: 16 },
   heroLabel: { fontSize: 10, color: '#f59e0b', fontWeight: '500', letterSpacing: 1 },
   heroCount: { fontSize: 28, fontWeight: '700', color: '#1c1917', marginTop: 2 },

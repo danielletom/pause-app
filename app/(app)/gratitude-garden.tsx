@@ -6,6 +6,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
 import Svg, { Circle, G } from 'react-native-svg';
 import AnimatedPressable from '@/components/AnimatedPressable';
+import BackButton from '@/components/BackButton';
 import { hapticLight, hapticSelection } from '@/lib/haptics';
 import { apiRequest } from '@/lib/api';
 
@@ -98,9 +99,7 @@ export default function GratitudeGardenScreen() {
       <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={s.topBar}>
-          <AnimatedPressable onPress={() => { hapticLight(); router.back(); }} scaleDown={0.95}>
-            <Text style={s.backBtn}>← Back</Text>
-          </AnimatedPressable>
+          <BackButton light />
         </View>
         <Text style={s.label}>YOUR GRATITUDE</Text>
         <Text style={s.title}>Garden</Text>
@@ -198,7 +197,6 @@ const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#1c1917' },
   scroll: { paddingHorizontal: 24, paddingBottom: 120 },
   topBar: { paddingTop: 8, marginBottom: 4 },
-  backBtn: { fontSize: 12, color: '#78716c' },
   label: { fontSize: 10, color: 'rgba(245,158,11,0.6)', fontWeight: '500', letterSpacing: 1, marginTop: 8 },
   title: { fontSize: 24, fontWeight: '700', color: '#ffffff', marginTop: 2 },
   subtitle: { fontSize: 11, color: '#78716c', marginTop: 4, marginBottom: 16, lineHeight: 16 },

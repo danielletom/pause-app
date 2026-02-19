@@ -10,6 +10,7 @@ import {
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
 import AnimatedPressable from '@/components/AnimatedPressable';
+import BackButton from '@/components/BackButton';
 import { hapticLight, hapticSelection } from '@/lib/haptics';
 import { apiRequest } from '@/lib/api';
 
@@ -79,9 +80,7 @@ export default function PeriodHistoryScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.topBar}>
-          <AnimatedPressable onPress={() => { hapticLight(); router.back(); }} scaleDown={0.97}>
-            <Text style={styles.backBtn}>← Tracker</Text>
-          </AnimatedPressable>
+          <BackButton label="Tracker" />
           <Text style={styles.title}>Cycle History</Text>
           <Text style={styles.subtitle}>{cycles.length} cycle{cycles.length !== 1 ? 's' : ''} tracked</Text>
         </View>
@@ -220,7 +219,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fafaf9' },
   scrollContent: { paddingHorizontal: 24, paddingTop: 8, paddingBottom: 100 },
   topBar: { marginBottom: 16 },
-  backBtn: { fontSize: 12, color: '#a8a29e', marginBottom: 8 },
   title: { fontSize: 22, fontWeight: '700', color: '#1c1917' },
   subtitle: { fontSize: 12, color: '#a8a29e', marginTop: 2 },
 
