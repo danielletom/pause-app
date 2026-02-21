@@ -93,6 +93,9 @@ type ContentItem = {
   category: string | null;
   tags: string[] | null;
   sortOrder: number;
+  programId: string | null;
+  programWeek: number | null;
+  programDay: number | null;
 };
 
 type ArticleItem = {
@@ -198,6 +201,9 @@ export default function WellnessScreen() {
     category: a.category,
     tags: null,
     sortOrder: 0,
+    programId: null,
+    programWeek: null,
+    programDay: null,
     _articleId: a.id, // Track real article ID for navigation
   }));
 
