@@ -95,6 +95,14 @@ type ContentItem = {
   sortOrder: number;
 };
 
+type ArticleItem = {
+  id: number;
+  title: string;
+  category: string | null;
+  readTime: number | null;
+  thumbnailUrl: string | null;
+};
+
 export default function WellnessScreen() {
   const router = useRouter();
   const { getToken } = useAuth();
@@ -113,6 +121,7 @@ export default function WellnessScreen() {
   const [medicationArticles, setMedicationArticles] = useState<ContentItem[]>([]);
   const [guides, setGuides] = useState<ContentItem[]>([]);
   const [recipes, setRecipes] = useState<ContentItem[]>([]);
+  const [articles, setArticles] = useState<ArticleItem[]>([]);
   const [contentLoading, setContentLoading] = useState(true);
 
   // Fetch program progress + all content library sections
@@ -124,34 +133,47 @@ export default function WellnessScreen() {
           setContentLoading(true);
           const token = await getToken();
 
-          // Fetch everything in parallel
-          const [
-            progressData,
-            lessonsData,
-            meditationsData,
-            medicationData,
-            guidesData,
-            recipesData,
-          ] = await Promise.all([
+          // Fetch progress + all published content + articles in parallel
+          const [progressData, allContent, articlesData] = await Promise.all([
             apiRequest('/api/program/progress', token).catch(() => null),
-            apiRequest('/api/content?type=lesson', token).catch(() => []),
-            apiRequest('/api/content?type=meditation', token).catch(() => []),
-            apiRequest('/api/content?type=article&category=medication', token).catch(() => []),
-            apiRequest('/api/content?type=guide', token).catch(() => []),
-            apiRequest('/api/content?type=article&category=recipes', token).catch(() => []),
+            apiRequest('/api/content', token).catch(() => []),
+            apiRequest('/api/articles', token).catch(() => []),
           ]);
 
           if (progressData) setProgramProgress(progressData);
 
-          // Lessons: standalone lessons (exclude program episodes — those have programWeek set)
-          const standaloneLessons = Array.isArray(lessonsData)
-            ? lessonsData.filter((l: any) => !l.programWeek)
-            : [];
+          // Categorize content from the unified response
+          const items: ContentItem[] = Array.isArray(allContent) ? allContent : [];
+
+          // Lessons & podcasts (standalone only — exclude program episodes)
+          const standaloneLessons = items.filter(
+            (l) => !l.programWeek && ['lesson', 'podcast'].includes(l.contentType)
+          );
           setLessons(standaloneLessons);
-          setMeditations(Array.isArray(meditationsData) ? meditationsData : []);
-          setMedicationArticles(Array.isArray(medicationData) ? medicationData : []);
-          setGuides(Array.isArray(guidesData) ? guidesData : []);
-          setRecipes(Array.isArray(recipesData) ? recipesData : []);
+
+          // Meditations (standalone only)
+          setMeditations(items.filter(
+            (l) => !l.programWeek && l.contentType === 'meditation'
+          ));
+
+          // Medication articles (any content about medication/HRT/supplements)
+          const medCategories = ['medication', 'hrt', 'supplements'];
+          setMedicationArticles(items.filter(
+            (l) => medCategories.includes((l.category || '').toLowerCase())
+          ));
+
+          // Guides
+          setGuides(items.filter(
+            (l) => l.contentType === 'guide' || l.format === 'pdf'
+          ));
+
+          // Recipes
+          setRecipes(items.filter(
+            (l) => (l.category || '').toLowerCase() === 'recipes' || (l.category || '').toLowerCase() === 'nutrition'
+          ));
+
+          // Articles (from separate articles table — educational content)
+          setArticles(Array.isArray(articlesData) ? articlesData : []);
         } catch {
           // Default states are fine — UI handles empty arrays gracefully
         } finally {
@@ -162,8 +184,25 @@ export default function WellnessScreen() {
     }, [])
   );
 
-  // Merge lessons + meditations for the Lessons tab
-  const allLessons = [...lessons, ...meditations];
+  // Convert articles to ContentItem shape for unified display
+  const articleContentItems: ContentItem[] = articles.map((a) => ({
+    id: a.id + 10000, // Offset to avoid ID collision with content table
+    title: a.title,
+    slug: null,
+    contentType: 'article',
+    format: 'text',
+    description: null,
+    audioUrl: null,
+    thumbnailUrl: a.thumbnailUrl || null,
+    durationMinutes: a.readTime || null,
+    category: a.category,
+    tags: null,
+    sortOrder: 0,
+    _articleId: a.id, // Track real article ID for navigation
+  }));
+
+  // Merge lessons + meditations + articles for the Lessons tab
+  const allLessons = [...lessons, ...meditations, ...articleContentItems];
   const featuredLessons = allLessons.slice(0, 6);
   const gridLessons = allLessons.slice(6, 10);
 
@@ -278,13 +317,18 @@ export default function WellnessScreen() {
                 >
                   {featuredLessons.map((l) => {
                     const style = getCategoryStyle(l.category);
+                    const isArticle = l.contentType === 'article' && (l as any)._articleId;
                     return (
                       <AnimatedPressable
-                        key={l.id}
+                        key={`${l.contentType}-${l.id}`}
                         onPress={() => {
                           hapticLight();
-                          const dest = isAudioContent(l) ? '/(app)/player' : '/(app)/article';
-                          router.push({ pathname: dest as any, params: { id: l.id, source: 'content' } });
+                          if (isArticle) {
+                            router.push({ pathname: '/(app)/article' as any, params: { id: (l as any)._articleId } });
+                          } else {
+                            const dest = isAudioContent(l) ? '/(app)/player' : '/(app)/article';
+                            router.push({ pathname: dest as any, params: { id: l.id, source: 'content' } });
+                          }
                         }}
                         scaleDown={0.97}
                         style={styles.lessonHorizCard}
@@ -306,23 +350,30 @@ export default function WellnessScreen() {
                 {/* 2x2 grid of more lessons */}
                 {gridLessons.length > 0 && (
                   <View style={styles.grid}>
-                    {gridLessons.map((l) => (
-                      <AnimatedPressable
-                        key={l.id}
-                        onPress={() => {
-                          hapticLight();
-                          const dest = isAudioContent(l) ? '/(app)/player' : '/(app)/article';
-                          router.push({ pathname: dest as any, params: { id: l.id, source: 'content' } });
-                        }}
-                        scaleDown={0.97}
-                        style={styles.lessonCard}
-                      >
-                        <Text style={styles.lessonTitle}>{l.title}</Text>
-                        <Text style={styles.lessonDur}>
-                          {l.contentType === 'meditation' ? 'Meditation' : 'Audio'} · {durationText(l.durationMinutes, l.format)}
-                        </Text>
-                      </AnimatedPressable>
-                    ))}
+                    {gridLessons.map((l) => {
+                      const isArticle = l.contentType === 'article' && (l as any)._articleId;
+                      return (
+                        <AnimatedPressable
+                          key={`${l.contentType}-${l.id}`}
+                          onPress={() => {
+                            hapticLight();
+                            if (isArticle) {
+                              router.push({ pathname: '/(app)/article' as any, params: { id: (l as any)._articleId } });
+                            } else {
+                              const dest = isAudioContent(l) ? '/(app)/player' : '/(app)/article';
+                              router.push({ pathname: dest as any, params: { id: l.id, source: 'content' } });
+                            }
+                          }}
+                          scaleDown={0.97}
+                          style={styles.lessonCard}
+                        >
+                          <Text style={styles.lessonTitle}>{l.title}</Text>
+                          <Text style={styles.lessonDur}>
+                            {isArticle ? `${durationText(l.durationMinutes, l.format)} read` : `${l.contentType === 'meditation' ? 'Meditation' : 'Audio'} · ${durationText(l.durationMinutes, l.format)}`}
+                          </Text>
+                        </AnimatedPressable>
+                      );
+                    })}
                   </View>
                 )}
               </>
