@@ -9,7 +9,7 @@ import {
   Animated,
   Dimensions,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useNavigationContainerRef } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
 import AnimatedPressable from '@/components/AnimatedPressable';
 import { hapticLight, hapticMedium } from '@/lib/haptics';
@@ -37,8 +37,14 @@ const DISMISS_THRESHOLD = 120;
 export default function PlayerScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const navRef = useNavigationContainerRef();
   const { getToken } = useAuth();
   const audio = useAudio();
+
+  const safeBack = () => {
+    if (navRef.canGoBack()) safeBack();
+    else router.replace('/(app)/(tabs)' as any);
+  };
 
   const [contentData, setContentData] = useState<ContentData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -71,7 +77,7 @@ export default function PlayerScreen() {
           useNativeDriver: true,
         }).start(() => {
           hapticLight();
-          router.back();
+          safeBack();
         });
       } else {
         // Snap back
@@ -177,7 +183,7 @@ export default function PlayerScreen() {
 
       {/* Back / minimize button */}
       <AnimatedPressable
-        onPress={() => { hapticLight(); router.back(); }}
+        onPress={() => { hapticLight(); safeBack(); }}
         scaleDown={0.95}
         style={styles.backButton}
       >

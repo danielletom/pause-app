@@ -11,7 +11,7 @@ import {
   Keyboard,
   Alert,
 } from 'react-native';
-import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
+import { useRouter, useLocalSearchParams, useFocusEffect, useNavigationContainerRef } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
 import AnimatedPressable from '@/components/AnimatedPressable';
 import BackButton from '@/components/BackButton';
@@ -171,7 +171,14 @@ function getQuoteOfDay(): { text: string; author: string } {
 
 export default function QuickLogScreen() {
   const router = useRouter();
+  const navRef = useNavigationContainerRef();
   const { getToken } = useAuth();
+
+  /** Safe back navigation — never throws GO_BACK error */
+  const safeBack = () => {
+    if (navRef.canGoBack()) router.back();
+    else router.replace('/(app)/(tabs)' as any);
+  };
   const { date: dateParam, mode: modeParam, logId: logIdParam } = useLocalSearchParams<{ date?: string; mode?: string; logId?: string }>();
   const logDate = dateParam || new Date().toISOString().split('T')[0];
   const isToday = logDate === new Date().toISOString().split('T')[0];
@@ -498,7 +505,7 @@ export default function QuickLogScreen() {
   const handleBack = () => {
     hapticLight();
     if (step > 0) setStep(step - 1);
-    else router.back();
+    else safeBack();
   };
 
   /* ── Submit ─────────────────────── */
@@ -617,7 +624,7 @@ export default function QuickLogScreen() {
 
       // Auto-dismiss
       setTimeout(() => {
-        router.back();
+        safeBack();
       }, 4500);
     } catch (err: any) {
       setSaving(false);
@@ -1513,7 +1520,7 @@ export default function QuickLogScreen() {
         </View>
 
         <AnimatedPressable
-          onPress={() => router.back()}
+          onPress={() => safeBack()}
           scaleDown={0.96}
           style={styles.celebDoneButton}
         >
@@ -1551,7 +1558,7 @@ export default function QuickLogScreen() {
             <Text style={[styles.navSkipText, { color: '#1c1917', fontWeight: '600' }]}>Edit</Text>
           </AnimatedPressable>
         ) : (
-          <AnimatedPressable onPress={() => router.back()} scaleDown={0.9} style={styles.navSide}>
+          <AnimatedPressable onPress={() => safeBack()} scaleDown={0.9} style={styles.navSide}>
             <Text style={styles.navSkipText}>Skip</Text>
           </AnimatedPressable>
         )}
@@ -1582,7 +1589,7 @@ export default function QuickLogScreen() {
       <View style={styles.footer}>
         {isViewMode ? (
           <AnimatedPressable
-            onPress={() => router.back()}
+            onPress={() => safeBack()}
             scaleDown={0.96}
             style={[styles.nextButton, { backgroundColor: '#44403c' }]}
           >

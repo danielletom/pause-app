@@ -6,7 +6,7 @@ import {
   StyleSheet,
   Dimensions,
 } from 'react-native';
-import { useRouter, useFocusEffect } from 'expo-router';
+import { useRouter, useFocusEffect, useNavigationContainerRef } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
@@ -35,6 +35,11 @@ type Rating = 'better' | 'same' | 'worse';
 export default function SOSScreen() {
   const { getToken } = useAuth();
   const router = useRouter();
+  const navRef = useNavigationContainerRef();
+  const safeBack = () => {
+    if (navRef.canGoBack()) safeBack();
+    else router.replace('/(app)/(tabs)' as any);
+  };
   const [step, setStep] = useState<Step>('intro');
   const [cycle, setCycle] = useState(1);
   const [phase, setPhase] = useState<'inhale' | 'hold' | 'exhale'>('inhale');
@@ -387,7 +392,7 @@ export default function SOSScreen() {
               setCycle(1);
               setPhase('inhale');
               setRating(null);
-              router.back();
+              safeBack();
             }}
             scaleDown={0.96}
             style={styles.doneButton}
@@ -414,9 +419,9 @@ export default function SOSScreen() {
                 setCycle(1);
                 setPhase('inhale');
                 setRating(null);
-                router.back();
+                safeBack();
               } catch {
-                router.back();
+                safeBack();
               }
             }}
             scaleDown={0.96}
