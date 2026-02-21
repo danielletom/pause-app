@@ -72,7 +72,7 @@ function durationText(minutes: number | null | undefined, format?: string): stri
 
 /* ─── Route helper: audio content → player, text → article ── */
 function isAudioContent(item: { contentType: string; format: string; audioUrl: string | null }): boolean {
-  const audioTypes = ['podcast', 'meditation', 'lesson', 'affirmation'];
+  const audioTypes = ['podcast', 'meditation', 'lesson', 'audio_lesson', 'affirmation', 'reflection'];
   if (audioTypes.includes(item.contentType)) return true;
   if (item.format === 'audio') return true;
   if (item.audioUrl) return true;
@@ -150,13 +150,13 @@ export default function WellnessScreen() {
 
           // Lessons & podcasts (standalone only — exclude program episodes)
           const standaloneLessons = items.filter(
-            (l) => !l.programWeek && ['lesson', 'podcast'].includes(l.contentType)
+            (l) => !l.programWeek && ['lesson', 'audio_lesson', 'podcast'].includes(l.contentType)
           );
           setLessons(standaloneLessons);
 
-          // Meditations (standalone only)
+          // Meditations & affirmations (standalone only)
           setMeditations(items.filter(
-            (l) => !l.programWeek && l.contentType === 'meditation'
+            (l) => !l.programWeek && ['meditation', 'affirmation'].includes(l.contentType)
           ));
 
           // Medication articles (any content about medication/HRT/supplements)
