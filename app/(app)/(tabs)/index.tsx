@@ -676,70 +676,84 @@ export default function HomeScreen() {
             </View>
 
             {/* Daily Journal card — works for today and past days */}
-            <AnimatedPressable
-              onPress={() => {
-                hapticMedium();
-                if (!morningDone) {
-                  router.push({ pathname: '/(app)/quick-log', params: { date: selectedDate, mode: 'morning' } });
-                } else if (!eveningDone) {
-                  router.push({ pathname: '/(app)/quick-log', params: { date: selectedDate, mode: 'evening' } });
-                } else if (isToday) {
-                  router.navigate('/(app)/journal');
-                }
-              }}
-              scaleDown={0.97}
-              style={styles.journalCard}
-            >
-              <View style={styles.journalCardRow}>
-                <View style={styles.journalMorningIcon}>
-                  <Text style={{ fontSize: 18, color: '#b45309' }}>☀</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.journalCardTitle}>
-                    {morningDone ? 'Morning ✓' : 'Morning journal'}
-                  </Text>
-                  <Text style={styles.journalCardDesc}>
-                    {morningDone ? 'Done' : isToday ? "How did you sleep? Takes 2 min" : 'Add a morning entry for this day'}
-                  </Text>
-                </View>
-                {!morningDone && isToday && hour < 14 && (
-                  <View style={styles.nowBadge}>
-                    <Text style={styles.nowBadgeText}>NOW</Text>
+            <View style={styles.journalCard}>
+              <AnimatedPressable
+                onPress={() => {
+                  hapticMedium();
+                  const amLog = dayLogs.find((e) => e.logType === 'morning');
+                  if (amLog) {
+                    router.push({ pathname: '/(app)/quick-log', params: { date: selectedDate, mode: 'morning', logId: String(amLog.id) } });
+                  } else {
+                    router.push({ pathname: '/(app)/quick-log', params: { date: selectedDate, mode: 'morning' } });
+                  }
+                }}
+                scaleDown={0.97}
+              >
+                <View style={styles.journalCardRow}>
+                  <View style={styles.journalMorningIcon}>
+                    <Text style={{ fontSize: 18, color: '#b45309' }}>☀</Text>
                   </View>
-                )}
-                {morningDone && (
-                  <View style={styles.journalCheckDone}>
-                    <Text style={{ fontSize: 12, color: '#fff', fontWeight: '600' }}>✓</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.journalCardTitle}>
+                      {morningDone ? 'Morning ✓' : 'Morning journal'}
+                    </Text>
+                    <Text style={styles.journalCardDesc}>
+                      {morningDone ? 'Done' : isToday ? "How did you sleep? Takes 2 min" : 'Add a morning entry for this day'}
+                    </Text>
                   </View>
-                )}
-                {!morningDone && (!isToday || hour >= 14) && <View style={styles.journalEmptyCheck} />}
-              </View>
-              <View style={[styles.journalCardRow, { marginTop: 12 }]}>
-                <View style={styles.journalEveningIcon}>
-                  <Text style={{ fontSize: 18, color: '#6366f1' }}>☽</Text>
+                  {!morningDone && isToday && hour < 14 && (
+                    <View style={styles.nowBadge}>
+                      <Text style={styles.nowBadgeText}>NOW</Text>
+                    </View>
+                  )}
+                  {morningDone && (
+                    <View style={styles.journalCheckDone}>
+                      <Text style={{ fontSize: 12, color: '#fff', fontWeight: '600' }}>✓</Text>
+                    </View>
+                  )}
+                  {!morningDone && (!isToday || hour >= 14) && <View style={styles.journalEmptyCheck} />}
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.journalCardTitle, !eveningDone && isToday && hour < 19 && { color: '#57534e' }]}>
-                    {eveningDone ? 'Evening ✓' : 'Evening reflection'}
-                  </Text>
-                  <Text style={styles.journalCardDesc}>
-                    {eveningDone ? 'Done' : isToday ? (hour >= 19 ? 'How was your day?' : 'Opens tonight at 7 PM') : 'Add an evening entry for this day'}
-                  </Text>
-                </View>
-                {eveningDone && (
-                  <View style={styles.journalCheckDone}>
-                    <Text style={{ fontSize: 12, color: '#fff', fontWeight: '600' }}>✓</Text>
+              </AnimatedPressable>
+              <AnimatedPressable
+                onPress={() => {
+                  hapticMedium();
+                  const pmLog = dayLogs.find((e) => e.logType === 'evening');
+                  if (pmLog) {
+                    router.push({ pathname: '/(app)/quick-log', params: { date: selectedDate, mode: 'evening', logId: String(pmLog.id) } });
+                  } else {
+                    router.push({ pathname: '/(app)/quick-log', params: { date: selectedDate, mode: 'evening' } });
+                  }
+                }}
+                scaleDown={0.97}
+                style={{ marginTop: 12 }}
+              >
+                <View style={styles.journalCardRow}>
+                  <View style={styles.journalEveningIcon}>
+                    <Text style={{ fontSize: 18, color: '#6366f1' }}>☽</Text>
                   </View>
-                )}
-                {!eveningDone && <View style={styles.journalEmptyCheck} />}
-              </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.journalCardTitle, !eveningDone && isToday && hour < 19 && { color: '#57534e' }]}>
+                      {eveningDone ? 'Evening ✓' : 'Evening reflection'}
+                    </Text>
+                    <Text style={styles.journalCardDesc}>
+                      {eveningDone ? 'Done' : isToday ? (hour >= 19 ? 'How was your day?' : 'Opens tonight at 7 PM') : 'Add an evening entry for this day'}
+                    </Text>
+                  </View>
+                  {eveningDone && (
+                    <View style={styles.journalCheckDone}>
+                      <Text style={{ fontSize: 12, color: '#fff', fontWeight: '600' }}>✓</Text>
+                    </View>
+                  )}
+                  {!eveningDone && <View style={styles.journalEmptyCheck} />}
+                </View>
+              </AnimatedPressable>
               {/* Mini streak */}
               {streak > 0 && (
                 <View style={styles.journalStreak}>
                   <Text style={styles.journalStreakText}>{streak} days in a row</Text>
                 </View>
               )}
-            </AnimatedPressable>
+            </View>
 
             {/* Today's Meds */}
             {meds.length > 0 && isToday && (
@@ -796,6 +810,13 @@ export default function HomeScreen() {
                     <Text style={styles.medsSummaryText}>
                       {medsTakenCount} of {meds.length} taken today
                     </Text>
+                    <AnimatedPressable
+                      onPress={() => { hapticLight(); router.push('/(app)/meds'); }}
+                      scaleDown={0.97}
+                      style={styles.medsAddButton}
+                    >
+                      <Text style={styles.medsAddButtonText}>+ Add</Text>
+                    </AnimatedPressable>
                   </View>
                 </View>
               </View>
@@ -1712,10 +1733,24 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     borderTopWidth: 1,
     borderTopColor: '#f5f5f4',
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
   },
   medsSummaryText: {
     fontSize: 14,
     color: '#78716c',
+  },
+  medsAddButton: {
+    backgroundColor: '#f5f5f4',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+  },
+  medsAddButtonText: {
+    fontSize: 13,
+    fontWeight: '600' as const,
+    color: '#1c1917',
   },
 
   // SOS + Check-in row
