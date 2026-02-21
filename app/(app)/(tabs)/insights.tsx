@@ -15,13 +15,6 @@ import { hapticLight, hapticSelection } from '@/lib/haptics';
 import { apiRequest } from '@/lib/api';
 
 // ─── Constants ──────────────────────────────────────────
-const PERIODS = [
-  { key: '1w', label: '1W' },
-  { key: '4w', label: '4W' },
-  { key: '3m', label: '3M' },
-  { key: 'all', label: 'All' },
-];
-
 const TABS = [
   { key: 'patterns', label: 'My patterns' },
   { key: 'normal', label: 'Am I normal?' },
@@ -31,6 +24,20 @@ const SYMPTOM_EMOJI: Record<string, string> = {
   hot_flash: '🔥', brain_fog: '😶‍🌫️', irritability: '😤', joint_pain: '💪',
   anxiety: '😰', fatigue: '😩', nausea: '🤢', heart_racing: '💓',
   night_sweats: '🌊', headache: '🤕', mood_swings: '🎭', insomnia: '😴',
+};
+
+// Map benchmark display names → log key (for navigation to symptom-detail)
+const DISPLAY_TO_KEY: Record<string, string> = {
+  'hot flashes': 'hot_flash',
+  'night sweats': 'night_sweats',
+  'joint pain': 'joint_pain',
+  'brain fog': 'brain_fog',
+  'mood changes': 'mood_swings',
+  'sleep disruption': 'insomnia',
+  'headaches': 'headache',
+  'heart palpitations': 'heart_racing',
+  'fatigue': 'fatigue',
+  'anxiety': 'anxiety',
 };
 
 // ─── API response types ─────────────────────────────────
@@ -208,7 +215,6 @@ export default function InsightsScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ symptom?: string }>();
   const [activeTab, setActiveTab] = useState<'patterns' | 'normal'>('patterns');
-  const [period, setPeriod] = useState('4w');
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const hasLoadedOnce = useRef(false);
@@ -229,7 +235,7 @@ export default function InsightsScreen() {
     try {
       if (!hasLoadedOnce.current) setLoading(true);
       const token = await getToken();
-      const range = period === '1w' ? '7d' : period === '4w' ? '28d' : period === '3m' ? '90d' : '365d';
+      const range = '90d';
 
       const todayDate = new Date().toISOString().split('T')[0];
 
@@ -272,7 +278,7 @@ export default function InsightsScreen() {
     } finally {
       setLoading(false);
     }
-  }, [period]);
+  }, [getToken]);
 
   useFocusEffect(
     useCallback(() => {
@@ -329,6 +335,40 @@ export default function InsightsScreen() {
   }, [correlations]);
   const sleepData = useMemo(() => computeSleepScore(logs), [logs]);
   const weeklyStory = useMemo(() => computeWeeklyStory(logs), [logs]);
+
+  // Dynamic "Looking ahead" text derived from actual correlations
+  const lookingAheadText = useMemo(() => {
+    if (correlations.length === 0) {
+      return 'Keep logging and we will start showing you personalised insights about what helps your symptoms.';
+    }
+
+    // Find the strongest "helps" correlation (direction === 'negative')
+    const helps = correlations
+      .filter((c) => c.direction === 'negative')
+      .sort((a, b) => Math.abs(b.effectSizePct) - Math.abs(a.effectSizePct));
+
+    if (helps.length > 0) {
+      const best = helps[0];
+      const factorLabel = formatSymptomName(best.factor).toLowerCase();
+      const symptomLabel = formatSymptomName(best.symptom).toLowerCase();
+      const pct = Math.round(Math.abs(best.effectSizePct));
+      return `On days when you have ${factorLabel}, ${symptomLabel} drops by ${pct}%. Worth trying this week.`;
+    }
+
+    // Fallback: strongest "hurts" correlation
+    const hurts = correlations
+      .filter((c) => c.direction === 'positive')
+      .sort((a, b) => Math.abs(b.effectSizePct) - Math.abs(a.effectSizePct));
+
+    if (hurts.length > 0) {
+      const worst = hurts[0];
+      const factorLabel = formatSymptomName(worst.factor).toLowerCase();
+      const symptomLabel = formatSymptomName(worst.symptom).toLowerCase();
+      return `Your data shows ${factorLabel} tends to increase ${symptomLabel}. Something to watch.`;
+    }
+
+    return 'Keep logging and we will start showing personalised insights here.';
+  }, [correlations]);
 
   const hasData = logs.length > 0;
   // Unique days with at least one log
@@ -413,9 +453,7 @@ export default function InsightsScreen() {
   const headerSub = totalDays > 0
     ? patternsLearning
       ? `${totalDays} days logged. Still learning your patterns.`
-      : normalLearning
-        ? `${totalDays} days logged. Benchmarks almost ready.`
-        : `${totalDays} days of data. Updated today.`
+      : `${totalDays} days of data. Insights updated daily.`
     : 'Log a few days and your patterns will start appearing here.';
 
   return (
@@ -445,30 +483,6 @@ export default function InsightsScreen() {
             );
           })}
         </View>
-
-        {/* Period pills (patterns tab only, not in learning state) */}
-        {activeTab === 'patterns' && !patternsLearning && (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.periodStrip}
-            contentContainerStyle={styles.periodContent}
-          >
-            {PERIODS.map((p) => {
-              const active = p.key === period;
-              return (
-                <AnimatedPressable
-                  key={p.key}
-                  onPress={() => { hapticSelection(); setPeriod(p.key); }}
-                  scaleDown={0.95}
-                  style={[styles.periodPill, active && styles.periodPillActive]}
-                >
-                  <Text style={[styles.periodText, active && styles.periodTextActive]}>{p.label}</Text>
-                </AnimatedPressable>
-              );
-            })}
-          </ScrollView>
-        )}
 
         {loading ? (
           <View style={styles.loadingContainer}>
@@ -920,10 +934,10 @@ export default function InsightsScreen() {
         ) : activeTab === 'patterns' ? (
           /* ═══════════════ MY PATTERNS TAB ═══════════════ */
           <>
-            {/* ─── This week's story ────────────────── */}
+            {/* ─── Your story ───────────────────────── */}
             {weeklyStory && weeklyStory.narrative ? (
               <View style={styles.storyCard}>
-                <Text style={styles.storyLabel}>This week's story</Text>
+                <Text style={styles.storyLabel}>YOUR STORY</Text>
                 <Text style={styles.storyNarrative}>{weeklyStory.narrative}</Text>
                 {weeklyStory.bestDay && weeklyStory.worstDay && (
                   <View style={styles.storyDays}>
@@ -1129,12 +1143,10 @@ export default function InsightsScreen() {
               </View>
             )}
 
-            {/* ─── What to expect ──────────────────── */}
+            {/* ─── Looking ahead (dynamic from correlations) ── */}
             <View style={styles.expectCard}>
               <Text style={styles.expectLabel}>💡 Looking ahead</Text>
-              <Text style={styles.expectDesc}>
-                Your data shows symptoms tend to be milder after 7+ hours of sleep. Worth prioritising this week.
-              </Text>
+              <Text style={styles.expectDesc}>{lookingAheadText}</Text>
             </View>
           </>
         ) : (
@@ -1182,7 +1194,8 @@ export default function InsightsScreen() {
                       key={bm.name}
                       onPress={() => {
                         hapticLight();
-                        router.push({ pathname: '/(app)/symptom-detail', params: { symptom: bm.name } });
+                        const key = DISPLAY_TO_KEY[bm.name.toLowerCase()] || bm.name.toLowerCase().replace(/\s+/g, '_');
+                        router.push({ pathname: '/(app)/symptom-detail', params: { symptom: key } });
                       }}
                       scaleDown={0.98}
                       style={styles.benchmarkCard}
@@ -1321,19 +1334,6 @@ const styles = StyleSheet.create({
   },
   tabText: { fontSize: 14, fontWeight: '500', color: '#78716c' },
   tabTextActive: { color: '#1c1917', fontWeight: '600' },
-
-  // Period pills
-  periodStrip: { marginBottom: 20, marginHorizontal: -24, maxHeight: 44 },
-  periodContent: { paddingHorizontal: 24, gap: 8 },
-  periodPill: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#f5f5f4',
-  },
-  periodPillActive: { backgroundColor: '#1c1917' },
-  periodText: { fontSize: 14, fontWeight: '500', color: '#78716c' },
-  periodTextActive: { color: '#ffffff' },
 
   loadingContainer: { flex: 1, alignItems: 'center', paddingTop: 60 },
   emptyContainer: { alignItems: 'center', paddingTop: 60, paddingHorizontal: 20 },
