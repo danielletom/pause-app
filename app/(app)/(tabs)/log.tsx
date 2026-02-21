@@ -151,7 +151,7 @@ export default function SymptomLogScreen() {
   const handleBack = () => {
     hapticLight();
     if (step > 0) setStep(step - 1);
-    else router.back();
+    else router.navigate('/(app)/(tabs)');
   };
 
   // Can advance from current step?
@@ -228,7 +228,7 @@ export default function SymptomLogScreen() {
           </Text>
           <Text style={styles.savedHint}>This feeds your Readiness Score + Insights</Text>
           <AnimatedPressable
-            onPress={() => { hapticLight(); router.back(); }}
+            onPress={() => { hapticLight(); router.navigate('/(app)/(tabs)'); }}
             scaleDown={0.97}
             style={styles.doneButton}
           >
@@ -443,7 +443,7 @@ export default function SymptomLogScreen() {
           <Text style={styles.navStep}>
             Step {step + 1} of {STEPS.length}
           </Text>
-          <AnimatedPressable onPress={() => { hapticLight(); router.back(); }} scaleDown={0.9} style={styles.navSide}>
+          <AnimatedPressable onPress={() => { hapticLight(); router.navigate('/(app)/(tabs)'); }} scaleDown={0.9} style={styles.navSide}>
             <Text style={styles.navSkipText}>Skip</Text>
           </AnimatedPressable>
         </View>
