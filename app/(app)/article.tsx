@@ -13,6 +13,7 @@ import Markdown from '@ronradtke/react-native-markdown-display';
 import AnimatedPressable from '@/components/AnimatedPressable';
 import { hapticLight } from '@/lib/haptics';
 import BackButton from '@/components/BackButton';
+import ErrorScreen from '@/components/ErrorScreen';
 import { apiRequest } from '@/lib/api';
 
 interface Article {
@@ -34,8 +35,24 @@ export default function ArticleScreen() {
     (async () => {
       try {
         const token = await getToken();
-        const data = await apiRequest(`/api/articles/${id}`, token);
-        setArticle(data);
+        // Try articles endpoint first, then fall back to content API
+        let data;
+        try {
+          data = await apiRequest(`/api/articles/${id}`, token);
+        } catch {
+          // Content items use a different endpoint
+          const contentData = await apiRequest(`/api/content?id=${id}`, token);
+          if (contentData) {
+            data = {
+              id: contentData.id,
+              title: contentData.title,
+              bodyMarkdown: contentData.bodyMarkdown || contentData.description || null,
+              category: contentData.category,
+              readTime: contentData.durationMinutes,
+            };
+          }
+        }
+        if (data) setArticle(data);
       } catch {
         // Non-critical
       } finally {
@@ -55,13 +72,7 @@ export default function ArticleScreen() {
   }
 
   if (!article) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <Text style={{ color: '#a8a29e', fontSize: 15 }}>Article not found</Text>
-        </View>
-      </SafeAreaView>
-    );
+    return <ErrorScreen type="not_found" />;
   }
 
   return (

@@ -193,10 +193,10 @@ export default function SOSScreen() {
 
             <Text style={styles.introTitle}>Hot Flash SOS</Text>
             <Text style={styles.introDesc}>
-              Guided breathing to help you through it. Takes about 3 minutes.
+              Guided breathing to help right now. About 3 minutes.
             </Text>
             <Text style={styles.socialProof}>
-              Used 847 times by Pause members this week
+              Used by hundreds of Pause members this week
             </Text>
           </View>
 
@@ -218,10 +218,10 @@ export default function SOSScreen() {
   if (step === 'breathing') {
     const phaseLabel = phase === 'inhale' ? 'Breathe in' : phase === 'hold' ? 'Hold' : 'Breathe out';
     const phaseHint = phase === 'inhale'
-      ? 'Inhale through your nose... 4 seconds'
+      ? 'In through your nose... nice and slow'
       : phase === 'hold'
-        ? 'Gently hold...'
-        : 'Exhale slowly... 6 seconds';
+        ? 'Hold gently...'
+        : 'Let it go... slow exhale';
 
     const CIRCLE_SIZE = SCREEN_WIDTH * 0.6;
 
@@ -327,9 +327,9 @@ export default function SOSScreen() {
             <Text style={styles.doneCheckMark}>✓</Text>
           </View>
 
-          <Text style={styles.doneTitle}>You did great</Text>
+          <Text style={styles.doneTitle}>That took courage</Text>
           <Text style={styles.doneDesc}>
-            3 minutes of calm. Your body thanks you.
+            3 minutes of calm. You showed up for yourself.
           </Text>
 
           {/* Rating */}
@@ -368,11 +368,11 @@ export default function SOSScreen() {
           {/* Upsell at 5+ uses — dark card */}
           {sosCount >= 5 && (
             <View style={styles.upsellCard}>
-              <Text style={styles.upsellLabel}>Did you know?</Text>
+              <Text style={styles.upsellLabel}>Worth knowing</Text>
               <Text style={styles.upsellTitle}>
-                Women on Pause+ see 54% fewer hot flashes after 8 weeks.
+                Pause+ members report 54% fewer hot flashes after 8 weeks of the full program.
               </Text>
-              <Text style={styles.upsellLink}>Learn about Pause+ →</Text>
+              <Text style={styles.upsellLink}>See what is included →</Text>
             </View>
           )}
         </View>

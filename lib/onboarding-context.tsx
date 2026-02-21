@@ -16,6 +16,10 @@ export interface OnboardingData {
     time: string;
     phone: string;
   };
+  healthConnect?: {
+    connected: boolean;
+    source: string | null;
+  };
 }
 
 interface OnboardingContextType {

@@ -70,6 +70,15 @@ function durationText(minutes: number | null | undefined, format?: string): stri
   return `${minutes} min`;
 }
 
+/* ─── Route helper: audio content → player, text → article ── */
+function isAudioContent(item: { contentType: string; format: string; audioUrl: string | null }): boolean {
+  const audioTypes = ['podcast', 'meditation', 'lesson', 'affirmation'];
+  if (audioTypes.includes(item.contentType)) return true;
+  if (item.format === 'audio') return true;
+  if (item.audioUrl) return true;
+  return false;
+}
+
 /* ─── Types for API content items ── */
 type ContentItem = {
   id: number;
@@ -175,12 +184,12 @@ export default function WellnessScreen() {
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>Wellness Centre</Text>
-          <Text style={styles.subtitle}>Your program, lessons, guides & recipes</Text>
+          <Text style={styles.subtitle}>Your program, lessons, guides, and recipes</Text>
         </View>
 
         {/* ── YOUR 8-WEEK PROGRAM (Pause Pod) ── */}
         <AnimatedPressable
-          onPress={() => { hapticMedium(); /* Future: navigate to Pause Pod detail */ }}
+          onPress={() => { hapticMedium(); router.push('/(app)/learn' as any); }}
           scaleDown={0.97}
           style={styles.programCard}
         >
@@ -211,7 +220,7 @@ export default function WellnessScreen() {
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.sosTitle}>Hot Flash SOS</Text>
-            <Text style={styles.sosSubtitle}>Guided breathing for instant relief</Text>
+            <Text style={styles.sosSubtitle}>Guided breathing to help right now</Text>
           </View>
           <Text style={styles.chevron}>›</Text>
         </AnimatedPressable>
@@ -219,7 +228,7 @@ export default function WellnessScreen() {
         {/* ── CONTENT LIBRARY ── */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Content Library</Text>
-          <Text style={styles.sectionSubtitle}>Lessons, medication info, guides & recipes</Text>
+          <Text style={styles.sectionSubtitle}>Lessons, medication info, guides, and recipes</Text>
         </View>
 
         {/* Filter tabs */}
@@ -272,7 +281,11 @@ export default function WellnessScreen() {
                     return (
                       <AnimatedPressable
                         key={l.id}
-                        onPress={() => { hapticLight(); router.push({ pathname: '/(app)/article', params: { id: l.id, source: 'content' } }); }}
+                        onPress={() => {
+                          hapticLight();
+                          const dest = isAudioContent(l) ? '/(app)/player' : '/(app)/article';
+                          router.push({ pathname: dest as any, params: { id: l.id, source: 'content' } });
+                        }}
                         scaleDown={0.97}
                         style={styles.lessonHorizCard}
                       >
@@ -296,7 +309,11 @@ export default function WellnessScreen() {
                     {gridLessons.map((l) => (
                       <AnimatedPressable
                         key={l.id}
-                        onPress={() => { hapticLight(); router.push({ pathname: '/(app)/article', params: { id: l.id, source: 'content' } }); }}
+                        onPress={() => {
+                          hapticLight();
+                          const dest = isAudioContent(l) ? '/(app)/player' : '/(app)/article';
+                          router.push({ pathname: dest as any, params: { id: l.id, source: 'content' } });
+                        }}
                         scaleDown={0.97}
                         style={styles.lessonCard}
                       >
@@ -336,7 +353,11 @@ export default function WellnessScreen() {
                   return (
                     <AnimatedPressable
                       key={a.id}
-                      onPress={() => { hapticLight(); router.push({ pathname: '/(app)/article', params: { id: a.id, source: 'content' } }); }}
+                      onPress={() => {
+                        hapticLight();
+                        const dest = isAudioContent(a) ? '/(app)/player' : '/(app)/article';
+                        router.push({ pathname: dest as any, params: { id: a.id, source: 'content' } });
+                      }}
                       scaleDown={0.97}
                       style={styles.medCard}
                     >
@@ -382,7 +403,11 @@ export default function WellnessScreen() {
                   return (
                     <AnimatedPressable
                       key={g.id}
-                      onPress={() => { hapticLight(); router.push({ pathname: '/(app)/article', params: { id: g.id, source: 'content' } }); }}
+                      onPress={() => {
+                        hapticLight();
+                        const dest = isAudioContent(g) ? '/(app)/player' : '/(app)/article';
+                        router.push({ pathname: dest as any, params: { id: g.id, source: 'content' } });
+                      }}
                       scaleDown={0.97}
                       style={styles.guideCard}
                     >
@@ -428,7 +453,11 @@ export default function WellnessScreen() {
                   return (
                     <AnimatedPressable
                       key={r.id}
-                      onPress={() => { hapticLight(); router.push({ pathname: '/(app)/article', params: { id: r.id, source: 'content' } }); }}
+                      onPress={() => {
+                        hapticLight();
+                        const dest = isAudioContent(r) ? '/(app)/player' : '/(app)/article';
+                        router.push({ pathname: dest as any, params: { id: r.id, source: 'content' } });
+                      }}
                       scaleDown={0.97}
                       style={styles.recipeCard}
                     >
@@ -459,7 +488,7 @@ export default function WellnessScreen() {
             {FOCUSED_PROGRAMS.map((p) => (
               <AnimatedPressable
                 key={p.title}
-                onPress={() => { hapticLight(); /* Future: navigate to program */ }}
+                onPress={() => { hapticLight(); router.push('/(app)/learn' as any); }}
                 scaleDown={0.97}
                 style={styles.focusedCard}
               >

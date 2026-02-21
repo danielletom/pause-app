@@ -4,7 +4,6 @@ import { useRouter } from 'expo-router';
 import AnimatedPressable from '@/components/AnimatedPressable';
 import BackButton from '@/components/BackButton';
 import { hapticLight } from '@/lib/haptics';
-import BackButton from '@/components/BackButton';
 
 const LEGAL_ITEMS = [
   {

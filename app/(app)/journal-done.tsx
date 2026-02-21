@@ -155,9 +155,9 @@ export default function JournalDoneScreen() {
             {/* Celebration header */}
             <View style={styles.celebHeader}>
               <Text style={styles.celebEmoji}>🎉</Text>
-              <Text style={styles.celebTitle}>Day complete!</Text>
+              <Text style={styles.celebTitle}>Day logged</Text>
               <Text style={styles.celebSubtitle}>
-                Both morning and evening check-ins are done. You're building a clear picture of your health.
+                Morning and evening done. That gives us a full picture of today.
               </Text>
             </View>
 
@@ -166,8 +166,8 @@ export default function JournalDoneScreen() {
               <View style={styles.streakRow}>
                 <Text style={styles.streakFlame}>🔥</Text>
                 <View>
-                  <Text style={styles.streakCount}>{streak} day streak</Text>
-                  <Text style={styles.streakLabel}>Keep the momentum going</Text>
+                  <Text style={styles.streakCount}>{streak} days in a row</Text>
+                  <Text style={styles.streakLabel}>Each day sharpens the picture</Text>
                 </View>
               </View>
             </View>
@@ -254,7 +254,7 @@ export default function JournalDoneScreen() {
             {/* Encouraging message */}
             <View style={styles.encourageCard}>
               <Text style={styles.encourageText}>
-                Every day you track helps us spot patterns and give you better insights. See you tomorrow!
+                Each day you log makes your insights more personal. See you tomorrow.
               </Text>
             </View>
           </View>
@@ -262,13 +262,13 @@ export default function JournalDoneScreen() {
           /* Not both complete */
           <View style={styles.incompleteState}>
             <Text style={styles.incompleteEmoji}>📝</Text>
-            <Text style={styles.incompleteTitle}>Almost there!</Text>
+            <Text style={styles.incompleteTitle}>Nearly there</Text>
             <Text style={styles.incompleteDesc}>
               {!morningLog && !eveningLog
-                ? 'Complete both your morning and evening check-ins to see your full day summary.'
+                ? 'Both check-ins give us a full day to work with. Start whenever you are ready.'
                 : !morningLog
-                  ? 'Complete your morning check-in to unlock the full day view.'
-                  : 'Complete your evening check-in to see your full day summary.'}
+                  ? 'A morning check-in rounds out today. Takes about 2 minutes.'
+                  : 'An evening reflection completes the picture. Under 2 minutes.'}
             </Text>
 
             {!morningLog && (

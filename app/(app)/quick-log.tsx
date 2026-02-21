@@ -666,45 +666,32 @@ export default function QuickLogScreen() {
               ))}
             </View>
 
-            {/* Hours selector */}
-            <Text style={styles.sectionLabel}>Hours of sleep</Text>
-            <Text style={styles.sleepHoursDisplay}>~{sleepHours}h</Text>
-            <View style={styles.sleepHoursRow}>
-              {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((h) => (
+            {/* Hours stepper — 0.5h increments */}
+            <Text style={styles.sectionLabel}>About how many hours?</Text>
+            <View style={styles.sleepStepperWrap}>
+              <View style={styles.sleepStepperRow}>
                 <AnimatedPressable
-                  key={h}
-                  onPress={() => { hapticSelection(); setSleepHours(h); }}
-                  scaleDown={0.9}
-                  style={[
-                    styles.sleepHourButton,
-                    h === sleepHours && styles.sleepHourButtonActive,
-                  ]}
+                  onPress={() => { if (sleepHours > 2) { hapticSelection(); setSleepHours(+(sleepHours - 0.5).toFixed(1)); } }}
+                  scaleDown={0.95}
+                  style={styles.sleepStepperBtn}
                 >
-                  <Text style={[
-                    styles.sleepHourLabel,
-                    h === sleepHours && styles.sleepHourLabelActive,
-                  ]}>
-                    {h}
-                  </Text>
+                  <Text style={styles.sleepStepperBtnText}>−</Text>
                 </AnimatedPressable>
-              ))}
-            </View>
-            <View style={styles.sleepHoursAdjust}>
-              <AnimatedPressable
-                onPress={() => { if (sleepHours > 0) { hapticSelection(); setSleepHours(sleepHours - 1); } }}
-                scaleDown={0.9}
-                style={styles.sleepAdjustBtn}
-              >
-                <Text style={styles.sleepAdjustBtnText}>−</Text>
-              </AnimatedPressable>
-              <Text style={styles.sleepAdjustLabel}>{sleepHours} hours</Text>
-              <AnimatedPressable
-                onPress={() => { if (sleepHours < 12) { hapticSelection(); setSleepHours(sleepHours + 1); } }}
-                scaleDown={0.9}
-                style={styles.sleepAdjustBtn}
-              >
-                <Text style={styles.sleepAdjustBtnText}>+</Text>
-              </AnimatedPressable>
+                <View style={styles.sleepStepperCenter}>
+                  <Text style={styles.sleepHoursDisplay}>{sleepHours}</Text>
+                  <Text style={styles.sleepHoursUnit}>hours</Text>
+                </View>
+                <AnimatedPressable
+                  onPress={() => { if (sleepHours < 12) { hapticSelection(); setSleepHours(+(sleepHours + 0.5).toFixed(1)); } }}
+                  scaleDown={0.95}
+                  style={styles.sleepStepperBtn}
+                >
+                  <Text style={styles.sleepStepperBtnText}>+</Text>
+                </AnimatedPressable>
+              </View>
+              <Text style={styles.sleepStepperHint}>
+                {sleepHours >= 8 ? 'Great rest' : sleepHours >= 7 ? 'Solid night' : sleepHours >= 6 ? 'Could be better' : sleepHours >= 5 ? 'Not enough' : 'Rough night'}
+              </Text>
             </View>
 
             {/* Sleep disruptions */}
@@ -1704,53 +1691,53 @@ const styles = StyleSheet.create({
   selectCheck: { fontSize: 14, color: '#ffffff', fontWeight: '600' },
   qualityCards: { gap: 8, marginBottom: 20 },
 
-  /* Sleep hours */
-  sleepHoursDisplay: {
-    fontSize: 28,
-    fontWeight: '300',
-    color: '#1c1917',
-    textAlign: 'center',
-    marginBottom: 12,
-  },
-  sleepHoursRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 12,
-    paddingHorizontal: 4,
-  },
-  sleepHourButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    alignItems: 'center',
-    justifyContent: 'center',
+  /* Sleep hours stepper */
+  sleepStepperWrap: {
     backgroundColor: '#f5f5f4',
-  },
-  sleepHourButtonActive: {
-    backgroundColor: '#1c1917',
-  },
-  sleepHourLabel: { fontSize: 14, fontWeight: '500', color: '#78716c' },
-  sleepHourLabelActive: { color: '#ffffff', fontWeight: '700' },
-  sleepHoursAdjust: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 20,
+    borderRadius: 20,
+    padding: 20,
     marginBottom: 20,
   },
-  sleepAdjustBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#f5f5f4',
+  sleepStepperRow: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 24,
   },
-  sleepAdjustBtnText: { fontSize: 20, fontWeight: '500', color: '#1c1917' },
-  sleepAdjustLabel: { fontSize: 16, fontWeight: '600', color: '#1c1917', minWidth: 70, textAlign: 'center' },
+  sleepStepperBtn: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#ffffff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  sleepStepperBtnText: { fontSize: 24, color: '#a8a29e' },
+  sleepStepperCenter: {
+    alignItems: 'center',
+    minWidth: 80,
+  },
+  sleepHoursDisplay: {
+    fontSize: 40,
+    fontWeight: '600',
+    color: '#1c1917',
+  },
+  sleepHoursUnit: {
+    fontSize: 14,
+    color: '#a8a29e',
+    marginTop: 2,
+  },
+  sleepStepperHint: {
+    textAlign: 'center',
+    fontSize: 12,
+    color: '#a8a29e',
+    marginTop: 12,
+  },
 
   /* Pill grid */
   pillGrid: {

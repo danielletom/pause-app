@@ -58,6 +58,10 @@ export default function SymptomDetailScreen() {
   const symptomKey = (symptom || '').toLowerCase().replace(/\s+/g, '_');
   const symptomLabel = (symptom || '').replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').replace(/^./, (s) => s.toUpperCase());
 
+  /** Format a snake_case tag to natural English: "family_stress" → "Family stress" */
+  const formatTag = (tag: string) =>
+    tag.replace(/_/g, ' ').replace(/^./, (s) => s.toUpperCase());
+
   useFocusEffect(
     useCallback(() => {
       (async () => {
@@ -228,7 +232,7 @@ export default function SymptomDetailScreen() {
                   {triggers.map((t) => (
                     <View key={t.tag}>
                       <View style={styles.triggerRow}>
-                        <Text style={styles.triggerLabel}>{t.tag}</Text>
+                        <Text style={styles.triggerLabel}>{formatTag(t.tag)}</Text>
                         <Text style={styles.triggerPct}>{t.pct}%</Text>
                       </View>
                       <View style={styles.triggerBarBg}>

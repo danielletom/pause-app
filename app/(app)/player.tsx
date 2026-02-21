@@ -15,6 +15,7 @@ import AnimatedPressable from '@/components/AnimatedPressable';
 import { hapticLight, hapticMedium } from '@/lib/haptics';
 import { apiRequest } from '@/lib/api';
 import { useAudio, Track } from '@/lib/audio-context';
+import ErrorScreen from '@/components/ErrorScreen';
 
 interface ContentData {
   id: number;
@@ -150,13 +151,7 @@ export default function PlayerScreen() {
   }
 
   if (!contentData) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <Text style={styles.errorText}>Content not found</Text>
-        </View>
-      </SafeAreaView>
-    );
+    return <ErrorScreen type="not_found" />;
   }
 
   const typeLabel = contentData.contentType === 'podcast' ? 'The Pause Pod'

@@ -24,10 +24,8 @@ Notifications.setNotificationHandler({
   }),
 });
 
-export {
-  // Catch any errors thrown by the Layout component.
-  ErrorBoundary,
-} from 'expo-router';
+// Custom error boundary that uses our branded ErrorScreen
+export { ErrorBoundary } from '@/components/ErrorBoundary';
 
 export const unstable_settings = {
   initialRouteName: 'index',

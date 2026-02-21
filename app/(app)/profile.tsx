@@ -25,7 +25,7 @@ const MENU_ITEMS = [
   { label: 'Custom tracking', desc: 'Add your own symptoms or triggers', icon: '✦', route: '/(app)/custom-tracking' },
   { label: 'Notifications', desc: 'Reminders, insights, SMS', icon: '🔔' },
   { label: 'Manage subscription', desc: 'Plan, billing, upgrade', icon: '⭐' },
-  { label: 'Wearable devices', desc: 'Apple Watch, Oura Ring', icon: '⌚', badge: 'Premium' },
+  { label: 'Wearable devices', desc: 'Apple Watch, Oura Ring', icon: '⌚', badge: 'Premium', route: '/(app)/wearables' },
   { label: 'Export my data', desc: 'Download your full history', icon: '📤', route: '/(app)/export-data' },
   { label: 'Terms & Privacy', desc: 'Terms of service, privacy policy', icon: '📄', route: '/(app)/legal' },
   { label: 'Help & feedback', desc: 'Contact us or request a feature', icon: '💬', route: '/(app)/help-feedback' },

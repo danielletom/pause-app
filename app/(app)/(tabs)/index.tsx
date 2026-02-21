@@ -15,6 +15,7 @@ import AnimatedPressable from '@/components/AnimatedPressable';
 import { hapticMedium, hapticLight, hapticSelection } from '@/lib/haptics';
 import { apiRequest } from '@/lib/api';
 import { useProfile } from '@/lib/useProfile';
+import { useHealthData } from '@/lib/useHealthData';
 
 /* ─── Date helpers ────────────────────────────────────────── */
 
@@ -173,6 +174,7 @@ export default function HomeScreen() {
   const getTokenRef = useRef(getToken);
   getTokenRef.current = getToken;
   const { profile } = useProfile();
+  const healthData = useHealthData();
   const router = useRouter();
   const [dayLogs, setDayLogs] = useState<LogEntry[]>([]);
   const [meds, setMeds] = useState<Medication[]>([]);
@@ -491,7 +493,7 @@ export default function HomeScreen() {
               const scoreNum = score ?? 0;
               const circumference = 163.4;
               const arcLength = (scoreNum / 100) * circumference;
-              const activityLabel = (score ?? 0) >= 70 ? 'Good day for activity' : (score ?? 0) >= 40 ? 'Take it easy' : 'Rest & recover';
+              const activityLabel = (score ?? 0) >= 70 ? 'Your body is ready' : (score ?? 0) >= 40 ? 'Mixed day' : 'Go gentle';
               const activityColor = (score ?? 0) >= 70 ? '#34d399' : (score ?? 0) >= 40 ? '#fbbf24' : '#fca5a5';
               const activityBg = (score ?? 0) >= 70 ? 'rgba(52,211,153,0.12)' : (score ?? 0) >= 40 ? 'rgba(251,191,36,0.12)' : 'rgba(252,165,165,0.12)';
 
@@ -563,16 +565,16 @@ export default function HomeScreen() {
                             const prefix = parts.join(' + ');
                             let msg = '';
                             if (scoreNum >= 70) {
-                              msg = `${prefix} means your body is ready for more today. Consider some gentle movement or an activity you enjoy.`;
+                              msg = `${prefix} — days like this are worth using. A walk or something you enjoy tends to make tomorrow better too.`;
                             } else if (scoreNum >= 40) {
-                              msg = `${prefix} — a mixed picture today. Listen to your body and take things at your own pace.`;
+                              msg = `${prefix}. Not your worst, not your best. Small wins still count today.`;
                             } else {
-                              msg = `${prefix} suggests today might feel harder. Be extra gentle with yourself and prioritize rest.`;
+                              msg = `${prefix}. Rough one. Go easy on yourself today — the SOS tool is there if you need it.`;
                             }
                             return <Text style={styles.readinessNarrative}>{msg}</Text>;
                           })()}
                         </View>
-                        {/* Stats row — Sleep, Symptoms, Stress */}
+                        {/* Stats row — Sleep, HRV, Symptoms, RHR, Stress */}
                         <View style={styles.readinessStatsInline}>
                           <View style={styles.readinessStatItem}>
                             <Text style={styles.readinessStatText}>
@@ -580,12 +582,28 @@ export default function HomeScreen() {
                             </Text>
                             {sleepLog?.sleepHours && sleepLog.sleepHours >= 6 && <Text style={styles.readinessStatCheck}> ✓</Text>}
                           </View>
+                          {healthData.connected && healthData.data.hrv != null && (
+                            <View style={styles.readinessStatItem}>
+                              <Text style={styles.readinessStatText}>
+                                HRV: {healthData.data.hrv}ms
+                              </Text>
+                              <Text style={styles.readinessStatCheck}> ✓</Text>
+                            </View>
+                          )}
                           <View style={styles.readinessStatItem}>
                             <Text style={styles.readinessStatText}>
                               Symptoms: {symptomTrends.length > 0 ? (symptomTrends.length <= 2 ? 'Low' : 'Moderate') : 'None'}
                             </Text>
                             {symptomTrends.length <= 2 && <Text style={styles.readinessStatCheck}> ✓</Text>}
                           </View>
+                          {healthData.connected && healthData.data.rhr != null && (
+                            <View style={styles.readinessStatItem}>
+                              <Text style={styles.readinessStatText}>
+                                RHR: {healthData.data.rhr}
+                              </Text>
+                              <Text style={styles.readinessStatCheck}> ✓</Text>
+                            </View>
+                          )}
                           <View style={styles.readinessStatItem}>
                             <Text style={styles.readinessStatText}>
                               Stress: {stressLabel.replace(' ✓', '')}
@@ -593,11 +611,20 @@ export default function HomeScreen() {
                             {stressorCount <= 0 && <Text style={styles.readinessStatCheck}> ✓</Text>}
                           </View>
                         </View>
+                        {/* Wearable sync indicator */}
+                        {healthData.connected && (
+                          <View style={styles.wearableSyncRow}>
+                            <View style={styles.wearableSyncDot} />
+                            <Text style={styles.wearableSyncText}>
+                              {healthData.source === 'apple_watch' ? 'Apple Watch' : healthData.source || 'Wearable'} synced
+                            </Text>
+                          </View>
+                        )}
                       </>
                     )}
                     {!hasLog && (
                       <Text style={styles.readinessHint}>
-                        {isToday ? 'Log today to see your score' : 'No data for this day'}
+                        {isToday ? 'A few check-ins and we can show you how your day is shaping up' : 'Nothing logged for this day'}
                       </Text>
                     )}
                   </View>
@@ -672,7 +699,7 @@ export default function HomeScreen() {
                     {morningDone ? 'Morning ✓' : 'Morning journal'}
                   </Text>
                   <Text style={styles.journalCardDesc}>
-                    {morningDone ? 'Completed' : isToday ? "How'd you sleep? 2 min check-in" : 'Log morning for this day'}
+                    {morningDone ? 'Done' : isToday ? "How did you sleep? Takes 2 min" : 'Add a morning entry for this day'}
                   </Text>
                 </View>
                 {!morningDone && isToday && hour < 14 && (
@@ -696,7 +723,7 @@ export default function HomeScreen() {
                     {eveningDone ? 'Evening ✓' : 'Evening reflection'}
                   </Text>
                   <Text style={styles.journalCardDesc}>
-                    {eveningDone ? 'Completed' : isToday ? (hour >= 19 ? 'How was today?' : 'Available tonight at 7 PM') : 'Log evening for this day'}
+                    {eveningDone ? 'Done' : isToday ? (hour >= 19 ? 'How was your day?' : 'Opens tonight at 7 PM') : 'Add an evening entry for this day'}
                   </Text>
                 </View>
                 {eveningDone && (
@@ -709,7 +736,7 @@ export default function HomeScreen() {
               {/* Mini streak */}
               {streak > 0 && (
                 <View style={styles.journalStreak}>
-                  <Text style={styles.journalStreakText}>{streak} day streak</Text>
+                  <Text style={styles.journalStreakText}>{streak} days in a row</Text>
                 </View>
               )}
             </AnimatedPressable>
@@ -780,9 +807,9 @@ export default function HomeScreen() {
                 <Text style={styles.sectionTitle}>Today's meds</Text>
                 <View style={styles.medsEmptyCard}>
                   <Text style={styles.medsEmptyIcon}>💊</Text>
-                  <Text style={styles.medsEmptyTitle}>Track your medications</Text>
+                  <Text style={styles.medsEmptyTitle}>Meds and supplements</Text>
                   <Text style={styles.medsEmptyDesc}>
-                    Add supplements, HRT, or prescriptions to track daily
+                    Track HRT, supplements, or prescriptions so we can spot what helps
                   </Text>
                   <AnimatedPressable
                     onPress={() => { hapticLight(); router.push('/(app)/meds'); }}
@@ -847,7 +874,7 @@ export default function HomeScreen() {
                 ) : (
                   <View style={styles.card}>
                     <Text style={styles.cardHintText}>
-                      Log symptoms to see your trends here
+                      Once you log symptoms, your trends will appear here
                     </Text>
                   </View>
                 )}
@@ -887,7 +914,6 @@ export default function HomeScreen() {
                           {sleepLog.sleepQuality ? ` · ${sleepLog.sleepQuality}` : ''}
                         </Text>
                       </View>
-                      <Text style={{ fontSize: 14, color: '#78716c' }}>Edit →</Text>
                     </View>
                   </AnimatedPressable>
                 )}
@@ -906,19 +932,19 @@ export default function HomeScreen() {
                   <Text style={styles.insightTitle}>
                     {insightNudge?.title || (
                       topCorrelations.length > 0
-                        ? 'We spotted a pattern'
+                        ? 'Something showed up in your data'
                         : streak >= 14
-                          ? `Overall ${symptomTrends.some((s) => s.improving) ? 'improving' : 'stable'}. ${symptomTrends[0]?.name || 'Your patterns'} trending.`
-                          : 'Building your picture'
+                          ? `${symptomTrends.some((s) => s.improving) ? 'Things are shifting' : 'Holding steady'}. ${symptomTrends[0]?.name || 'Your patterns'} worth watching.`
+                          : 'Your picture is taking shape'
                     )}
                   </Text>
                   <Text style={styles.insightDesc}>
                     {insightNudge?.body || (
                       topCorrelations.length > 0
-                        ? topCorrelations[0].humanLabel + (topCorrelations.length > 1 ? ` We found ${topCorrelations.length} patterns so far.` : '')
+                        ? topCorrelations[0].humanLabel + (topCorrelations.length > 1 ? ` ${topCorrelations.length} connections found so far.` : '')
                         : streak >= 7
-                          ? `${streak}-day streak! Patterns start emerging after 14 days of data.`
-                          : 'Keep logging daily so we can identify triggers and trends in your symptoms.'
+                          ? `${streak} days logged. A few more and we can start connecting the dots.`
+                          : 'A few more check-ins and we can start spotting what triggers your symptoms.'
                     )}
                   </Text>
                   <Text style={[styles.seeAll, { marginTop: 6 }]}>See why →</Text>
@@ -1055,7 +1081,7 @@ export default function HomeScreen() {
                             <Text style={[styles.summaryTitle, { fontWeight: '700' }]}>Evening reflection</Text>
                           </View>
                           <Text style={{ fontSize: 14, color: '#78716c', marginTop: 4 }}>
-                            Ready when you are — 4 steps · under 2 min
+                            Whenever you are ready. 4 quick steps, under 2 min.
                           </Text>
                         </AnimatedPressable>
                       );
@@ -1076,7 +1102,7 @@ export default function HomeScreen() {
                 <View style={{ gap: 8 }}>
                   {/* 1. Program lesson — always first, from 8-week plan */}
                   <AnimatedPressable
-                    onPress={() => { hapticLight(); router.navigate('/(app)/wellness'); }}
+                    onPress={() => { hapticLight(); router.push('/(app)/player' as any); }}
                     scaleDown={0.97}
                     style={styles.programLessonCard}
                   >
@@ -1097,7 +1123,7 @@ export default function HomeScreen() {
 
                   {/* 2. Suggested evening audio — with tag pills */}
                   <AnimatedPressable
-                    onPress={() => { hapticLight(); router.navigate('/(app)/wellness'); }}
+                    onPress={() => { hapticLight(); router.push('/(app)/player' as any); }}
                     scaleDown={0.97}
                     style={[styles.card, { flexDirection: 'row', alignItems: 'center', gap: 12 }]}
                   >
@@ -1134,8 +1160,8 @@ export default function HomeScreen() {
                         <Text style={{ fontSize: 14, color: '#6366f1' }}>☽</Text>
                       </View>
                       <View style={{ flex: 1 }}>
-                        <Text style={styles.planTitle}>Evening journal</Text>
-                        <Text style={styles.planSubtitle}>Reflect on your day · 2 min</Text>
+                        <Text style={styles.planTitle}>Evening reflection</Text>
+                        <Text style={styles.planSubtitle}>How was today? Under 2 min</Text>
                       </View>
                       <View style={styles.planCheckbox} />
                     </AnimatedPressable>
@@ -1145,8 +1171,8 @@ export default function HomeScreen() {
                   <View style={styles.tonightInsight}>
                     <Text style={{ fontSize: 14, color: '#047857', marginTop: 2 }}>💡</Text>
                     <Text style={styles.tonightInsightText}>
-                      <Text style={{ fontWeight: '500', color: '#44403c' }}>Tomorrow's forecast: </Text>
-                      Sleep 7+ hours tonight and your readiness could hit 78. Your body responds well to early wind-downs.
+                      <Text style={{ fontWeight: '500', color: '#44403c' }}>Looking ahead: </Text>
+                      7+ hours of sleep tonight could push your readiness to 78 tomorrow. Your data shows early wind-downs help.
                     </Text>
                   </View>
                 </View>
@@ -1166,7 +1192,7 @@ export default function HomeScreen() {
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.wellnessEntryTitle}>Wellness Centre</Text>
-                    <Text style={styles.wellnessEntrySubtitle}>Your program, meditations, podcasts & guides</Text>
+                    <Text style={styles.wellnessEntrySubtitle}>Your program, meditations, podcasts, and guides</Text>
                   </View>
                   <Text style={{ fontSize: 18, color: '#78716c' }}>›</Text>
                 </View>
@@ -1278,8 +1304,8 @@ export default function HomeScreen() {
                 </Text>
                 <Text style={styles.emptyDesc}>
                   {isToday
-                    ? 'Track your symptoms, mood, and sleep to see patterns over time.'
-                    : 'You can still add a past entry to fill in the gaps.'}
+                    ? 'A quick check-in helps us learn what affects your symptoms, mood, and sleep.'
+                    : 'You can still log a past entry to fill in the picture.'}
                 </Text>
                 <AnimatedPressable
                   onPress={() => {
@@ -1532,6 +1558,22 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#34d399',
   },
+  wearableSyncRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 8,
+  },
+  wearableSyncDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#34d399',
+  },
+  wearableSyncText: {
+    fontSize: 11,
+    color: '#78716c',
+  },
 
   // Journal card
   journalCard: {
@@ -1684,13 +1726,14 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   sosCard: {
-    backgroundColor: '#ecfdf5',
+    backgroundColor: '#fff1f2',
     borderWidth: 1,
-    borderColor: '#d1fae5',
+    borderColor: '#fecdd3',
     borderRadius: 16,
-    padding: 16,
+    padding: 14,
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'center',
+    gap: 6,
     width: 90,
   },
   checkinCard: {
@@ -1724,12 +1767,12 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#14b8a6',
+    backgroundColor: '#f43f5e',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  sosTitle: { fontSize: 14, fontWeight: '600', color: '#115e59' },
-  sosSubtitle: { fontSize: 14, color: '#5eead4' },
+  sosTitle: { fontSize: 14, fontWeight: '700', color: '#1c1917', textAlign: 'center' as const },
+  sosSubtitle: { fontSize: 12, color: '#78716c', textAlign: 'center' as const },
 
   // Sections
   section: { marginBottom: 20 },

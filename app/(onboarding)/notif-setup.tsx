@@ -86,7 +86,7 @@ export default function NotifSetupScreen() {
 
   const handleFinish = () => {
     updateData({ notifPrefs: notifs });
-    router.push('/(onboarding)/done');
+    router.push('/(onboarding)/health-connect');
   };
 
   return (

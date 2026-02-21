@@ -69,10 +69,10 @@ interface BenchmarksResponse {
 }
 
 const NORMALIZATION_FACTS = [
-  { emoji: '🧠', title: 'Brain fog is hormonal', desc: 'Estrogen fluctuations directly affect memory and focus. It\'s not "just stress" — your brain is adapting.' },
-  { emoji: '💓', title: 'Heart pounding is hormonal', desc: 'Palpitations during perimenopause are caused by estrogen changes affecting your cardiovascular system.' },
-  { emoji: '📊', title: 'Often misdiagnosed', desc: '73% of women experience perimenopause symptoms but only 1 in 4 are correctly identified by their doctor.' },
-  { emoji: '💪', title: 'Joint pain is real', desc: 'Estrogen helps protect your joints. As levels drop, inflammation can increase — this is not "getting old."' },
+  { emoji: '🧠', title: 'Brain fog is hormonal', desc: "Estrogen changes affect memory and focus directly. It is not \"just stress\" — your brain is adapting to a new normal." },
+  { emoji: '💓', title: 'Heart pounding is hormonal', desc: "That racing heart feeling? Estrogen shifts can do that. It is more common than most women realise." },
+  { emoji: '📊', title: 'Often missed by doctors', desc: "73% of women experience perimenopause symptoms, but only 1 in 4 get the right diagnosis first time." },
+  { emoji: '💪', title: 'Joint pain is real', desc: "Estrogen helps protect joints. As levels shift, inflammation can increase. This is hormonal, not just ageing." },
 ];
 
 interface LogEntry {
@@ -178,24 +178,24 @@ function computeWeeklyStory(logs: LogEntry[]) {
     const olderCount = older7.filter((l) => l.symptomsJson?.[topSymptom[0]]).length;
     if (olderCount > 0 && daysWithIt < olderCount) {
       const drop = Math.round(((olderCount - daysWithIt) / olderCount) * 100);
-      narrative = `Your ${name.toLowerCase()} dropped ${drop}% this week.`;
+      narrative = `${name} dropped ${drop}% compared to last week.`;
     } else if (daysWithIt >= 5) {
-      narrative = `${name} showed up ${daysWithIt} of 7 days this week.`;
+      narrative = `${name} showed up ${daysWithIt} of 7 days this week. Worth watching.`;
     } else {
       narrative = `${name} appeared ${daysWithIt} time${daysWithIt === 1 ? '' : 's'} this week.`;
     }
   }
 
   if (goodSleepDays >= 5) {
-    narrative += ` Great sleep — you hit 7+ hours on ${goodSleepDays} nights.`;
+    narrative += ` Sleep was solid — 7+ hours on ${goodSleepDays} nights.`;
   } else if (goodSleepDays <= 2) {
-    narrative += ` Sleep was rough — only ${goodSleepDays} nights of 7+ hours.`;
+    narrative += ` Sleep was rough this week — only ${goodSleepDays} nights over 7 hours.`;
   }
 
   return {
     narrative,
-    bestDay: bestDay ? new Date(bestDay.date).toLocaleDateString('en', { weekday: 'long' }) : null,
-    worstDay: worstDay ? new Date(worstDay.date).toLocaleDateString('en', { weekday: 'long' }) : null,
+    bestDay: bestDay ? new Date(bestDay.date).toLocaleDateString('en', { weekday: 'short', month: 'short', day: 'numeric' }) : null,
+    worstDay: worstDay ? new Date(worstDay.date).toLocaleDateString('en', { weekday: 'short', month: 'short', day: 'numeric' }) : null,
     bestMood: bestDay?.mood ?? 3,
     worstMood: worstDay?.mood ?? 3,
   };
@@ -212,6 +212,7 @@ export default function InsightsScreen() {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const hasLoadedOnce = useRef(false);
+  const maxDaysEver = useRef(0);
 
   // API-backed state for correlations
   const [correlations, setCorrelations] = useState<CorrelationItem[]>([]);
@@ -240,7 +241,12 @@ export default function InsightsScreen() {
         apiRequest(`/api/logs?date=${todayDate}`, token).catch(() => []),
       ]);
 
-      setLogs(Array.isArray(logsData) ? logsData : []);
+      const parsedLogs = Array.isArray(logsData) ? logsData : [];
+      setLogs(parsedLogs);
+
+      // Track max unique days ever seen (so learning state doesn't regress on short periods)
+      const uniqueDateCount = new Set(parsedLogs.map((l: any) => l.date)).size;
+      if (uniqueDateCount > maxDaysEver.current) maxDaysEver.current = uniqueDateCount;
 
       // Check today's morning/evening status
       const todayEntries = Array.isArray(todayLogs) ? todayLogs : [];
@@ -382,11 +388,11 @@ export default function InsightsScreen() {
     const topSymptom = earlySymptomSummary[0];
     if (!topSymptom) return null;
     const shortSleepDays = logs.filter((l) => (l.sleepHours ?? 8) < 6).length;
-    let text = `You've logged ${topSymptom.displayName.toLowerCase()} on ${topSymptom.daysLogged} of ${totalDays} days`;
+    let text = `${topSymptom.displayName} showed up on ${topSymptom.daysLogged} of ${totalDays} days`;
     if (shortSleepDays > 0) {
-      text += ` and sleep under 6h ${shortSleepDays} time${shortSleepDays > 1 ? 's' : ''}`;
+      text += `, and you slept under 6 hours ${shortSleepDays} time${shortSleepDays > 1 ? 's' : ''}`;
     }
-    text += '. We\'re starting to look for a connection — a few more days and we\'ll know.';
+    text += '. We are looking for a connection. A few more days and we should know.';
     return text;
   }, [totalDays, earlySymptomSummary, logs]);
 
@@ -400,17 +406,17 @@ export default function InsightsScreen() {
     return symptoms.size;
   }, [logs]);
 
-  // Learning state thresholds
-  const patternsLearning = totalDays < 7;
-  const normalLearning = totalDays < 14;
+  // Learning state thresholds — use maxDaysEver so switching to 1W doesn't regress
+  const patternsLearning = maxDaysEver.current < 7;
+  const normalLearning = maxDaysEver.current < 14;
 
   const headerSub = totalDays > 0
     ? patternsLearning
-      ? `${totalDays} days of data · Learning mode`
+      ? `${totalDays} days logged. Still learning your patterns.`
       : normalLearning
-        ? `${totalDays} days of data · Benchmarks unlocking soon`
-        : `${totalDays} days of data · Updated today`
-    : 'Start logging to see insights';
+        ? `${totalDays} days logged. Benchmarks almost ready.`
+        : `${totalDays} days of data. Updated today.`
+    : 'Log a few days and your patterns will start appearing here.';
 
   return (
     <SafeAreaView style={styles.container}>
@@ -494,9 +500,9 @@ export default function InsightsScreen() {
                   </View>
                 </View>
               </View>
-              <Text style={ls.heroTitle}>We're learning your patterns</Text>
+              <Text style={ls.heroTitle}>Your patterns are building</Text>
               <Text style={ls.heroDesc}>
-                {7 - totalDays} more day{7 - totalDays > 1 ? 's' : ''} of logging and we can start showing you what affects your symptoms, sleep, and mood.
+                {7 - totalDays} more day{7 - totalDays > 1 ? 's' : ''} and we can start showing you what affects your symptoms, sleep, and mood.
               </Text>
 
               {/* Day progress dots — Day 1 starts at first circle */}
@@ -520,7 +526,7 @@ export default function InsightsScreen() {
               </View>
 
               {totalDays >= 4 && (
-                <Text style={ls.heroEncouragement}>Keep it up — you're over halfway there</Text>
+                <Text style={ls.heroEncouragement}>Over halfway. The picture is getting clearer.</Text>
               )}
             </View>
 
@@ -575,7 +581,7 @@ export default function InsightsScreen() {
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>While we're learning</Text>
               <Text style={ls.subtitleText}>
-                The more consistently you log — morning and evening — the more accurate your patterns will be.
+                Morning and evening check-ins give us the clearest picture. Even a quick one helps.
               </Text>
 
               <AnimatedPressable
@@ -690,7 +696,7 @@ export default function InsightsScreen() {
                           <Text style={ls.symptomRawName}>{s.emoji} {s.displayName}</Text>
                           <Text style={ls.symptomRawDays}>{s.daysLogged} days logged</Text>
                         </View>
-                        <Text style={{ fontSize: 14, color: '#78716c' }}>Building data...</Text>
+                        <Text style={{ fontSize: 14, color: '#78716c' }}>Gathering data</Text>
                       </View>
                     );
                   })}
@@ -702,7 +708,7 @@ export default function InsightsScreen() {
             <View style={ls.motivationCard}>
               <Text style={ls.motivationLabel}>Remember</Text>
               <Text style={ls.motivationText}>
-                Every check-in teaches us something about your body. The patterns are there — we just need a few more days to see them clearly.
+                Every check-in teaches us something about your body. The patterns are already forming — a few more days and they will be clear enough to share.
               </Text>
             </View>
           </>
@@ -733,9 +739,9 @@ export default function InsightsScreen() {
                   </View>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={ls.heroTitle}>Building your benchmark</Text>
+                  <Text style={ls.heroTitle}>Almost ready to compare</Text>
                   <Text style={[ls.heroDesc, { marginBottom: 0 }]}>
-                    {14 - totalDays} more day{14 - totalDays > 1 ? 's' : ''} and we can compare your experience to{' '}
+                    {14 - totalDays} more day{14 - totalDays > 1 ? 's' : ''} and we can show you how your experience compares to{' '}
                     <Text style={{ color: '#78716c' }}>12,847 other women</Text> in perimenopause.
                   </Text>
                 </View>
@@ -769,7 +775,7 @@ export default function InsightsScreen() {
                 <View style={{ flex: 1 }}>
                   <Text style={ls.explainerTitle}>Why do we need 14 days?</Text>
                   <Text style={ls.explainerDesc}>
-                    Menopause symptoms fluctuate week to week. Two weeks gives us enough data to reliably place you within your peer group — so the comparison is meaningful, not misleading.
+                    Menopause symptoms fluctuate week to week. Two weeks gives us enough data to place you reliably within your peer group, so the comparison is meaningful.
                   </Text>
                 </View>
               </View>
@@ -897,7 +903,7 @@ export default function InsightsScreen() {
                 </View>
               </View>
               <Text style={ls.journeyDesc}>
-                You're building a picture of your health that no one else has. {14 - totalDays} more days and we'll show you exactly where you stand.
+                You are building a picture of your health that only you have. {14 - totalDays} more days and we can show you where you stand.
               </Text>
             </View>
 
@@ -1033,7 +1039,7 @@ export default function InsightsScreen() {
                 </View>
               ) : (
                 <View style={styles.card}>
-                  <Text style={styles.cardHint}>Log symptoms to see your trends here</Text>
+                  <Text style={styles.cardHint}>Your symptom trends will appear here once you have a few days logged</Text>
                 </View>
               )}
             </View>
@@ -1057,7 +1063,7 @@ export default function InsightsScreen() {
                         </View>
                       </View>
                     )) : (
-                      <Text style={styles.hhEmpty}>Keep logging to find patterns</Text>
+                      <Text style={styles.hhEmpty}>Still looking for what helps you</Text>
                     )}
                   </View>
                   {/* Hurts */}
@@ -1074,7 +1080,7 @@ export default function InsightsScreen() {
                         </View>
                       </View>
                     )) : (
-                      <Text style={styles.hhEmpty}>Need more data</Text>
+                      <Text style={styles.hhEmpty}>Still looking for triggers</Text>
                     )}
                   </View>
                 </View>
@@ -1125,9 +1131,9 @@ export default function InsightsScreen() {
 
             {/* ─── What to expect ──────────────────── */}
             <View style={styles.expectCard}>
-              <Text style={styles.expectLabel}>💡 What to expect this week</Text>
+              <Text style={styles.expectLabel}>💡 Looking ahead</Text>
               <Text style={styles.expectDesc}>
-                Based on your patterns, focus on sleep quality. Your symptoms tend to be milder after nights with 7+ hours.
+                Your data shows symptoms tend to be milder after 7+ hours of sleep. Worth prioritising this week.
               </Text>
             </View>
           </>
