@@ -316,18 +316,32 @@ export default function InsightsScreen() {
 
   // Derive helps/hurts from API correlations (positive direction = helps, negative = hurts)
   const helpsHurts = useMemo(() => {
-    const helps: { label: string; pct: number }[] = [];
-    const hurts: { label: string; pct: number }[] = [];
+    const helps: { label: string; pct: number; key: string }[] = [];
+    const hurts: { label: string; pct: number; key: string }[] = [];
+    // Track best correlation per factor within each direction to avoid duplicates
+    const bestHelps = new Map<string, { label: string; pct: number; key: string }>();
+    const bestHurts = new Map<string, { label: string; pct: number; key: string }>();
     for (const c of correlations) {
       const pct = Math.round(Math.abs(c.effectSizePct));
       if (pct < 10) continue;
-      const label = formatSymptomName(c.factor);
+      const factorLabel = formatSymptomName(c.factor);
+      const symptomLabel = formatSymptomName(c.symptom).toLowerCase();
+      const label = `${factorLabel} → ${symptomLabel}`;
+      const key = `${c.factor}_${c.symptom}`;
       if (c.direction === 'negative') {
-        helps.push({ label, pct });
+        const existing = bestHelps.get(c.factor);
+        if (!existing || pct > existing.pct) {
+          bestHelps.set(c.factor, { label, pct, key });
+        }
       } else {
-        hurts.push({ label, pct });
+        const existing = bestHurts.get(c.factor);
+        if (!existing || pct > existing.pct) {
+          bestHurts.set(c.factor, { label, pct, key });
+        }
       }
     }
+    helps.push(...bestHelps.values());
+    hurts.push(...bestHurts.values());
     return {
       helps: helps.sort((a, b) => b.pct - a.pct).slice(0, 4),
       hurts: hurts.sort((a, b) => b.pct - a.pct).slice(0, 4),
@@ -352,7 +366,7 @@ export default function InsightsScreen() {
       const factorLabel = formatSymptomName(best.factor).toLowerCase();
       const symptomLabel = formatSymptomName(best.symptom).toLowerCase();
       const pct = Math.round(Math.abs(best.effectSizePct));
-      return `On days when you have ${factorLabel}, ${symptomLabel} drops by ${pct}%. Worth trying this week.`;
+      return `On days when you have ${factorLabel}, ${symptomLabel} drops by ${pct}pp. Worth trying this week.`;
     }
 
     // Fallback: strongest "hurts" correlation
@@ -985,7 +999,7 @@ export default function InsightsScreen() {
                         <Text style={styles.correlationArrow}>
                           {formatSymptomName(c.factor)} → {formatSymptomName(c.symptom)}{' '}
                           <Text style={{ color: c.direction === 'negative' ? '#047857' : '#dc2626' }}>
-                            {c.direction === 'negative' ? `↓${pct}%` : `↑${pct}%`}
+                            {c.direction === 'negative' ? `↓${pct}pp` : `↑${pct}pp`}
                           </Text>
                           {lagLabel}
                         </Text>
@@ -1067,13 +1081,13 @@ export default function InsightsScreen() {
                   <View style={[styles.helpsHurtsCard, styles.helpsCard]}>
                     <Text style={styles.helpsHurtsLabel}>Helps ↓</Text>
                     {helpsHurts.helps.length > 0 ? helpsHurts.helps.map((h) => (
-                      <View key={h.label} style={styles.hhItem}>
+                      <View key={h.key} style={styles.hhItem}>
                         <View style={styles.hhRow}>
-                          <Text style={styles.hhName}>{h.label}</Text>
-                          <Text style={[styles.hhPct, { color: '#047857' }]}>{h.pct}%</Text>
+                          <Text style={styles.hhName} numberOfLines={2}>{h.label}</Text>
+                          <Text style={[styles.hhPct, { color: '#047857' }]}>{h.pct}pp</Text>
                         </View>
                         <View style={styles.hhBarBg}>
-                          <View style={[styles.hhBarFill, { width: `${h.pct}%`, backgroundColor: '#059669' }]} />
+                          <View style={[styles.hhBarFill, { width: `${Math.min(h.pct, 100)}%`, backgroundColor: '#059669' }]} />
                         </View>
                       </View>
                     )) : (
@@ -1084,13 +1098,13 @@ export default function InsightsScreen() {
                   <View style={[styles.helpsHurtsCard, styles.hurtsCard]}>
                     <Text style={styles.helpsHurtsLabel}>Hurts ↑</Text>
                     {helpsHurts.hurts.length > 0 ? helpsHurts.hurts.map((h) => (
-                      <View key={h.label} style={styles.hhItem}>
+                      <View key={h.key} style={styles.hhItem}>
                         <View style={styles.hhRow}>
-                          <Text style={styles.hhName}>{h.label}</Text>
-                          <Text style={[styles.hhPct, { color: '#dc2626' }]}>{h.pct}%</Text>
+                          <Text style={styles.hhName} numberOfLines={2}>{h.label}</Text>
+                          <Text style={[styles.hhPct, { color: '#dc2626' }]}>{h.pct}pp</Text>
                         </View>
                         <View style={styles.hhBarBg}>
-                          <View style={[styles.hhBarFill, { width: `${h.pct}%`, backgroundColor: '#dc2626' }]} />
+                          <View style={[styles.hhBarFill, { width: `${Math.min(h.pct, 100)}%`, backgroundColor: '#dc2626' }]} />
                         </View>
                       </View>
                     )) : (
