@@ -1,6 +1,6 @@
 import { useAuth } from '@clerk/clerk-expo';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://pause-api-seven.vercel.app';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://pause-api.vercel.app';
 
 export async function apiRequest(
   endpoint: string,

@@ -4,7 +4,7 @@
 
 The Pause API now has a multi-agent insights pipeline that runs nightly. It produces AI-enriched data that the API already serves, but the Expo React Native frontend doesn't fully consume it yet. These instructions describe the UI changes needed.
 
-**API base URL:** `https://pause-api-seven.vercel.app`
+**API base URL:** `https://pause-api.vercel.app`
 
 ---
 

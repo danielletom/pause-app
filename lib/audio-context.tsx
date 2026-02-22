@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
 import { Audio, AVPlaybackStatus } from 'expo-av';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://pause-api-seven.vercel.app';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://pause-api.vercel.app';
 
 export interface Track {
   id: number;
