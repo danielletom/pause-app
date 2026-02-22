@@ -218,7 +218,7 @@ export default function HomeScreen() {
         apiRequest(`/api/meds/logs?date=${todayDate}`, token).catch(() => []),
         apiRequest('/api/logs?range=28d', token).catch(() => []),
         apiRequest('/api/articles', token).catch(() => []),
-        apiRequest(`/api/insights/home?date=${todayDate}`, token).catch(() => null),
+        apiRequest(`/api/insights/home?date=${selectedDate}`, token).catch(() => null),
         apiRequest('/api/period/settings', token).catch(() => null),
         apiRequest('/api/period/cycles/current', token).catch(() => null),
       ]);
@@ -546,30 +546,23 @@ export default function HomeScreen() {
                             if (aiNarrative) {
                               return <Text style={styles.readinessNarrative}>{aiNarrative}</Text>;
                             }
-                            // Smart client-side fallback using actual log data
-                            const parts: string[] = [];
-                            if (sleepLog?.sleepHours != null) {
-                              const sq = sleepLog.sleepHours >= 7 ? 'Good' : sleepLog.sleepHours >= 5 ? 'Okay' : 'Low';
-                              parts.push(`${sq} sleep (${sleepLog.sleepHours}h)`);
-                            }
-                            if (latestMood) {
-                              parts.push(`${MOOD_LABEL[latestMood]?.toLowerCase() || 'neutral'} mood`);
-                            }
-                            const symLevel = symptomTrends.length === 0 ? 'no' : symptomTrends.length <= 2 ? 'low' : 'moderate';
-                            parts.push(`${symLevel} symptom load`);
-                            const allStress = new Set<string>();
-                            dayLogs.forEach((e) => (e.contextTags || []).forEach((t: string) => allStress.add(t)));
-                            if (allStress.size > 2) parts.push('high stress');
-                            else if (allStress.size > 0) parts.push('moderate stress');
-
-                            const prefix = parts.join(' + ');
+                            // Warm client-side fallback
+                            const hrs = sleepLog?.sleepHours;
+                            const topSym = symptomTrends.length > 0 ? symptomTrends[0].name.replace(/_/g, ' ') : null;
                             let msg = '';
                             if (scoreNum >= 70) {
-                              msg = `${prefix} — days like this are worth using. A walk or something you enjoy tends to make tomorrow better too.`;
+                              const sleepNote = hrs ? `${hrs} hours of sleep and your body is responding well` : 'Your body is doing well today';
+                              msg = `${sleepNote} — a great day to enjoy something active if you're up for it.`;
                             } else if (scoreNum >= 40) {
-                              msg = `${prefix}. Not your worst, not your best. Small wins still count today.`;
+                              const sleepNote = hrs ? `${hrs} hours of sleep is keeping things steady` : 'Some things are working in your favour';
+                              const dragNote = topSym ? `, but ${topSym} is weighing on things` : ', though your body could use some extra care';
+                              msg = `${sleepNote}${dragNote}. Listen to what you need today.`;
                             } else {
-                              msg = `${prefix}. Rough one. Go easy on yourself today — the SOS tool is there if you need it.`;
+                              const context = hrs && hrs < 6
+                                ? `Only ${hrs} hours of sleep makes everything feel harder`
+                                : topSym ? `${topSym.charAt(0).toUpperCase() + topSym.slice(1)} is weighing heavily today`
+                                : 'Your body is carrying a lot today';
+                              msg = `${context}. Be extra gentle with yourself — rest is productive too.`;
                             }
                             return <Text style={styles.readinessNarrative}>{msg}</Text>;
                           })()}
