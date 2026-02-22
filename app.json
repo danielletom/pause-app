@@ -16,7 +16,9 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "UIBackgroundModes": ["audio"]
+        "UIBackgroundModes": [
+          "audio"
+        ]
       }
     },
     "android": {
@@ -35,7 +37,12 @@
     "plugins": [
       "expo-router",
       "expo-secure-store",
-      "expo-web-browser"
+      "expo-web-browser",
+      ["@kingstinct/react-native-healthkit", {
+        "NSHealthShareUsageDescription": "Pause reads your activity data to automatically track your sleep and improve your health insights.",
+        "NSHealthUpdateUsageDescription": false,
+        "background": false
+      }]
     ],
     "experiments": {
       "typedRoutes": true

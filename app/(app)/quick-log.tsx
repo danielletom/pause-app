@@ -18,6 +18,8 @@ import BackButton from '@/components/BackButton';
 import { hapticLight, hapticMedium, hapticSuccess, hapticSelection } from '@/lib/haptics';
 import { apiRequest } from '@/lib/api';
 import { useProfile } from '@/lib/useProfile';
+import { useSleepTracking } from '@/lib/useSleepTracking';
+import { useHealthData } from '@/lib/useHealthData';
 
 /* ─── Constants ──────────────────────────────────────── */
 
@@ -253,6 +255,17 @@ export default function QuickLogScreen() {
   const [flowIntensity, setFlowIntensity] = useState<'light' | 'medium' | 'heavy' | null>(null);
 
   const { profile: userProfile } = useProfile();
+  const health = useHealthData();
+  const { sleep: autoSleep } = useSleepTracking(new Date(logDate));
+  const [sleepAutoFilled, setSleepAutoFilled] = useState(false);
+
+  // Auto-fill sleep hours from HealthKit when available (Rise-style)
+  useEffect(() => {
+    if (autoSleep && health.connected && isMorning && !editingLogId && !sleepAutoFilled) {
+      setSleepHours(autoSleep.hours);
+      setSleepAutoFilled(true);
+    }
+  }, [autoSleep, health.connected, isMorning, editingLogId, sleepAutoFilled]);
   const showPeriodTracker = isMorning && (
     !userProfile?.stage ||
     userProfile.stage === 'perimenopause' ||
@@ -526,10 +539,22 @@ export default function QuickLogScreen() {
           }),
         ];
 
-        // Notes: { grateful, intention }
+        // Notes: { grateful, intention, sleepTracking }
         const notesObj: any = {};
         if (gratitudeText.trim()) notesObj.grateful = gratitudeText.trim();
         if (intentionText.trim()) notesObj.intention = intentionText.trim();
+
+        // Include auto-tracked sleep data for the correlation engine
+        if (autoSleep && sleepAutoFilled) {
+          notesObj.sleepTracking = {
+            source: 'auto',
+            sleepStart: autoSleep.sleepStart.toISOString(),
+            sleepEnd: autoSleep.sleepEnd.toISOString(),
+            detectedHours: autoSleep.hours,
+            adjustedHours: sleepHours, // what the user submitted (may differ)
+            wasAdjusted: sleepHours !== autoSleep.hours,
+          };
+        }
 
         await apiRequest('/api/logs', token, {
           method: 'POST',
@@ -537,6 +562,8 @@ export default function QuickLogScreen() {
             date: logDate,
             sleepHours,
             sleepQuality,
+            sleepStart: autoSleep?.sleepStart?.toISOString() ?? undefined,
+            sleepEnd: autoSleep?.sleepEnd?.toISOString() ?? undefined,
             mood,
             symptomsJson: Object.keys(symptoms).length > 0 ? symptoms : undefined,
             energy,
@@ -644,10 +671,44 @@ export default function QuickLogScreen() {
           <View>
             <Text style={styles.stepTitle}>How did you sleep?</Text>
             <Text style={styles.stepSubtitle}>
-              {isToday ? 'Last night — tell us how it went' : 'How was sleep that night?'}
+              {sleepAutoFilled
+                ? 'We tracked your sleep automatically — adjust if needed'
+                : isToday ? 'Last night — tell us how it went' : 'How was sleep that night?'}
             </Text>
 
+            {/* Auto-tracked sleep card — shown when HealthKit detected sleep */}
+            {sleepAutoFilled && autoSleep && (
+              <View style={styles.autoSleepCard}>
+                <View style={styles.autoSleepHeader}>
+                  <Text style={styles.autoSleepIcon}>🌙</Text>
+                  <Text style={styles.autoSleepTitle}>Sleep tracked automatically</Text>
+                  <View style={styles.autoDetectedBadge}>
+                    <Text style={styles.autoDetectedText}>Auto</Text>
+                  </View>
+                </View>
+                <View style={styles.autoSleepTimes}>
+                  <View style={styles.autoSleepTimeCol}>
+                    <Text style={styles.autoSleepTimeLabel}>Fell asleep</Text>
+                    <Text style={styles.autoSleepTimeValue}>
+                      ~{autoSleep.sleepStart.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                    </Text>
+                  </View>
+                  <Text style={styles.autoSleepArrow}>→</Text>
+                  <View style={styles.autoSleepTimeCol}>
+                    <Text style={styles.autoSleepTimeLabel}>Woke up</Text>
+                    <Text style={styles.autoSleepTimeValue}>
+                      ~{autoSleep.sleepEnd.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                    </Text>
+                  </View>
+                </View>
+                <Text style={styles.autoSleepNote}>
+                  Based on your phone activity. Adjust the hours below if this doesn't look right.
+                </Text>
+              </View>
+            )}
+
             {/* Sleep quality options */}
+            <Text style={styles.sectionLabel}>How did it feel?</Text>
             <View style={styles.qualityCards}>
               {SLEEP_QUALITY.map((sq) => (
                 <AnimatedPressable
@@ -674,7 +735,16 @@ export default function QuickLogScreen() {
             </View>
 
             {/* Hours stepper — 0.5h increments */}
-            <Text style={styles.sectionLabel}>About how many hours?</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Text style={styles.sectionLabel}>
+                {sleepAutoFilled ? 'Adjust hours' : 'About how many hours?'}
+              </Text>
+              {sleepAutoFilled && (
+                <Text style={{ fontSize: 11, color: '#a8a29e', marginBottom: 10 }}>
+                  Pre-filled from tracking
+                </Text>
+              )}
+            </View>
             <View style={styles.sleepStepperWrap}>
               <View style={styles.sleepStepperRow}>
                 <AnimatedPressable
@@ -1744,6 +1814,69 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#a8a29e',
     marginTop: 12,
+  },
+  autoSleepCard: {
+    backgroundColor: '#f0f9ff',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#bae6fd',
+    marginBottom: 20,
+  },
+  autoSleepHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  autoSleepIcon: { fontSize: 16 },
+  autoSleepTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#0c4a6e',
+    flex: 1,
+  },
+  autoSleepTimes: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 16,
+    marginBottom: 10,
+  },
+  autoSleepTimeCol: {
+    alignItems: 'center',
+  },
+  autoSleepTimeLabel: {
+    fontSize: 11,
+    color: '#0369a1',
+    marginBottom: 2,
+  },
+  autoSleepTimeValue: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#0c4a6e',
+  },
+  autoSleepArrow: {
+    fontSize: 16,
+    color: '#7dd3fc',
+    marginTop: 12,
+  },
+  autoSleepNote: {
+    fontSize: 11,
+    color: '#0369a1',
+    textAlign: 'center',
+    lineHeight: 16,
+  },
+  autoDetectedBadge: {
+    backgroundColor: '#dbeafe',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  autoDetectedText: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: '#2563eb',
   },
 
   /* Pill grid */
