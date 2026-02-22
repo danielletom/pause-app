@@ -108,14 +108,19 @@ export default function GratitudeJournalScreen() {
   if (entries.length === 0) {
     return (
       <SafeAreaView style={s.container}>
-        <View style={s.topBar}>
+        <View style={[s.topBar, { paddingHorizontal: 24 }]}>
           <BackButton />
         </View>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 }}>
-          <Text style={{ fontSize: 48, marginBottom: 16 }}>✦</Text>
+          {/* Garden illustration */}
+          <View style={s.emptyGarden}>
+            <View style={s.emptyGardenRing}>
+              <Text style={{ fontSize: 42 }}>🌸</Text>
+            </View>
+          </View>
           <Text style={s.emptyTitle}>Your gratitude garden awaits</Text>
           <Text style={s.emptyDesc}>
-            Gratitudes from your morning journal will appear here automatically, or add one now.
+            Each morning, note something you're grateful for. Over time, your garden will bloom with moments of joy — and research shows gratitude practice can improve sleep and reduce anxiety.
           </Text>
           <AnimatedPressable
             onPress={() => { hapticMedium(); router.push({ pathname: '/(app)/quick-log', params: { mode: 'morning' } }); }}
@@ -124,6 +129,7 @@ export default function GratitudeJournalScreen() {
           >
             <Text style={s.emptyBtnText}>Start morning journal</Text>
           </AnimatedPressable>
+          <Text style={s.emptyHint}>Takes about 30 seconds</Text>
         </View>
       </SafeAreaView>
     );
@@ -302,8 +308,15 @@ const s = StyleSheet.create({
   flourishText: { fontSize: 11, color: '#d6d3d1' },
   flourishSub: { fontSize: 11, color: '#e7e5e4', marginTop: 4 },
 
-  emptyTitle: { fontSize: 20, fontWeight: '700', color: '#1c1917', marginBottom: 8, textAlign: 'center' },
-  emptyDesc: { fontSize: 13, color: '#78716c', textAlign: 'center', lineHeight: 20, marginBottom: 24 },
+  emptyGarden: { marginBottom: 24, alignItems: 'center' },
+  emptyGardenRing: {
+    width: 100, height: 100, borderRadius: 50,
+    backgroundColor: '#fffbeb', borderWidth: 1, borderColor: '#fef3c7',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  emptyTitle: { fontSize: 20, fontWeight: '700', color: '#1c1917', marginBottom: 10, textAlign: 'center' },
+  emptyDesc: { fontSize: 14, color: '#78716c', textAlign: 'center', lineHeight: 22, marginBottom: 28 },
   emptyBtn: { backgroundColor: '#1c1917', borderRadius: 16, paddingVertical: 14, paddingHorizontal: 32 },
   emptyBtnText: { color: '#ffffff', fontSize: 15, fontWeight: '600' },
+  emptyHint: { fontSize: 12, color: '#a8a29e', marginTop: 10 },
 });

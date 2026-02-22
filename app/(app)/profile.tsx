@@ -21,11 +21,10 @@ const __DEV__ = process.env.NODE_ENV !== 'production';
 const MENU_ITEMS = [
   { label: 'Edit profile', desc: 'Name, email, account', icon: '✏️', route: '/(app)/edit-profile' },
   { label: 'About me', desc: 'Weight, height, birthday, stage', icon: '👤', route: '/(app)/about-me' },
-  { label: 'Medications', desc: 'Supplements, HRT, labs & tracking', icon: '💊', route: '/(app)/meds' },
+  { label: 'Medications', desc: 'Supplements, HRT & tracking', icon: '💊', route: '/(app)/meds' },
   { label: 'Custom tracking', desc: 'Add your own symptoms or triggers', icon: '✦', route: '/(app)/custom-tracking' },
   { label: 'Notifications', desc: 'Reminders, insights, SMS', icon: '🔔' },
   { label: 'Manage subscription', desc: 'Plan, billing, upgrade', icon: '⭐' },
-  { label: 'Wearable devices', desc: 'Apple Watch, Oura Ring', icon: '⌚', badge: 'Premium', route: '/(app)/wearables' },
   { label: 'Export my data', desc: 'Download your full history', icon: '📤', route: '/(app)/export-data' },
   { label: 'Terms & Privacy', desc: 'Terms of service, privacy policy', icon: '📄', route: '/(app)/legal' },
   { label: 'Help & feedback', desc: 'Contact us or request a feature', icon: '💬', route: '/(app)/help-feedback' },
@@ -108,14 +107,8 @@ export default function ProfileScreen() {
             {/* Subscription Card — dark */}
             <View style={styles.subCard}>
               <Text style={styles.subLabel}>Your plan</Text>
-              <Text style={styles.subTitle}>You're on the free plan</Text>
-              <Text style={styles.subDesc}>Basic logging, SOS, limited insights</Text>
-              <TouchableOpacity style={styles.subButtonPrimary} activeOpacity={0.8}>
-                <Text style={styles.subButtonPrimaryText}>Get Pause Premium — $7.99/mo</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.subButtonGold} activeOpacity={0.8}>
-                <Text style={styles.subButtonGoldText}>Try Pause+ — from $39/mo</Text>
-              </TouchableOpacity>
+              <Text style={styles.subTitle}>Early Access</Text>
+              <Text style={styles.subDesc}>You have full access to all features during our early access period. Thank you for being here from the start.</Text>
             </View>
 
             {/* Account Info Card */}
@@ -152,9 +145,9 @@ export default function ProfileScreen() {
                   <View style={{ flex: 1 }}>
                     <View style={styles.menuLabelRow}>
                       <Text style={styles.menuLabel}>{item.label}</Text>
-                      {item.badge && (
+                      {(item as any).badge && (
                         <View style={styles.badge}>
-                          <Text style={styles.badgeText}>{item.badge}</Text>
+                          <Text style={styles.badgeText}>{(item as any).badge}</Text>
                         </View>
                       )}
                     </View>
@@ -199,7 +192,11 @@ export default function ProfileScreen() {
             </TouchableOpacity>
 
             {/* Delete account */}
-            <TouchableOpacity style={styles.deleteButton} activeOpacity={0.7}>
+            <TouchableOpacity
+              style={styles.deleteButton}
+              activeOpacity={0.7}
+              onPress={() => router.push('/(app)/edit-profile' as any)}
+            >
               <Text style={styles.deleteText}>Delete my account</Text>
             </TouchableOpacity>
 
@@ -231,21 +228,6 @@ const styles = StyleSheet.create({
   subLabel: { fontSize: 16, color: '#78716c', marginBottom: 6 },
   subTitle: { fontSize: 16, fontWeight: '500', color: '#ffffff', marginBottom: 2 },
   subDesc: { fontSize: 16, color: '#a8a29e', marginBottom: 16 },
-  subButtonPrimary: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    paddingVertical: 11,
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  subButtonPrimaryText: { fontSize: 16, fontWeight: '600', color: '#1c1917' },
-  subButtonGold: {
-    backgroundColor: '#fbbf24',
-    borderRadius: 12,
-    paddingVertical: 11,
-    alignItems: 'center',
-  },
-  subButtonGoldText: { fontSize: 16, fontWeight: '600', color: '#1c1917' },
 
   // Account info
   accountCard: {

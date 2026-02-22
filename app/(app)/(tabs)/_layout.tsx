@@ -1,7 +1,7 @@
 import { Tabs } from 'expo-router';
 import { Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import TabBarIcon, { TabBarLogIcon } from '@/components/TabBarIcon';
+import TabBarIcon from '@/components/TabBarIcon';
 import { hapticLight } from '@/lib/haptics';
 
 export default function TabsLayout() {
@@ -57,10 +57,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="log"
         options={{
-          title: '',
-          tabBarIcon: ({ focused }) => <TabBarLogIcon focused={focused} />,
-          tabBarLabel: () => null,
-          tabBarStyle: { display: 'none' },
+          href: null,
         }}
       />
       <Tabs.Screen
@@ -78,6 +75,15 @@ export default function TabsLayout() {
           title: 'Wellness',
           tabBarIcon: ({ color, size, focused }) => (
             <TabBarIcon name="heart-outline" size={22} color={color} focused={focused} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Profile',
+          tabBarIcon: ({ color, size, focused }) => (
+            <TabBarIcon name="person-outline" size={22} color={color} focused={focused} />
           ),
         }}
       />

@@ -88,7 +88,7 @@ export default function HealthConnectScreen() {
             <Text style={styles.checkMark}>✓</Text>
           </View>
           <Text style={styles.connectedTitle}>Connected</Text>
-          <Text style={styles.connectedSource}>Apple Watch</Text>
+          <Text style={styles.connectedSource}>Apple Health</Text>
           <Text style={styles.connectedDesc}>
             Your watch data will sharpen every insight we build for you.
           </Text>
@@ -107,7 +107,7 @@ export default function HealthConnectScreen() {
     <SafeAreaView style={styles.container}>
       <ProgressBar step={6} total={7} />
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.heading}>Your watch data makes this smarter</Text>
+        <Text style={styles.heading}>Connect with Apple Health</Text>
         <Text style={styles.subheading}>
           We can pull a few things from Apple Health to give you sharper, more personal insights.
         </Text>

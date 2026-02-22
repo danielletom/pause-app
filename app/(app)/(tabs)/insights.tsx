@@ -578,9 +578,11 @@ export default function InsightsScreen() {
                   </View>
                 </View>
               </View>
-              <Text style={ls.heroTitle}>Your patterns are building</Text>
+              <Text style={ls.heroTitle}>{totalDays === 0 ? 'Your insights start here' : 'Your patterns are building'}</Text>
               <Text style={ls.heroDesc}>
-                {7 - totalDays} more day{7 - totalDays > 1 ? 's' : ''} and we can start showing you what affects your symptoms, sleep, and mood.
+                {totalDays === 0
+                  ? 'Complete your first morning check-in and we\'ll start learning your patterns. After 7 days, your personalised insights unlock.'
+                  : `${7 - totalDays} more day${7 - totalDays > 1 ? 's' : ''} and we can start showing you what affects your symptoms, sleep, and mood.`}
               </Text>
 
               {/* Day progress dots — Day 1 starts at first circle */}
@@ -817,9 +819,11 @@ export default function InsightsScreen() {
                   </View>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={ls.heroTitle}>Almost ready to compare</Text>
+                  <Text style={ls.heroTitle}>{totalDays === 0 ? 'Start tracking to compare' : 'Almost ready to compare'}</Text>
                   <Text style={[ls.heroDesc, { marginBottom: 0 }]}>
-                    {14 - totalDays} more day{14 - totalDays > 1 ? 's' : ''} and we can show you how your experience compares to{' '}
+                    {totalDays === 0
+                      ? 'Log your first check-in to begin. After 14 days we can show you how your experience compares to '
+                      : `${14 - totalDays} more day${14 - totalDays > 1 ? 's' : ''} and we can show you how your experience compares to `}
                     <Text style={{ color: '#78716c' }}>12,847 other women</Text> in perimenopause.
                   </Text>
                 </View>
@@ -839,7 +843,7 @@ export default function InsightsScreen() {
               </View>
               <View style={ls.dotGridLabels}>
                 <Text style={ls.dotGridLabelText}>Day 1</Text>
-                <Text style={[ls.dotGridLabelText, { color: '#78716c', fontWeight: '500' }]}>Day {totalDays} ←</Text>
+                <Text style={[ls.dotGridLabelText, { color: '#78716c', fontWeight: '500' }]}>{totalDays === 0 ? 'Start →' : `Day ${totalDays} ←`}</Text>
                 <Text style={ls.dotGridLabelText}>Day 14</Text>
               </View>
             </View>
@@ -869,7 +873,7 @@ export default function InsightsScreen() {
                 {[
                   { emoji: '👥', title: 'Early perimenopause', sub: 'Your menopause stage' },
                   { emoji: '🎂', title: 'Ages 40–49', sub: 'Your age bracket' },
-                  { emoji: '📊', title: 'Moderate symptoms', sub: `Based on your first ${totalDays} days` },
+                  { emoji: '📊', title: 'Moderate symptoms', sub: totalDays === 0 ? 'Will refine as you log' : `Based on your first ${totalDays} days` },
                 ].map((item, i) => (
                   <View key={i} style={ls.peerGroupRow}>
                     <View style={ls.peerGroupIcon}>
@@ -913,8 +917,8 @@ export default function InsightsScreen() {
                       </View>
                     </View>
                     <View style={ls.blurPopBar}>
-                      <View style={[ls.blurPopBarFill, { width: bm.fillPct }]} />
-                      <View style={[ls.blurPopMarker, { left: bm.markerPct }]} />
+                      <View style={[ls.blurPopBarFill, { width: bm.fillPct as any }]} />
+                      <View style={[ls.blurPopMarker, { left: bm.markerPct as any }]} />
                     </View>
                     {i === 0 && (
                       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 }}>
@@ -987,7 +991,7 @@ export default function InsightsScreen() {
 
             {/* ─── CTA ─── */}
             <AnimatedPressable
-              onPress={() => { hapticLight(); router.navigate('/(app)/log'); }}
+              onPress={() => { hapticLight(); router.navigate('/(app)/log' as any); }}
               scaleDown={0.97}
               style={ls.bigCta}
             >
@@ -1001,7 +1005,7 @@ export default function InsightsScreen() {
             {/* ─── Your story ───────────────────────── */}
             {weeklyStory && weeklyStory.narrative ? (
               <View style={styles.storyCard}>
-                <Text style={styles.storyLabel}>YOUR STORY</Text>
+                <Text style={styles.storyLabel}>YOUR STORY THIS WEEK</Text>
                 <Text style={styles.storyNarrative}>{weeklyStory.narrative}</Text>
                 {weeklyStory.bestDay && weeklyStory.worstDay && (
                   <View style={styles.storyDays}>

@@ -373,7 +373,8 @@ export default function HomeScreen() {
       .filter(([, v]) => v > 0)
       .sort(([, a], [, b]) => b - a)
       .slice(0, 4);
-    const colors = ['#fbbf24', '#818cf8', '#34d399', '#fda4af'];
+    // Color based on severity: mild = green, moderate = amber, severe = red
+    const sevColor = (s: number) => s >= 3 ? '#ef4444' : s >= 2 ? '#f59e0b' : '#78716c';
     return entries.map(([name, sev], i) => {
       const trend = weekTrends[name];
       let weekChange: string | null = null;
@@ -395,7 +396,7 @@ export default function HomeScreen() {
           .trim(),
         rawName: name,
         sev: Math.min(sev, 3),
-        color: colors[i % colors.length],
+        color: sevColor(sev),
         weekChange,
         improving: trend ? trend.thisWeek < trend.lastWeek : false,
       };
@@ -648,7 +649,7 @@ export default function HomeScreen() {
                   } else if (!eveningDone) {
                     router.push({ pathname: '/(app)/quick-log', params: { date: selectedDate, mode: 'evening' } });
                   } else {
-                    router.navigate('/(app)/log');
+                    router.navigate('/(app)/log' as any);
                   }
                 }}
                 scaleDown={0.97}
@@ -843,7 +844,7 @@ export default function HomeScreen() {
               <View style={styles.section}>
                 <View style={styles.sectionHeader}>
                   <Text style={styles.sectionTitle}>How you're doing</Text>
-                  <AnimatedPressable onPress={() => { hapticLight(); router.navigate('/(app)/insights'); }} scaleDown={0.97}>
+                  <AnimatedPressable onPress={() => { hapticLight(); router.navigate('/(app)/insights' as any); }} scaleDown={0.97}>
                     <Text style={styles.seeAll}>See why →</Text>
                   </AnimatedPressable>
                 </View>
@@ -939,7 +940,7 @@ export default function HomeScreen() {
             {/* Insight nudge — pattern detection (from correlations or AI fallback) */}
             {(insightNudge || topCorrelations.length > 0 || (hasLog && symptomTrends.length > 0)) && (
               <AnimatedPressable
-                onPress={() => { hapticLight(); router.navigate('/(app)/insights'); }}
+                onPress={() => { hapticLight(); router.navigate('/(app)/insights' as any); }}
                 scaleDown={0.98}
                 style={styles.insightCard}
               >
@@ -966,25 +967,6 @@ export default function HomeScreen() {
                   <Text style={[styles.seeAll, { marginTop: 6 }]}>See why →</Text>
                 </View>
               </AnimatedPressable>
-            )}
-
-            {/* Tomorrow's forecast (from AI pipeline) */}
-            {tomorrowForecast && (
-              <View style={{
-                backgroundColor: '#eff6ff',
-                borderRadius: 14,
-                padding: 14,
-                marginTop: 8,
-                borderWidth: 1,
-                borderColor: '#bfdbfe',
-              }}>
-                <Text style={{ fontSize: 13, fontWeight: '600', color: '#1e40af', marginBottom: 4 }}>
-                  🔮 Looking ahead
-                </Text>
-                <Text style={{ fontSize: 14, color: '#1e3a5f', lineHeight: 20 }}>
-                  {tomorrowForecast}
-                </Text>
-              </View>
             )}
 
             {/* Morning / Evening summary cards */}
@@ -1203,13 +1185,15 @@ export default function HomeScreen() {
                   )}
 
                   {/* Tomorrow's forecast insight */}
-                  <View style={styles.tonightInsight}>
-                    <Text style={{ fontSize: 14, color: '#047857', marginTop: 2 }}>💡</Text>
-                    <Text style={styles.tonightInsightText}>
-                      <Text style={{ fontWeight: '500', color: '#44403c' }}>Looking ahead: </Text>
-                      7+ hours of sleep tonight could push your readiness to 78 tomorrow. Your data shows early wind-downs help.
-                    </Text>
-                  </View>
+                  {tomorrowForecast ? (
+                    <View style={styles.tonightInsight}>
+                      <Text style={{ fontSize: 14, color: '#047857', marginTop: 2 }}>💡</Text>
+                      <Text style={styles.tonightInsightText}>
+                        <Text style={{ fontWeight: '500', color: '#44403c' }}>Looking ahead: </Text>
+                        {tomorrowForecast}
+                      </Text>
+                    </View>
+                  ) : null}
                 </View>
               </View>
             )}
@@ -1217,7 +1201,7 @@ export default function HomeScreen() {
             {/* Wellness Centre entry card */}
             {isToday && (
               <AnimatedPressable
-                onPress={() => { hapticMedium(); router.navigate('/(app)/wellness'); }}
+                onPress={() => { hapticMedium(); router.navigate('/(app)/wellness' as any); }}
                 scaleDown={0.97}
                 style={styles.wellnessEntryCard}
               >

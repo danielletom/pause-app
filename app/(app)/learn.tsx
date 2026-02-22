@@ -119,7 +119,7 @@ export default function LearnScreen() {
   const currentWeek = data?.week ?? 1;
   const totalDone = data?.totalDone ?? 0;
   const totalEpisodes = data?.totalEpisodes ?? 40;
-  const pct = totalEpisodes > 0 ? Math.round((totalDone / totalEpisodes) * 100) : 0;
+  const pct = totalEpisodes > 0 ? Math.min(Math.round((totalDone / totalEpisodes) * 100), 100) : 0;
 
   // Group episodes by week
   const weekMap = new Map<number, Episode[]>();

@@ -42,7 +42,7 @@ export default function PlayerScreen() {
   const audio = useAudio();
 
   const safeBack = () => {
-    if (navRef.canGoBack()) safeBack();
+    if (navRef.canGoBack()) router.back();
     else router.replace('/(app)/(tabs)' as any);
   };
 
