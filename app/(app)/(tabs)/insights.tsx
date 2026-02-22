@@ -124,7 +124,15 @@ interface LogEntry {
 // ─── Helper functions ───────────────────────────────────
 
 function formatSymptomName(name: string): string {
-  return name.replace(/_/g, ' ').replace(/([A-Z])/g, ' $1').replace(/^./, (c) => c.toUpperCase());
+  // Strip "Med " or "med_" prefix from factor names (e.g. "Med Vitamin D" → "Vitamin D")
+  let cleaned = name.replace(/^Med\s+/i, '').replace(/^med_/i, '');
+  return cleaned.replace(/_/g, ' ').replace(/([A-Z])/g, ' $1').replace(/^./, (c) => c.toUpperCase()).trim();
+}
+
+function strengthLabel(pct: number): string {
+  if (pct >= 35) return 'Strong link';
+  if (pct >= 15) return 'Moderate';
+  return 'Weak signal';
 }
 
 // (correlations and benchmarks now fetched from API — mock functions removed)
@@ -347,54 +355,67 @@ export default function InsightsScreen() {
       .slice(0, 6);
   }, [logs]);
 
-  // Derive helps/hurts — prefer AI pipeline data, fall back to local computation
+  // Derive helps/hurts with separated factor/symptom for new card design
+  interface HHEntry {
+    factorName: string;
+    symptomName: string;
+    pct: number;
+    key: string;
+    explanation?: string;
+    recommendation?: string;
+    lagDays?: number;
+    strength: string;
+  }
+
   const helpsHurts = useMemo(() => {
     // Prefer AI-enriched pipeline data when available
     if (pipelineHelpsHurts) {
       return {
         helps: pipelineHelpsHurts.helps.map((h) => ({
-          label: `${formatSymptomName(h.factor)} → ${formatSymptomName(h.symptom).toLowerCase()}`,
+          factorName: formatSymptomName(h.factor),
+          symptomName: formatSymptomName(h.symptom),
           pct: Math.round(h.strength),
           key: `${h.factor}_${h.symptom}`,
           explanation: h.explanation,
-        })).slice(0, 4),
+          strength: strengthLabel(Math.round(h.strength)),
+        })).slice(0, 4) as HHEntry[],
         hurts: pipelineHelpsHurts.hurts.map((h) => ({
-          label: `${formatSymptomName(h.factor)} → ${formatSymptomName(h.symptom).toLowerCase()}`,
+          factorName: formatSymptomName(h.factor),
+          symptomName: formatSymptomName(h.symptom),
           pct: Math.round(h.strength),
           key: `${h.factor}_${h.symptom}`,
           explanation: h.explanation,
-        })).slice(0, 4),
+          strength: strengthLabel(Math.round(h.strength)),
+        })).slice(0, 4) as HHEntry[],
       };
     }
     // Fallback: derive from raw correlations
-    const helps: { label: string; pct: number; key: string; explanation?: string }[] = [];
-    const hurts: { label: string; pct: number; key: string; explanation?: string }[] = [];
-    const bestHelps = new Map<string, { label: string; pct: number; key: string }>();
-    const bestHurts = new Map<string, { label: string; pct: number; key: string }>();
+    const bestHelps = new Map<string, HHEntry>();
+    const bestHurts = new Map<string, HHEntry>();
     for (const c of correlations) {
       const pct = Math.round(Math.abs(c.effectSizePct));
       if (pct < 10) continue;
-      const factorLabel = formatSymptomName(c.factor);
-      const symptomLabel = formatSymptomName(c.symptom).toLowerCase();
-      const label = `${factorLabel} → ${symptomLabel}`;
-      const key = `${c.factor}_${c.symptom}`;
+      const entry: HHEntry = {
+        factorName: formatSymptomName(c.factor),
+        symptomName: formatSymptomName(c.symptom),
+        pct,
+        key: `${c.factor}_${c.symptom}`,
+        explanation: c.explanation,
+        recommendation: c.recommendation,
+        lagDays: c.lagDays,
+        strength: strengthLabel(pct),
+      };
       if (c.direction === 'negative') {
         const existing = bestHelps.get(c.factor);
-        if (!existing || pct > existing.pct) {
-          bestHelps.set(c.factor, { label, pct, key });
-        }
+        if (!existing || pct > existing.pct) bestHelps.set(c.factor, entry);
       } else {
         const existing = bestHurts.get(c.factor);
-        if (!existing || pct > existing.pct) {
-          bestHurts.set(c.factor, { label, pct, key });
-        }
+        if (!existing || pct > existing.pct) bestHurts.set(c.factor, entry);
       }
     }
-    helps.push(...bestHelps.values());
-    hurts.push(...bestHurts.values());
     return {
-      helps: helps.sort((a, b) => b.pct - a.pct).slice(0, 4),
-      hurts: hurts.sort((a, b) => b.pct - a.pct).slice(0, 4),
+      helps: [...bestHelps.values()].sort((a, b) => b.pct - a.pct).slice(0, 4),
+      hurts: [...bestHurts.values()].sort((a, b) => b.pct - a.pct).slice(0, 4),
     };
   }, [correlations, pipelineHelpsHurts]);
   const sleepData = useMemo(() => computeSleepScore(logs), [logs]);
@@ -1024,55 +1045,124 @@ export default function InsightsScreen() {
               </View>
             ) : null}
 
-            {/* ─── What we've connected (correlations) ─ */}
-            {correlations.length > 0 && (
+            {/* ─── What's helping (green) ─────────── */}
+            {helpsHurts.helps.length > 0 && (
               <View style={styles.section}>
-                <View style={styles.sectionHeaderRow}>
-                  <Text style={styles.sectionTitle}>What we've connected</Text>
-                  {dataQuality !== 'strong' && (
-                    <View style={styles.qualityBadge}>
-                      <Text style={styles.qualityBadgeText}>
-                        {dataQuality === 'building' ? '📊 Building' : '📈 Moderate'}
-                      </Text>
-                    </View>
-                  )}
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                  <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#10b981' }} />
+                  <Text style={styles.sectionTitle}>What's helping</Text>
                 </View>
                 <View style={{ gap: 8 }}>
-                  {correlations.slice(0, 4).map((c, i) => {
-                    const pct = Math.round(Math.abs(c.effectSizePct));
-                    const lagLabel = c.lagDays > 0 ? ` (${c.lagDays}d lag)` : '';
-                    return (
-                      <View
-                        key={i}
-                        style={[
-                          styles.correlationCard,
-                          c.direction === 'negative' ? styles.correlationPositive : styles.correlationNegative,
-                        ]}
-                      >
-                        <Text style={styles.correlationFactor}>{c.humanLabel}</Text>
-                        <Text style={styles.correlationArrow}>
-                          {formatSymptomName(c.factor)} → {formatSymptomName(c.symptom)}{' '}
-                          <Text style={{ color: c.direction === 'negative' ? '#047857' : '#dc2626' }}>
-                            {c.direction === 'negative' ? `↓${pct}%` : `↑${pct}%`}
+                  {helpsHurts.helps.map((h) => (
+                    <View key={h.key} style={styles.helpsCardNew}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                        <View style={styles.helpsIconWrap}>
+                          <Text style={{ fontSize: 14 }}>💊</Text>
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.corrFactorName}>{h.factorName}</Text>
+                          <Text style={styles.corrDesc}>
+                            {h.symptomName} improves by{' '}
+                            <Text style={{ color: '#059669', fontWeight: '600' }}>{h.pct}%</Text>
                           </Text>
-                          {lagLabel}
-                        </Text>
-                        <Text style={styles.correlationConfidence}>
-                          Seen {c.occurrences} times · {Math.round(c.confidence * 100)}% confidence
-                        </Text>
-                        {c.explanation && (
-                          <Text style={{ fontSize: 13, color: '#44403c', marginTop: 4, lineHeight: 18 }}>
-                            {c.explanation}
-                          </Text>
-                        )}
-                        {c.recommendation && (
-                          <Text style={{ fontSize: 12, color: '#047857', marginTop: 4, fontStyle: 'italic' }}>
-                            💡 {c.recommendation}
-                          </Text>
-                        )}
+                        </View>
                       </View>
-                    );
-                  })}
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 }}>
+                        <View style={styles.corrBarBg}>
+                          <View style={[styles.corrBarFill, { width: `${Math.min(h.pct, 100)}%`, backgroundColor: '#10b981' }]} />
+                        </View>
+                        <View style={[styles.corrTag, { backgroundColor: '#ecfdf5' }]}>
+                          <Text style={[styles.corrTagText, { color: '#059669' }]}>{h.strength}</Text>
+                        </View>
+                      </View>
+                      {h.explanation && (
+                        <Text style={styles.corrExplanation}>
+                          {h.lagDays && h.lagDays > 0 ? `Takes ~${h.lagDays} day${h.lagDays > 1 ? 's' : ''} to notice. ` : ''}{h.explanation}
+                        </Text>
+                      )}
+                    </View>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            {/* ─── What's making things worse (red) ── */}
+            {helpsHurts.hurts.length > 0 && (
+              <View style={styles.section}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                  <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#ef4444' }} />
+                  <Text style={styles.sectionTitle}>What's making things worse</Text>
+                </View>
+                <View style={{ gap: 8 }}>
+                  {helpsHurts.hurts.map((h) => (
+                    <View key={h.key} style={styles.hurtsCardNew}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                        <View style={styles.hurtsIconWrap}>
+                          <Text style={{ fontSize: 14 }}>💊</Text>
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.corrFactorName}>{h.factorName}</Text>
+                          <Text style={styles.corrDesc}>
+                            {h.symptomName} increases by{' '}
+                            <Text style={{ color: '#dc2626', fontWeight: '600' }}>{h.pct}%</Text>
+                          </Text>
+                        </View>
+                      </View>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 }}>
+                        <View style={[styles.corrBarBg, { backgroundColor: '#fef2f2' }]}>
+                          <View style={[styles.corrBarFill, { width: `${Math.min(h.pct, 100)}%`, backgroundColor: '#ef4444' }]} />
+                        </View>
+                        <View style={[styles.corrTag, { backgroundColor: '#fef2f2' }]}>
+                          <Text style={[styles.corrTagText, { color: '#dc2626' }]}>{h.strength}</Text>
+                        </View>
+                      </View>
+                      {h.recommendation && (
+                        <View style={styles.corrTipCard}>
+                          <Text style={{ fontSize: 14, marginTop: 1 }}>💡</Text>
+                          <Text style={styles.corrTipText}>{h.recommendation}</Text>
+                        </View>
+                      )}
+                      {!h.recommendation && h.explanation && (
+                        <Text style={styles.corrExplanation}>{h.explanation}</Text>
+                      )}
+                    </View>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            {/* ─── It's complicated (amber) ────────── */}
+            {contradictions.length > 0 && (
+              <View style={styles.section}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                  <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#f59e0b' }} />
+                  <Text style={styles.sectionTitle}>It's complicated</Text>
+                </View>
+                <View style={{ gap: 8 }}>
+                  {contradictions.map((c, i) => (
+                    <View key={i} style={styles.complicatedCard}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                        <View style={styles.complicatedIconWrap}>
+                          <Text style={{ fontSize: 14 }}>💊</Text>
+                        </View>
+                        <View>
+                          <Text style={styles.corrFactorName}>{formatSymptomName(c.factor)}</Text>
+                          <Text style={{ fontSize: 12, color: '#78716c', marginTop: 2 }}>Helps some things, hurts others</Text>
+                        </View>
+                      </View>
+                      <View style={{ flexDirection: 'row', gap: 8, marginBottom: 10 }}>
+                        <View style={styles.complicatedHelpsBox}>
+                          <Text style={{ fontSize: 11, fontWeight: '600', color: '#059669', marginBottom: 4 }}>✓ Helps</Text>
+                          <Text style={{ fontSize: 12, fontWeight: '500', color: '#1c1917' }}>{formatSymptomName(c.helpsSymptom)}</Text>
+                        </View>
+                        <View style={styles.complicatedHurtsBox}>
+                          <Text style={{ fontSize: 11, fontWeight: '600', color: '#dc2626', marginBottom: 4 }}>✗ Hurts</Text>
+                          <Text style={{ fontSize: 12, fontWeight: '500', color: '#1c1917' }}>{formatSymptomName(c.hurtsSymptom)}</Text>
+                        </View>
+                      </View>
+                      <Text style={{ fontSize: 12, color: '#78716c', lineHeight: 17 }}>{c.explanation}</Text>
+                    </View>
+                  ))}
                 </View>
               </View>
             )}
@@ -1135,94 +1225,6 @@ export default function InsightsScreen() {
                 </View>
               )}
             </View>
-
-            {/* ─── What helps vs what hurts ─────────── */}
-            {(helpsHurts.helps.length > 0 || helpsHurts.hurts.length > 0) && (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>What helps vs. what hurts</Text>
-                <View style={styles.helpsHurtsRow}>
-                  {/* Helps */}
-                  <View style={[styles.helpsHurtsCard, styles.helpsCard]}>
-                    <Text style={styles.helpsHurtsLabel}>Helps ↓</Text>
-                    {helpsHurts.helps.length > 0 ? helpsHurts.helps.map((h) => (
-                      <View key={h.key} style={styles.hhItem}>
-                        <View style={styles.hhRow}>
-                          <Text style={styles.hhName} numberOfLines={2}>{h.label}</Text>
-                          <Text style={[styles.hhPct, { color: '#047857' }]}>{h.pct}%</Text>
-                        </View>
-                        <View style={styles.hhBarBg}>
-                          <View style={[styles.hhBarFill, { width: `${Math.min(h.pct, 100)}%`, backgroundColor: '#059669' }]} />
-                        </View>
-                        {'explanation' in h && h.explanation ? (
-                          <Text style={{ fontSize: 11, color: '#78716c', marginTop: 3, lineHeight: 15 }} numberOfLines={2}>{h.explanation}</Text>
-                        ) : null}
-                      </View>
-                    )) : (
-                      <Text style={styles.hhEmpty}>Still looking for what helps you</Text>
-                    )}
-                  </View>
-                  {/* Hurts */}
-                  <View style={[styles.helpsHurtsCard, styles.hurtsCard]}>
-                    <Text style={styles.helpsHurtsLabel}>Hurts ↑</Text>
-                    {helpsHurts.hurts.length > 0 ? helpsHurts.hurts.map((h) => (
-                      <View key={h.key} style={styles.hhItem}>
-                        <View style={styles.hhRow}>
-                          <Text style={styles.hhName} numberOfLines={2}>{h.label}</Text>
-                          <Text style={[styles.hhPct, { color: '#dc2626' }]}>{h.pct}%</Text>
-                        </View>
-                        <View style={styles.hhBarBg}>
-                          <View style={[styles.hhBarFill, { width: `${Math.min(h.pct, 100)}%`, backgroundColor: '#dc2626' }]} />
-                        </View>
-                        {'explanation' in h && h.explanation ? (
-                          <Text style={{ fontSize: 11, color: '#78716c', marginTop: 3, lineHeight: 15 }} numberOfLines={2}>{h.explanation}</Text>
-                        ) : null}
-                      </View>
-                    )) : (
-                      <Text style={styles.hhEmpty}>Still looking for triggers</Text>
-                    )}
-                  </View>
-                </View>
-              </View>
-            )}
-
-            {/* ─── Contradictions (things that cut both ways) ─── */}
-            {contradictions.length > 0 && (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Things that cut both ways</Text>
-                <View style={{ gap: 8 }}>
-                  {contradictions.map((c, i) => (
-                    <View key={i} style={{
-                      backgroundColor: '#fefce8',
-                      borderRadius: 12,
-                      padding: 14,
-                      borderWidth: 1,
-                      borderColor: '#fde68a',
-                    }}>
-                      <Text style={{ fontSize: 14, fontWeight: '600', color: '#92400e', marginBottom: 4 }}>
-                        {formatSymptomName(c.factor)}
-                      </Text>
-                      <View style={{ flexDirection: 'row', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                          <Text style={{ color: '#047857' }}>✓</Text>
-                          <Text style={{ fontSize: 13, color: '#44403c' }}>
-                            Helps {c.helpsSymptom.replace(/_/g, ' ')}
-                          </Text>
-                        </View>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                          <Text style={{ color: '#dc2626' }}>✗</Text>
-                          <Text style={{ fontSize: 13, color: '#44403c' }}>
-                            Hurts {c.hurtsSymptom.replace(/_/g, ' ')}
-                          </Text>
-                        </View>
-                      </View>
-                      <Text style={{ fontSize: 13, color: '#78716c', lineHeight: 18 }}>
-                        {c.explanation}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-              </View>
-            )}
 
             {/* ─── Sleep Analysis ──────────────────── */}
             {sleepData && (
@@ -1575,6 +1577,123 @@ const styles = StyleSheet.create({
   hhBarBg: { height: 4, backgroundColor: 'rgba(0,0,0,0.06)', borderRadius: 2 },
   hhBarFill: { height: 4, borderRadius: 2 },
   hhEmpty: { fontSize: 14, color: '#78716c', fontStyle: 'italic' },
+
+  // ═══ New correlation cards (mockup design) ═══
+  helpsCardNew: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 14,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: '#d1fae5',
+  },
+  hurtsCardNew: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 14,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: '#fecaca',
+  },
+  helpsIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: '#ecfdf5',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  hurtsIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: '#fef2f2',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  corrFactorName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1c1917',
+  },
+  corrDesc: {
+    fontSize: 12,
+    color: '#6b7280',
+    marginTop: 2,
+  },
+  corrBarBg: {
+    flex: 1,
+    height: 4,
+    backgroundColor: '#ecfdf5',
+    borderRadius: 99,
+    overflow: 'hidden',
+  },
+  corrBarFill: {
+    height: 4,
+    borderRadius: 99,
+  },
+  corrTag: {
+    borderRadius: 99,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+  },
+  corrTagText: {
+    fontSize: 11,
+    fontWeight: '500',
+  },
+  corrExplanation: {
+    fontSize: 12,
+    color: '#78716c',
+    marginTop: 8,
+    lineHeight: 17,
+  },
+  corrTipCard: {
+    backgroundColor: '#fffbeb',
+    borderRadius: 10,
+    padding: 10,
+    paddingHorizontal: 12,
+    marginTop: 10,
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'flex-start',
+  },
+  corrTipText: {
+    fontSize: 12,
+    color: '#92400e',
+    fontWeight: '500',
+    lineHeight: 17,
+    flex: 1,
+  },
+  complicatedCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 14,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: '#fde68a',
+  },
+  complicatedIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: '#fffbeb',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  complicatedHelpsBox: {
+    flex: 1,
+    backgroundColor: '#ecfdf5',
+    borderRadius: 10,
+    padding: 10,
+    paddingHorizontal: 12,
+  },
+  complicatedHurtsBox: {
+    flex: 1,
+    backgroundColor: '#fef2f2',
+    borderRadius: 10,
+    padding: 10,
+    paddingHorizontal: 12,
+  },
 
   // Sleep analysis
   sleepCard: {
