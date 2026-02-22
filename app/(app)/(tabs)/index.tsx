@@ -188,6 +188,7 @@ export default function HomeScreen() {
   const [serverReadiness, setServerReadiness] = useState<number | null>(null);
   const [readinessComponents, setReadinessComponents] = useState<Record<string, number> | null>(null);
   const [insightNudge, setInsightNudge] = useState<{ title: string; body: string } | null>(null);
+  const [tomorrowForecast, setTomorrowForecast] = useState<string | null>(null);
   const [narrative, setNarrative] = useState<string | null>(null);
   const [topCorrelations, setTopCorrelations] = useState<{ factor: string; symptom: string; direction: string; effectSizePct: number; humanLabel: string }[]>([]);
   const [weekTrends, setWeekTrends] = useState<Record<string, { thisWeek: number; lastWeek: number }>>({});
@@ -264,6 +265,7 @@ export default function HomeScreen() {
         if (homeData.readiness != null) setServerReadiness(homeData.readiness);
         if (homeData.readinessComponents) setReadinessComponents(homeData.readinessComponents);
         if (homeData.insightNudge) setInsightNudge(homeData.insightNudge);
+        if (homeData.tomorrowForecast) setTomorrowForecast(homeData.tomorrowForecast);
         if (homeData.narrative) setNarrative(homeData.narrative);
         if (homeData.topCorrelations) setTopCorrelations(homeData.topCorrelations);
       }
@@ -964,6 +966,25 @@ export default function HomeScreen() {
                   <Text style={[styles.seeAll, { marginTop: 6 }]}>See why →</Text>
                 </View>
               </AnimatedPressable>
+            )}
+
+            {/* Tomorrow's forecast (from AI pipeline) */}
+            {tomorrowForecast && (
+              <View style={{
+                backgroundColor: '#eff6ff',
+                borderRadius: 14,
+                padding: 14,
+                marginTop: 8,
+                borderWidth: 1,
+                borderColor: '#bfdbfe',
+              }}>
+                <Text style={{ fontSize: 13, fontWeight: '600', color: '#1e40af', marginBottom: 4 }}>
+                  🔮 Looking ahead
+                </Text>
+                <Text style={{ fontSize: 14, color: '#1e3a5f', lineHeight: 20 }}>
+                  {tomorrowForecast}
+                </Text>
+              </View>
             )}
 
             {/* Morning / Evening summary cards */}

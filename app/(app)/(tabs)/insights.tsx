@@ -50,6 +50,25 @@ interface CorrelationItem {
   occurrences: number;
   lagDays: number;
   humanLabel: string;
+  // Pipeline enrichments (optional — present when AI pipeline has run)
+  explanation?: string;
+  recommendation?: string;
+  mechanism?: string;
+  caveat?: string;
+}
+
+interface PipelineHelpsHurtsEntry {
+  factor: string;
+  symptom: string;
+  explanation: string;
+  strength: number;
+}
+
+interface ContradictionEntry {
+  factor: string;
+  helpsSymptom: string;
+  hurtsSymptom: string;
+  explanation: string;
 }
 
 interface CorrelationsResponse {
@@ -57,6 +76,12 @@ interface CorrelationsResponse {
   lastComputed: string | null;
   dataQuality: 'building' | 'moderate' | 'strong';
   totalFound: number;
+  // Pipeline enrichments (optional)
+  helpsHurts?: {
+    helps: PipelineHelpsHurtsEntry[];
+    hurts: PipelineHelpsHurtsEntry[];
+  };
+  contradictions?: ContradictionEntry[];
 }
 
 interface BenchmarkSymptom {
@@ -223,6 +248,9 @@ export default function InsightsScreen() {
   // API-backed state for correlations
   const [correlations, setCorrelations] = useState<CorrelationItem[]>([]);
   const [dataQuality, setDataQuality] = useState<string>('building');
+  // Pipeline enrichments from naturopath agent
+  const [pipelineHelpsHurts, setPipelineHelpsHurts] = useState<CorrelationsResponse['helpsHurts'] | null>(null);
+  const [contradictions, setContradictions] = useState<ContradictionEntry[]>([]);
 
   // API-backed state for benchmarks
   const [benchmarkData, setBenchmarkData] = useState<BenchmarksResponse | null>(null);
@@ -263,8 +291,13 @@ export default function InsightsScreen() {
       if (correlationsData?.correlations) {
         setCorrelations(correlationsData.correlations);
         setDataQuality(correlationsData.dataQuality || 'building');
+        // Pipeline enrichments (optional)
+        setPipelineHelpsHurts(correlationsData.helpsHurts ?? null);
+        setContradictions(correlationsData.contradictions ?? []);
       } else {
         setCorrelations([]);
+        setPipelineHelpsHurts(null);
+        setContradictions([]);
       }
 
       // Set benchmark data from API
@@ -314,11 +347,28 @@ export default function InsightsScreen() {
       .slice(0, 6);
   }, [logs]);
 
-  // Derive helps/hurts from API correlations (positive direction = helps, negative = hurts)
+  // Derive helps/hurts — prefer AI pipeline data, fall back to local computation
   const helpsHurts = useMemo(() => {
-    const helps: { label: string; pct: number; key: string }[] = [];
-    const hurts: { label: string; pct: number; key: string }[] = [];
-    // Track best correlation per factor within each direction to avoid duplicates
+    // Prefer AI-enriched pipeline data when available
+    if (pipelineHelpsHurts) {
+      return {
+        helps: pipelineHelpsHurts.helps.map((h) => ({
+          label: `${formatSymptomName(h.factor)} → ${formatSymptomName(h.symptom).toLowerCase()}`,
+          pct: Math.round(h.strength),
+          key: `${h.factor}_${h.symptom}`,
+          explanation: h.explanation,
+        })).slice(0, 4),
+        hurts: pipelineHelpsHurts.hurts.map((h) => ({
+          label: `${formatSymptomName(h.factor)} → ${formatSymptomName(h.symptom).toLowerCase()}`,
+          pct: Math.round(h.strength),
+          key: `${h.factor}_${h.symptom}`,
+          explanation: h.explanation,
+        })).slice(0, 4),
+      };
+    }
+    // Fallback: derive from raw correlations
+    const helps: { label: string; pct: number; key: string; explanation?: string }[] = [];
+    const hurts: { label: string; pct: number; key: string; explanation?: string }[] = [];
     const bestHelps = new Map<string, { label: string; pct: number; key: string }>();
     const bestHurts = new Map<string, { label: string; pct: number; key: string }>();
     for (const c of correlations) {
@@ -346,7 +396,7 @@ export default function InsightsScreen() {
       helps: helps.sort((a, b) => b.pct - a.pct).slice(0, 4),
       hurts: hurts.sort((a, b) => b.pct - a.pct).slice(0, 4),
     };
-  }, [correlations]);
+  }, [correlations, pipelineHelpsHurts]);
   const sleepData = useMemo(() => computeSleepScore(logs), [logs]);
   const weeklyStory = useMemo(() => computeWeeklyStory(logs), [logs]);
 
@@ -366,7 +416,7 @@ export default function InsightsScreen() {
       const factorLabel = formatSymptomName(best.factor).toLowerCase();
       const symptomLabel = formatSymptomName(best.symptom).toLowerCase();
       const pct = Math.round(Math.abs(best.effectSizePct));
-      return `On days when you have ${factorLabel}, ${symptomLabel} drops by ${pct}pp. Worth trying this week.`;
+      return `On days when you have ${factorLabel}, ${symptomLabel} drops by ${pct}%. Worth trying this week.`;
     }
 
     // Fallback: strongest "hurts" correlation
@@ -999,13 +1049,23 @@ export default function InsightsScreen() {
                         <Text style={styles.correlationArrow}>
                           {formatSymptomName(c.factor)} → {formatSymptomName(c.symptom)}{' '}
                           <Text style={{ color: c.direction === 'negative' ? '#047857' : '#dc2626' }}>
-                            {c.direction === 'negative' ? `↓${pct}pp` : `↑${pct}pp`}
+                            {c.direction === 'negative' ? `↓${pct}%` : `↑${pct}%`}
                           </Text>
                           {lagLabel}
                         </Text>
                         <Text style={styles.correlationConfidence}>
                           Seen {c.occurrences} times · {Math.round(c.confidence * 100)}% confidence
                         </Text>
+                        {c.explanation && (
+                          <Text style={{ fontSize: 13, color: '#44403c', marginTop: 4, lineHeight: 18 }}>
+                            {c.explanation}
+                          </Text>
+                        )}
+                        {c.recommendation && (
+                          <Text style={{ fontSize: 12, color: '#047857', marginTop: 4, fontStyle: 'italic' }}>
+                            💡 {c.recommendation}
+                          </Text>
+                        )}
                       </View>
                     );
                   })}
@@ -1084,11 +1144,14 @@ export default function InsightsScreen() {
                       <View key={h.key} style={styles.hhItem}>
                         <View style={styles.hhRow}>
                           <Text style={styles.hhName} numberOfLines={2}>{h.label}</Text>
-                          <Text style={[styles.hhPct, { color: '#047857' }]}>{h.pct}pp</Text>
+                          <Text style={[styles.hhPct, { color: '#047857' }]}>{h.pct}%</Text>
                         </View>
                         <View style={styles.hhBarBg}>
                           <View style={[styles.hhBarFill, { width: `${Math.min(h.pct, 100)}%`, backgroundColor: '#059669' }]} />
                         </View>
+                        {'explanation' in h && h.explanation ? (
+                          <Text style={{ fontSize: 11, color: '#78716c', marginTop: 3, lineHeight: 15 }} numberOfLines={2}>{h.explanation}</Text>
+                        ) : null}
                       </View>
                     )) : (
                       <Text style={styles.hhEmpty}>Still looking for what helps you</Text>
@@ -1101,16 +1164,58 @@ export default function InsightsScreen() {
                       <View key={h.key} style={styles.hhItem}>
                         <View style={styles.hhRow}>
                           <Text style={styles.hhName} numberOfLines={2}>{h.label}</Text>
-                          <Text style={[styles.hhPct, { color: '#dc2626' }]}>{h.pct}pp</Text>
+                          <Text style={[styles.hhPct, { color: '#dc2626' }]}>{h.pct}%</Text>
                         </View>
                         <View style={styles.hhBarBg}>
                           <View style={[styles.hhBarFill, { width: `${Math.min(h.pct, 100)}%`, backgroundColor: '#dc2626' }]} />
                         </View>
+                        {'explanation' in h && h.explanation ? (
+                          <Text style={{ fontSize: 11, color: '#78716c', marginTop: 3, lineHeight: 15 }} numberOfLines={2}>{h.explanation}</Text>
+                        ) : null}
                       </View>
                     )) : (
                       <Text style={styles.hhEmpty}>Still looking for triggers</Text>
                     )}
                   </View>
+                </View>
+              </View>
+            )}
+
+            {/* ─── Contradictions (things that cut both ways) ─── */}
+            {contradictions.length > 0 && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Things that cut both ways</Text>
+                <View style={{ gap: 8 }}>
+                  {contradictions.map((c, i) => (
+                    <View key={i} style={{
+                      backgroundColor: '#fefce8',
+                      borderRadius: 12,
+                      padding: 14,
+                      borderWidth: 1,
+                      borderColor: '#fde68a',
+                    }}>
+                      <Text style={{ fontSize: 14, fontWeight: '600', color: '#92400e', marginBottom: 4 }}>
+                        {formatSymptomName(c.factor)}
+                      </Text>
+                      <View style={{ flexDirection: 'row', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                          <Text style={{ color: '#047857' }}>✓</Text>
+                          <Text style={{ fontSize: 13, color: '#44403c' }}>
+                            Helps {c.helpsSymptom.replace(/_/g, ' ')}
+                          </Text>
+                        </View>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                          <Text style={{ color: '#dc2626' }}>✗</Text>
+                          <Text style={{ fontSize: 13, color: '#44403c' }}>
+                            Hurts {c.hurtsSymptom.replace(/_/g, ' ')}
+                          </Text>
+                        </View>
+                      </View>
+                      <Text style={{ fontSize: 13, color: '#78716c', lineHeight: 18 }}>
+                        {c.explanation}
+                      </Text>
+                    </View>
+                  ))}
                 </View>
               </View>
             )}
