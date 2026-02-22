@@ -214,10 +214,11 @@ export default function WellnessScreen() {
   const totalDone = programProgress?.totalDone ?? 0;
   const pct = programProgress ? Math.min(Math.round((totalDone / totalEpisodes) * 100), 100) : 0;
   const weekTitle = programProgress?.weekTitle || 'Week 1: Understanding Menopause';
+  const totalDay = (programProgress as any)?.totalDay ?? 1;
   const progressLabel = programProgress
     ? totalDone === 0
       ? 'Ready to begin your journey'
-      : `Day ${programProgress.day} of 56 · ${totalDone} of ${totalEpisodes} lessons done`
+      : `Day ${totalDay} of ${totalEpisodes} · ${totalDone} lessons done`
     : 'Ready to begin';
 
   return (
