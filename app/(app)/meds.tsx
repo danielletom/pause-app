@@ -40,17 +40,16 @@ interface MedLog {
   taken: boolean;
 }
 
-type TabKey = 'supplements' | 'current' | 'hrt' | 'labs';
+type TabKey = 'supplements' | 'current' | 'hrt';
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: 'current', label: 'Current' },
   { key: 'supplements', label: 'Supplements' },
   { key: 'hrt', label: 'HRT' },
-  { key: 'labs', label: 'Labs' },
 ];
 
 const TIME_OPTIONS = ['Morning', 'Afternoon', 'Evening', 'Bedtime', 'Custom'];
-const FREQUENCY_OPTIONS = ['Daily', 'Twice daily', 'Weekly', 'Every 2 weeks', 'Monthly', 'As needed', 'Custom'];
+const FREQUENCY_OPTIONS = ['Daily', 'Twice daily', 'Weekly', 'Every 2 weeks', 'Monthly', 'Custom'];
 const TYPE_OPTIONS = [
   { key: 'hrt', label: 'HRT' },
   { key: 'supplement', label: 'Supplement' },
@@ -362,17 +361,6 @@ export default function MedsScreen() {
                   </View>
                 )}
 
-                {/* Personalized upsell nudge */}
-                <View style={styles.upsellCard}>
-                  <Text style={styles.upsellIcon}>✦</Text>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.upsellTitle}>Personalized for you</Text>
-                    <Text style={styles.upsellDesc}>
-                      Women in your profile report 40-60% fewer hot flashes after 8 weeks with the Pause supplement.
-                    </Text>
-                    <Text style={styles.upsellLink}>See the research →</Text>
-                  </View>
-                </View>
               </View>
             )}
 
@@ -461,7 +449,7 @@ export default function MedsScreen() {
                   style={styles.addMedBtn}
                 >
                   <Ionicons name="add" size={18} color="#78716c" />
-                  <Text style={styles.addMedBtnText}>Add medication</Text>
+                  <Text style={styles.addMedBtnText}>Add</Text>
                 </AnimatedPressable>
               </View>
             )}
@@ -529,48 +517,6 @@ export default function MedsScreen() {
               </View>
             )}
 
-            {/* ─── Labs Tab ─── */}
-            {activeTab === 'labs' && (
-              <View style={styles.tabContent}>
-                {/* Upload options */}
-                <View style={[styles.card, { borderWidth: 1, borderColor: '#e7e5e4' }]}>
-                  <View style={styles.labsHeaderRow}>
-                    <Text style={styles.cardTitle}>Add lab results</Text>
-                    <View style={styles.premiumBadge}>
-                      <Text style={styles.premiumBadgeText}>Premium</Text>
-                    </View>
-                  </View>
-                  <View style={styles.uploadGrid}>
-                    <TouchableOpacity style={styles.uploadOption} activeOpacity={0.8}>
-                      <View style={styles.uploadIconCircle}>
-                        <Ionicons name="camera-outline" size={22} color="#ffffff" />
-                      </View>
-                      <Text style={styles.uploadOptionTitle}>Scan photo</Text>
-                      <Text style={styles.uploadOptionDesc}>Take a photo of your lab sheet</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.uploadOption} activeOpacity={0.8}>
-                      <View style={styles.uploadIconCircle}>
-                        <Ionicons name="document-outline" size={22} color="#ffffff" />
-                      </View>
-                      <Text style={styles.uploadOptionTitle}>Upload PDF</Text>
-                      <Text style={styles.uploadOptionDesc}>Import from your files</Text>
-                    </TouchableOpacity>
-                  </View>
-                  <Text style={styles.uploadNote}>We'll automatically parse your results</Text>
-                </View>
-
-                {/* Placeholder for recent labs */}
-                <View style={styles.emptyState}>
-                  <View style={styles.emptyIcon}>
-                    <Ionicons name="flask-outline" size={36} color="#78716c" />
-                  </View>
-                  <Text style={styles.emptyTitle}>No lab results yet</Text>
-                  <Text style={styles.emptyDesc}>
-                    Upload your lab work to track hormones, vitamins, and key markers over time
-                  </Text>
-                </View>
-              </View>
-            )}
           </>
         )}
       </ScrollView>

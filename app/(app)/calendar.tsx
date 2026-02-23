@@ -317,7 +317,7 @@ export default function CalendarScreen() {
                     <Text style={styles.emptyDayText}>No check-ins logged</Text>
                     {(isPast || isToday) && (
                       <AnimatedPressable
-                        onPress={() => { hapticLight(); router.navigate('/(app)/log'); }}
+                        onPress={() => { hapticLight(); router.navigate('/(app)/log' as any); }}
                         scaleDown={0.97}
                         style={styles.logNowBtn}
                       >

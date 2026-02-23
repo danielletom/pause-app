@@ -112,23 +112,35 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
 
   const togglePlayPause = useCallback(async () => {
     if (!soundRef.current) return;
-    if (isPlaying) {
-      await soundRef.current.pauseAsync();
-    } else {
-      await soundRef.current.playAsync();
+    try {
+      if (isPlaying) {
+        await soundRef.current.pauseAsync();
+      } else {
+        await soundRef.current.playAsync();
+      }
+    } catch (err) {
+      console.warn('togglePlayPause error (sound may have been unloaded):', err);
     }
   }, [isPlaying]);
 
   const seekBy = useCallback(async (seconds: number) => {
     if (!soundRef.current) return;
-    const newPos = Math.max(0, Math.min(position + seconds * 1000, duration));
-    await soundRef.current.setPositionAsync(newPos);
+    try {
+      const newPos = Math.max(0, Math.min(position + seconds * 1000, duration));
+      await soundRef.current.setPositionAsync(newPos);
+    } catch (err) {
+      console.warn('seekBy error:', err);
+    }
   }, [position, duration]);
 
   const seekTo = useCallback(async (positionMs: number) => {
     if (!soundRef.current) return;
-    const clamped = Math.max(0, Math.min(positionMs, duration));
-    await soundRef.current.setPositionAsync(clamped);
+    try {
+      const clamped = Math.max(0, Math.min(positionMs, duration));
+      await soundRef.current.setPositionAsync(clamped);
+    } catch (err) {
+      console.warn('seekTo error:', err);
+    }
   }, [duration]);
 
   const stop = useCallback(async () => {

@@ -18,18 +18,11 @@ import { apiRequest } from '@/lib/api';
 const CONTENT_TABS = [
   { key: 'all', label: 'All' },
   { key: 'lessons', label: 'Lessons' },
-  { key: 'medication', label: 'Medication' },
+  { key: 'meditations', label: 'Meditations' },
   { key: 'guides', label: 'Guides' },
   { key: 'recipes', label: 'Recipes' },
 ];
 
-/* ─── Focused Programs (static — these are curated program entries) ── */
-const FOCUSED_PROGRAMS = [
-  { title: 'Better Sleep', icon: '☽', bgColor: '#e0e7ff', iconColor: '#6366f1' },
-  { title: 'Hot Flash Relief', icon: '❄', bgColor: '#ccfbf1', iconColor: '#0f766e' },
-  { title: 'Mood & Calm', icon: '◉', bgColor: '#d1fae5', iconColor: '#047857' },
-  { title: 'Movement', icon: '♡', bgColor: '#ffe4e6', iconColor: '#be123c' },
-];
 
 /* ─── Visual mapping for content cards (category → colors/icons) ── */
 const CATEGORY_STYLES: Record<string, { icon: string; bgColor: string; iconColor: string }> = {
@@ -213,15 +206,20 @@ export default function WellnessScreen() {
   const gridLessons = allLessons.slice(6, 10);
 
   const showLessons = activeTab === 'all' || activeTab === 'lessons';
-  const showMedication = activeTab === 'all' || activeTab === 'medication';
+  const showMeditation = activeTab === 'all' || activeTab === 'meditations';
   const showGuides = activeTab === 'all' || activeTab === 'guides';
   const showRecipes = activeTab === 'all' || activeTab === 'recipes';
 
-  const pct = programProgress ? Math.round((programProgress.totalDone / 40) * 100) : 0;
-  const weekTitle = programProgress?.weekTitle || 'Week 2: Sleep & Night Sweats';
+  const totalEpisodes = (programProgress as any)?.totalEpisodes || 40;
+  const totalDone = programProgress?.totalDone ?? 0;
+  const pct = programProgress ? Math.min(Math.round((totalDone / totalEpisodes) * 100), 100) : 0;
+  const weekTitle = programProgress?.weekTitle || 'Week 1: Understanding Menopause';
+  const totalDay = (programProgress as any)?.totalDay ?? 1;
   const progressLabel = programProgress
-    ? `Day ${programProgress.day} of 56 · ${programProgress.totalDone} of 40 lessons done`
-    : 'Ready to begin · 40 lessons';
+    ? totalDone === 0
+      ? 'Ready to begin your journey'
+      : `Day ${totalDay} of ${totalEpisodes} · ${totalDone} lessons done`
+    : 'Ready to begin';
 
   return (
     <SafeAreaView style={styles.container}>
@@ -387,33 +385,31 @@ export default function WellnessScreen() {
           </View>
         )}
 
-        {/* ── Medication & Supplements ── */}
-        {showMedication && (
+        {/* ── Meditations ── */}
+        {showMeditation && (
           <View style={styles.sectionBlock}>
             <View style={styles.sectionHeaderRow}>
-              <Text style={styles.sectionLabel}>Medication & Supplements</Text>
+              <Text style={styles.sectionLabel}>Meditations</Text>
               <Text style={styles.sectionCount}>
-                {medicationArticles.length > 0 ? `${medicationArticles.length} articles` : 'Loading...'}
+                {meditations.length > 0 ? `${meditations.length} meditations` : 'Loading...'}
               </Text>
             </View>
             {contentLoading ? (
               <ActivityIndicator size="small" color="#78716c" style={{ marginVertical: 20 }} />
-            ) : medicationArticles.length === 0 ? (
+            ) : meditations.length === 0 ? (
               <View style={styles.emptyState}>
-                <Text style={styles.emptyText}>Medication articles coming soon</Text>
+                <Text style={styles.emptyText}>Meditations coming soon</Text>
               </View>
             ) : (
               <View style={{ gap: 8 }}>
-                {medicationArticles.map((a) => {
+                {meditations.map((a) => {
                   const style = getCategoryStyle(a.category);
-                  const tagLabel = (a.tags as string[] | null)?.[0] || a.category || '';
                   return (
                     <AnimatedPressable
                       key={a.id}
                       onPress={() => {
                         hapticLight();
-                        const dest = isAudioContent(a) ? '/(app)/player' : '/(app)/article';
-                        router.push({ pathname: dest as any, params: { id: a.id, source: 'content' } });
+                        router.push({ pathname: '/(app)/player' as any, params: { id: a.id, source: 'content' } });
                       }}
                       scaleDown={0.97}
                       style={styles.medCard}
@@ -425,11 +421,6 @@ export default function WellnessScreen() {
                         <Text style={styles.medTitle} numberOfLines={2}>{a.title}</Text>
                         <Text style={styles.medDur}>{durationText(a.durationMinutes, a.format)}</Text>
                       </View>
-                      {tagLabel ? (
-                        <View style={styles.medTagBadge}>
-                          <Text style={styles.medTagText}>{tagLabel}</Text>
-                        </View>
-                      ) : null}
                     </AnimatedPressable>
                   );
                 })}
@@ -538,25 +529,6 @@ export default function WellnessScreen() {
           </View>
         )}
 
-        {/* ── Focused Programs — 2x2 grid ── */}
-        <View style={styles.sectionBlock}>
-          <Text style={styles.sectionLabel}>Focused programs</Text>
-          <View style={[styles.grid, { marginTop: 8 }]}>
-            {FOCUSED_PROGRAMS.map((p) => (
-              <AnimatedPressable
-                key={p.title}
-                onPress={() => { hapticLight(); router.push('/(app)/learn' as any); }}
-                scaleDown={0.97}
-                style={styles.focusedCard}
-              >
-                <View style={[styles.focusedIcon, { backgroundColor: p.bgColor }]}>
-                  <Text style={{ fontSize: 14, color: p.iconColor }}>{p.icon}</Text>
-                </View>
-                <Text style={styles.focusedTitle}>{p.title}</Text>
-              </AnimatedPressable>
-            ))}
-          </View>
-        </View>
       </ScrollView>
     </SafeAreaView>
   );

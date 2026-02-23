@@ -58,7 +58,7 @@ export default function DoneScreen() {
   };
 
   const handleStart = () => {
-    router.replace('/(app)');
+    router.replace('/(app)' as any);
   };
 
   return (

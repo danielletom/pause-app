@@ -6,10 +6,15 @@ import {
   ScrollView,
   StyleSheet,
   TextInput,
+  Image,
+  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useAuth, useUser } from '@clerk/clerk-expo';
+import * as ImagePicker from 'expo-image-picker';
 import AnimatedPressable from '@/components/AnimatedPressable';
 import { hapticLight, hapticSelection, hapticSuccess } from '@/lib/haptics';
+import { apiRequest } from '@/lib/api';
 import BackButton from '@/components/BackButton';
 
 const TABS = [
@@ -48,16 +53,92 @@ const IMPORTANCE_OPTIONS: [string, string][] = [
 
 export default function HelpFeedbackScreen() {
   const router = useRouter();
+  const { getToken } = useAuth();
+  const { user } = useUser();
   const [tab, setTab] = useState<'help' | 'feature'>('help');
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
   const [category, setCategory] = useState('App issue');
   const [description, setDescription] = useState('');
+  const [screenshot, setScreenshot] = useState<string | null>(null);
 
   const [featureSubmitted, setFeatureSubmitted] = useState(false);
+  const [featureSubmitting, setFeatureSubmitting] = useState(false);
   const [featureText, setFeatureText] = useState('');
   const [featureCategory, setFeatureCategory] = useState('Tracking');
   const [importance, setImportance] = useState('important');
+
+  const pickScreenshot = async () => {
+    hapticLight();
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        quality: 0.7,
+        allowsEditing: false,
+      });
+      if (!result.canceled && result.assets[0]) {
+        setScreenshot(result.assets[0].uri);
+      }
+    } catch {
+      // Non-critical
+    }
+  };
+
+  const handleSupportSubmit = async () => {
+    if (!description.trim()) {
+      Alert.alert('Please describe your issue', 'Tell us what happened so we can help.');
+      return;
+    }
+    try {
+      setSubmitting(true);
+      hapticSuccess();
+      const token = await getToken();
+      await apiRequest('/api/support', token, {
+        method: 'POST',
+        body: JSON.stringify({
+          type: 'support',
+          category,
+          description: description.trim(),
+          email: user?.primaryEmailAddress?.emailAddress,
+          hasScreenshot: !!screenshot,
+        }),
+      });
+      setSubmitted(true);
+    } catch {
+      // Even if API fails, show success — support email is the fallback
+      setSubmitted(true);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleFeatureSubmit = async () => {
+    if (!featureText.trim()) {
+      Alert.alert('Please describe your idea', "Tell us what you'd like to see in Pause.");
+      return;
+    }
+    try {
+      setFeatureSubmitting(true);
+      hapticSuccess();
+      const token = await getToken();
+      await apiRequest('/api/support', token, {
+        method: 'POST',
+        body: JSON.stringify({
+          type: 'feature_request',
+          category: featureCategory,
+          description: featureText.trim(),
+          importance,
+          email: user?.primaryEmailAddress?.emailAddress,
+        }),
+      });
+      setFeatureSubmitted(true);
+    } catch {
+      setFeatureSubmitted(true);
+    } finally {
+      setFeatureSubmitting(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -150,17 +231,29 @@ export default function HelpFeedbackScreen() {
                 />
 
                 {/* Screenshot attach */}
-                <View style={styles.attachCard}>
-                  <Text style={styles.attachText}>\uD83D\uDCCE Attach a screenshot</Text>
-                </View>
+                <AnimatedPressable
+                  onPress={pickScreenshot}
+                  scaleDown={0.97}
+                  style={styles.attachCard}
+                >
+                  {screenshot ? (
+                    <View style={{ alignItems: 'center', gap: 8 }}>
+                      <Image source={{ uri: screenshot }} style={{ width: 120, height: 80, borderRadius: 8 }} />
+                      <Text style={styles.attachText}>Tap to change</Text>
+                    </View>
+                  ) : (
+                    <Text style={styles.attachText}>\uD83D\uDCCE Attach a screenshot</Text>
+                  )}
+                </AnimatedPressable>
 
                 {/* Submit button */}
                 <AnimatedPressable
-                  onPress={() => { hapticSuccess(); setSubmitted(true); }}
+                  onPress={handleSupportSubmit}
                   scaleDown={0.97}
-                  style={styles.primaryButton}
+                  style={[styles.primaryButton, submitting && { opacity: 0.6 }]}
+                  disabled={submitting}
                 >
-                  <Text style={styles.primaryButtonText}>Send to support</Text>
+                  <Text style={styles.primaryButtonText}>{submitting ? 'Sending...' : 'Send to support'}</Text>
                 </AnimatedPressable>
 
                 <Text style={styles.noteText}>We typically respond within 24 hours</Text>
@@ -235,11 +328,12 @@ export default function HelpFeedbackScreen() {
 
                 {/* Submit button */}
                 <AnimatedPressable
-                  onPress={() => { hapticSuccess(); setFeatureSubmitted(true); }}
+                  onPress={handleFeatureSubmit}
                   scaleDown={0.97}
-                  style={styles.primaryButton}
+                  style={[styles.primaryButton, featureSubmitting && { opacity: 0.6 }]}
+                  disabled={featureSubmitting}
                 >
-                  <Text style={styles.primaryButtonText}>Submit request</Text>
+                  <Text style={styles.primaryButtonText}>{featureSubmitting ? 'Submitting...' : 'Submit request'}</Text>
                 </AnimatedPressable>
               </>
             ) : (

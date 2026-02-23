@@ -40,5 +40,5 @@ export default function Index() {
 
   if (!isSignedIn) return <Redirect href="/(auth)/welcome" />;
   if (!onboardingComplete) return <Redirect href="/(onboarding)/about-you" />;
-  return <Redirect href="/(app)" />;
+  return <Redirect href={"/(app)" as any} />;
 }

@@ -155,14 +155,20 @@ export default function EditProfileScreen() {
             </AnimatedPressable>
           ) : (
             <View style={styles.deleteCard}>
-              <Text style={styles.deleteCardTitle}>Are you sure?</Text>
+              <Text style={styles.deleteCardTitle}>Delete your account?</Text>
               <Text style={styles.deleteCardBody}>
-                This will permanently delete your account, all tracking data,
-                journal entries, and reports. This cannot be undone.
+                This action is permanent and cannot be reversed. You will lose:
               </Text>
+              <View style={{ gap: 6, marginBottom: 12 }}>
+                <Text style={styles.deleteCardBody}>• All symptom logs and journal entries</Text>
+                <Text style={styles.deleteCardBody}>• Your readiness scores and insights history</Text>
+                <Text style={styles.deleteCardBody}>• Correlation data and personalised recommendations</Text>
+                <Text style={styles.deleteCardBody}>• Gratitude journal and period tracking data</Text>
+                <Text style={styles.deleteCardBody}>• Program progress and content history</Text>
+              </View>
               <Text style={styles.deleteCardNote}>
                 If you have a Pause+ subscription, please cancel it first in
-                your Apple ID settings.
+                your Apple ID settings. Your data cannot be restored after deletion.
               </Text>
 
               <AnimatedPressable
@@ -170,7 +176,7 @@ export default function EditProfileScreen() {
                 scaleDown={0.97}
                 style={styles.deleteConfirmButton}
               >
-                <Text style={styles.deleteConfirmText}>Yes, delete my account</Text>
+                <Text style={styles.deleteConfirmText}>Yes, permanently delete everything</Text>
               </AnimatedPressable>
 
               <AnimatedPressable
@@ -178,7 +184,7 @@ export default function EditProfileScreen() {
                 scaleDown={0.97}
                 style={styles.deleteCancelButton}
               >
-                <Text style={styles.deleteCancelText}>Cancel</Text>
+                <Text style={styles.deleteCancelText}>Keep my account</Text>
               </AnimatedPressable>
             </View>
           )}

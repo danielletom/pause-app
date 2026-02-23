@@ -285,24 +285,6 @@ export default function JournalScreen() {
           <Text style={styles.linkArrow}>›</Text>
         </AnimatedPressable>
 
-        {/* Custom tracking nudge */}
-        <AnimatedPressable
-          onPress={() => {
-            hapticLight();
-            router.navigate('/(app)/log');
-          }}
-          scaleDown={0.97}
-          style={[styles.linkCard, { borderWidth: 1, borderColor: '#f5f5f4' }]}
-        >
-          <View style={styles.linkIcon}>
-            <Text style={styles.linkIconText}>✦</Text>
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.linkTitle}>Track something specific</Text>
-            <Text style={styles.linkDesc}>Log a symptom, trigger, or anything else</Text>
-          </View>
-          <Text style={styles.linkArrow}>›</Text>
-        </AnimatedPressable>
       </ScrollView>
     </SafeAreaView>
   );
