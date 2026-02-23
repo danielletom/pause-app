@@ -16,6 +16,7 @@ import { hapticMedium, hapticLight, hapticSelection } from '@/lib/haptics';
 import { apiRequest } from '@/lib/api';
 import { useProfile } from '@/lib/useProfile';
 import { useHealthData } from '@/lib/useHealthData';
+import { useSleepTracking } from '@/lib/useSleepTracking';
 
 /* ─── Date helpers ────────────────────────────────────────── */
 
@@ -175,6 +176,7 @@ export default function HomeScreen() {
   getTokenRef.current = getToken;
   const { profile } = useProfile();
   const healthData = useHealthData();
+  const { sleep: autoSleep } = useSleepTracking();
   const router = useRouter();
   const [dayLogs, setDayLogs] = useState<LogEntry[]>([]);
   const [meds, setMeds] = useState<Medication[]>([]);
@@ -909,6 +911,37 @@ export default function HomeScreen() {
                       Once you log symptoms, your trends will appear here
                     </Text>
                   </View>
+                )}
+
+                {/* Auto-detected sleep card — from HealthKit step data (Rise-style) */}
+                {autoSleep && healthData.connected && !sleepLog?.sleepHours && (
+                  <AnimatedPressable
+                    onPress={() => {
+                      hapticLight();
+                      router.push({ pathname: '/(app)/quick-log', params: { date: selectedDate, mode: 'morning' } });
+                    }}
+                    scaleDown={0.97}
+                    style={[styles.card, { marginTop: 8, borderWidth: 1, borderColor: '#dbeafe' }]}
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                      <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: '#ede9fe', alignItems: 'center', justifyContent: 'center' }}>
+                        <Text style={{ fontSize: 18 }}>🌙</Text>
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                          <Text style={styles.trendName}>
+                            {autoSleep.hours}h sleep detected
+                          </Text>
+                          <View style={{ backgroundColor: '#dbeafe', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 }}>
+                            <Text style={{ fontSize: 10, fontWeight: '500', color: '#2563eb' }}>Auto</Text>
+                          </View>
+                        </View>
+                        <Text style={styles.trendSubtext}>
+                          ~{autoSleep.sleepStart.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} — ~{autoSleep.sleepEnd.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} · Tap to log your morning
+                        </Text>
+                      </View>
+                    </View>
+                  </AnimatedPressable>
                 )}
 
                 {/* Sleep Score card — shows score from readiness components */}

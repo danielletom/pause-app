@@ -6,6 +6,7 @@ import {
   ScrollView,
   StyleSheet,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import ProgressBar from '@/components/onboarding/ProgressBar';
@@ -17,38 +18,45 @@ import { useHealthData } from '@/lib/useHealthData';
 
 /* ─── Data types we request from Apple Health ──────────── */
 const DATA_TYPES = [
-  { icon: '🌙', label: 'Sleep', desc: 'Duration and stages' },
+  { icon: '🚶', label: 'Steps & activity', desc: 'Used to detect your sleep window' },
+  { icon: '🌙', label: 'Sleep', desc: 'Auto-tracked from phone stillness' },
   { icon: '❤️', label: 'Heart rate', desc: 'Resting and active' },
   { icon: '📊', label: 'HRV', desc: 'Heart rate variability' },
-  { icon: '🚶', label: 'Activity', desc: 'Steps and movement' },
-  { icon: '🔄', label: 'Cycle data', desc: 'Period and ovulation' },
 ];
 
 /* ─── Before / after enrichment examples ───────────────── */
 const ENRICHMENTS = [
+  { before: 'You manually enter sleep hours', after: 'Sleep auto-detected from phone activity' },
   { before: 'Readiness score from logs only', after: 'Readiness score with HRV and resting heart rate' },
-  { before: 'Sleep duration you report', after: 'Sleep stages from your watch' },
   { before: 'Symptom patterns from check-ins', after: 'Symptoms correlated with heart rate changes' },
   { before: 'Hot flash tracking by hand', after: 'Predicted flashes using overnight temperature' },
 ];
 
-type ScreenState = 'initial' | 'syncing' | 'connected';
+type ScreenState = 'initial' | 'syncing' | 'connected' | 'unavailable';
 
 export default function HealthConnectScreen() {
   const router = useRouter();
   const { updateData } = useOnboarding();
   const health = useHealthData();
-  const [state, setState] = useState<ScreenState>('initial');
+  const [state, setState] = useState<ScreenState>(
+    health.available ? 'initial' : 'unavailable'
+  );
 
   const handleConnect = async () => {
     hapticMedium();
     setState('syncing');
     try {
-      await health.connect('apple_watch');
-      setState('connected');
-      updateData({ healthConnect: { connected: true, source: 'apple_watch' } });
+      await health.connect('apple_health');
+      if (health.connected) {
+        setState('connected');
+        updateData({ healthConnect: { connected: true, source: 'apple_health' } });
+      } else {
+        // User may have denied — treat as connected anyway since
+        // iOS doesn't tell us the actual permission result
+        setState('connected');
+        updateData({ healthConnect: { connected: true, source: 'apple_health' } });
+      }
     } catch {
-      // If connect fails, go back to initial
       setState('initial');
     }
   };
@@ -64,6 +72,29 @@ export default function HealthConnectScreen() {
     router.push('/(onboarding)/done');
   };
 
+  /* ─── Unavailable (Android / simulator) ────────────── */
+  if (state === 'unavailable') {
+    return (
+      <SafeAreaView style={styles.container}>
+        <ProgressBar step={6} total={7} />
+        <View style={styles.centerWrap}>
+          <Text style={{ fontSize: 40, marginBottom: 16 }}>📱</Text>
+          <Text style={styles.connectedTitle}>Not available</Text>
+          <Text style={styles.connectedDesc}>
+            {Platform.OS !== 'ios'
+              ? 'Auto sleep tracking uses Apple Health and is only available on iOS.'
+              : 'Apple Health is not available on this device.'}
+          </Text>
+        </View>
+        <View style={styles.footer}>
+          <OnboardingButton onPress={handleContinue}>
+            Continue
+          </OnboardingButton>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   /* ─── Syncing state ──────────────────────────────────── */
   if (state === 'syncing') {
     return (
@@ -71,8 +102,8 @@ export default function HealthConnectScreen() {
         <ProgressBar step={6} total={7} />
         <View style={styles.centerWrap}>
           <ActivityIndicator size="large" color="#1c1917" />
-          <Text style={styles.syncTitle}>Connecting...</Text>
-          <Text style={styles.syncSubtitle}>This takes a moment</Text>
+          <Text style={styles.syncTitle}>Connecting to Apple Health...</Text>
+          <Text style={styles.syncSubtitle}>Requesting access to your activity data</Text>
         </View>
       </SafeAreaView>
     );
@@ -90,7 +121,7 @@ export default function HealthConnectScreen() {
           <Text style={styles.connectedTitle}>Connected</Text>
           <Text style={styles.connectedSource}>Apple Health</Text>
           <Text style={styles.connectedDesc}>
-            Your watch data will sharpen every insight we build for you.
+            Your sleep will be auto-tracked from phone activity each morning. No need to wear anything or start a session.
           </Text>
         </View>
         <View style={styles.footer}>
@@ -107,9 +138,9 @@ export default function HealthConnectScreen() {
     <SafeAreaView style={styles.container}>
       <ProgressBar step={6} total={7} />
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.heading}>Connect with Apple Health</Text>
+        <Text style={styles.heading}>Auto-track your sleep</Text>
         <Text style={styles.subheading}>
-          We can pull a few things from Apple Health to give you sharper, more personal insights.
+          Pause reads your phone's activity data to figure out when you fell asleep and woke up — no wearable needed.
         </Text>
 
         {/* Data types list */}
@@ -125,9 +156,18 @@ export default function HealthConnectScreen() {
           ))}
         </View>
 
+        {/* How it works card */}
+        <View style={styles.howCard}>
+          <Text style={styles.howTitle}>How it works</Text>
+          <Text style={styles.howStep}>1. Your iPhone tracks steps all day via the motion chip</Text>
+          <Text style={styles.howStep}>2. When you sleep, step activity stops</Text>
+          <Text style={styles.howStep}>3. Each morning, Pause finds that gap and logs your sleep</Text>
+          <Text style={styles.howStep}>4. Your morning check-in is pre-filled automatically</Text>
+        </View>
+
         {/* Why this helps card */}
         <View style={styles.whyCard}>
-          <Text style={styles.whyTitle}>Why this helps</Text>
+          <Text style={styles.whyTitle}>What this unlocks</Text>
           {ENRICHMENTS.map((e, i) => (
             <View key={i} style={styles.enrichRow}>
               <View style={styles.enrichBefore}>
@@ -220,6 +260,28 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#78716c',
     marginTop: 1,
+  },
+
+  /* How it works card */
+  howCard: {
+    backgroundColor: '#f0f9ff',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#bae6fd',
+    marginBottom: 16,
+  },
+  howTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#0369a1',
+    marginBottom: 10,
+  },
+  howStep: {
+    fontSize: 13,
+    color: '#0c4a6e',
+    lineHeight: 20,
+    marginBottom: 4,
   },
 
   /* Why this helps card */
