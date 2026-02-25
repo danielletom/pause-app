@@ -11,6 +11,13 @@ export interface Profile {
   goals: string[];
   onboardingComplete: boolean;
   createdAt: string;
+  // About me fields
+  height: string | null;
+  weight: string | null;
+  relationship: string | null;
+  workStatus: string | null;
+  children: string | null;
+  exerciseFrequency: string | null;
   // Period tracking
   periodTrackingEnabled: boolean;
   periodHomeWidget: boolean;

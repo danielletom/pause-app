@@ -13,6 +13,7 @@ import {
   Keyboard,
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
+import BackButton from '@/components/BackButton';
 import { useAuth } from '@clerk/clerk-expo';
 import AnimatedPressable from '@/components/AnimatedPressable';
 import { hapticLight, hapticMedium, hapticSelection, hapticSuccess } from '@/lib/haptics';
@@ -150,7 +151,7 @@ export default function SymptomLogScreen() {
   const handleBack = () => {
     hapticLight();
     if (step > 0) setStep(step - 1);
-    else router.back();
+    else router.navigate('/(app)/(tabs)');
   };
 
   // Can advance from current step?
@@ -227,7 +228,7 @@ export default function SymptomLogScreen() {
           </Text>
           <Text style={styles.savedHint}>This feeds your Readiness Score + Insights</Text>
           <AnimatedPressable
-            onPress={() => { hapticLight(); router.back(); }}
+            onPress={() => { hapticLight(); router.navigate('/(app)/(tabs)'); }}
             scaleDown={0.97}
             style={styles.doneButton}
           >
@@ -438,13 +439,11 @@ export default function SymptomLogScreen() {
 
         {/* Navigation header */}
         <View style={styles.nav}>
-          <AnimatedPressable onPress={handleBack} scaleDown={0.9} style={styles.navSide}>
-            <Text style={styles.navBackText}>← Back</Text>
-          </AnimatedPressable>
+          <BackButton onPress={handleBack} />
           <Text style={styles.navStep}>
             Step {step + 1} of {STEPS.length}
           </Text>
-          <AnimatedPressable onPress={() => { hapticLight(); router.back(); }} scaleDown={0.9} style={styles.navSide}>
+          <AnimatedPressable onPress={() => { hapticLight(); router.navigate('/(app)/(tabs)'); }} scaleDown={0.9} style={styles.navSide}>
             <Text style={styles.navSkipText}>Skip</Text>
           </AnimatedPressable>
         </View>

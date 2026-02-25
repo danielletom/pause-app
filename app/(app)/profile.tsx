@@ -178,7 +178,11 @@ export default function ProfileScreen() {
             </TouchableOpacity>
 
             {/* Delete account */}
-            <TouchableOpacity style={styles.deleteButton} activeOpacity={0.7}>
+            <TouchableOpacity
+              style={styles.deleteButton}
+              activeOpacity={0.7}
+              onPress={() => router.push('/(app)/edit-profile' as any)}
+            >
               <Text style={styles.deleteText}>Delete my account</Text>
             </TouchableOpacity>
 

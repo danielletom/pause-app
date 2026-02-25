@@ -119,7 +119,7 @@ export default function JournalScreen() {
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>Your journal</Text>
-          <Text style={styles.subtitle}>2 minutes morning + evening</Text>
+          <Text style={styles.subtitle}>2 minutes, morning and evening</Text>
         </View>
 
         {/* Streak card (dark) */}
@@ -178,7 +178,7 @@ export default function JournalScreen() {
             <View style={{ flex: 1 }}>
               <Text style={styles.journalCardTitle}>Morning check-in</Text>
               <Text style={styles.journalCardDesc}>
-                {morningDone ? 'Completed ✓' : 'Sleep, body, what\'s ahead, gratitude'}
+                {morningDone ? 'Done ✓' : 'Sleep, symptoms, what you are grateful for'}
               </Text>
               {!morningDone && (
                 <Text style={styles.morningTime}>~2 minutes</Text>
@@ -218,10 +218,10 @@ export default function JournalScreen() {
               <Text style={styles.journalCardTitle}>Evening reflection</Text>
               <Text style={styles.journalCardDesc}>
                 {eveningDone
-                  ? 'Completed ✓'
+                  ? 'Done ✓'
                   : eveningAvailable
-                    ? 'How was today, activities, highlight'
-                    : 'Available at 7 PM'}
+                    ? 'Mood, energy, and a highlight from today'
+                    : 'Opens at 7 PM'}
               </Text>
             </View>
             {eveningDone ? (
@@ -261,7 +261,7 @@ export default function JournalScreen() {
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.linkTitle}>View full week</Text>
-            <Text style={styles.linkDesc}>See your daily entries + patterns</Text>
+            <Text style={styles.linkDesc}>Daily entries and what we have spotted</Text>
           </View>
           <Text style={styles.linkArrow}>›</Text>
         </AnimatedPressable>
@@ -280,29 +280,11 @@ export default function JournalScreen() {
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.linkTitle}>Gratitude journal</Text>
-            <Text style={styles.linkDesc}>Your collection of golden moments</Text>
+            <Text style={styles.linkDesc}>The good things you have noticed</Text>
           </View>
           <Text style={styles.linkArrow}>›</Text>
         </AnimatedPressable>
 
-        {/* Custom tracking nudge */}
-        <AnimatedPressable
-          onPress={() => {
-            hapticLight();
-            router.navigate('/(app)/log');
-          }}
-          scaleDown={0.97}
-          style={[styles.linkCard, { borderWidth: 1, borderColor: '#f5f5f4' }]}
-        >
-          <View style={styles.linkIcon}>
-            <Text style={styles.linkIconText}>✦</Text>
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.linkTitle}>Track something else?</Text>
-            <Text style={styles.linkDesc}>Add your own symptoms or triggers</Text>
-          </View>
-          <Text style={styles.linkArrow}>›</Text>
-        </AnimatedPressable>
       </ScrollView>
     </SafeAreaView>
   );

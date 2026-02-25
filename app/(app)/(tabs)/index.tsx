@@ -15,6 +15,8 @@ import AnimatedPressable from '@/components/AnimatedPressable';
 import { hapticMedium, hapticLight, hapticSelection } from '@/lib/haptics';
 import { apiRequest } from '@/lib/api';
 import { useProfile } from '@/lib/useProfile';
+import { useHealthData } from '@/lib/useHealthData';
+import { useSleepTracking } from '@/lib/useSleepTracking';
 
 /* ─── Date helpers ────────────────────────────────────────── */
 
@@ -173,6 +175,8 @@ export default function HomeScreen() {
   const getTokenRef = useRef(getToken);
   getTokenRef.current = getToken;
   const { profile } = useProfile();
+  const healthData = useHealthData();
+  const { sleep: autoSleep } = useSleepTracking();
   const router = useRouter();
   const [dayLogs, setDayLogs] = useState<LogEntry[]>([]);
   const [meds, setMeds] = useState<Medication[]>([]);
@@ -183,9 +187,12 @@ export default function HomeScreen() {
   const [lastLoggedHoursAgo, setLastLoggedHoursAgo] = useState<number | null>(null);
   const [weekLogStatus, setWeekLogStatus] = useState<Record<string, { am: boolean; pm: boolean }>>({});
   const [recommendation, setRecommendation] = useState<string | null>(null);
+  const [isAiGenerated, setIsAiGenerated] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [serverReadiness, setServerReadiness] = useState<number | null>(null);
   const [readinessComponents, setReadinessComponents] = useState<Record<string, number> | null>(null);
   const [insightNudge, setInsightNudge] = useState<{ title: string; body: string } | null>(null);
+  const [tomorrowForecast, setTomorrowForecast] = useState<string | null>(null);
   const [narrative, setNarrative] = useState<string | null>(null);
   const [topCorrelations, setTopCorrelations] = useState<{ factor: string; symptom: string; direction: string; effectSizePct: number; humanLabel: string }[]>([]);
   const [weekTrends, setWeekTrends] = useState<Record<string, { thisWeek: number; lastWeek: number }>>({});
@@ -208,6 +215,10 @@ export default function HomeScreen() {
       if (!hasLoadedOnce.current) {
         setLoading(true);
       }
+      // Track refreshing state for analyzing animation
+      if (hasLoadedOnce.current) {
+        setIsRefreshing(true);
+      }
       const token = await getTokenRef.current();
       const todayDate = toDateStr(new Date());
       const [logData, medsData, medLogsData, recentLogs, articlesData, homeData, periodSettings, periodCurrent] = await Promise.all([
@@ -216,7 +227,7 @@ export default function HomeScreen() {
         apiRequest(`/api/meds/logs?date=${todayDate}`, token).catch(() => []),
         apiRequest('/api/logs?range=28d', token).catch(() => []),
         apiRequest('/api/articles', token).catch(() => []),
-        apiRequest(`/api/insights/home?date=${todayDate}`, token).catch(() => null),
+        apiRequest(`/api/insights/home?date=${selectedDate}`, token).catch(() => null),
         apiRequest('/api/period/settings', token).catch(() => null),
         apiRequest('/api/period/cycles/current', token).catch(() => null),
       ]);
@@ -259,9 +270,11 @@ export default function HomeScreen() {
       // Set recommendation + AI data from home API
       if (homeData) {
         if (homeData.recommendation) setRecommendation(homeData.recommendation);
+        setIsAiGenerated(!!homeData.isAiGenerated);
         if (homeData.readiness != null) setServerReadiness(homeData.readiness);
         if (homeData.readinessComponents) setReadinessComponents(homeData.readinessComponents);
         if (homeData.insightNudge) setInsightNudge(homeData.insightNudge);
+        if (homeData.tomorrowForecast) setTomorrowForecast(homeData.tomorrowForecast);
         if (homeData.narrative) setNarrative(homeData.narrative);
         if (homeData.topCorrelations) setTopCorrelations(homeData.topCorrelations);
       }
@@ -332,6 +345,7 @@ export default function HomeScreen() {
       hasLoadedOnce.current = true;
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
   }, [selectedDate]);
 
@@ -369,7 +383,8 @@ export default function HomeScreen() {
       .filter(([, v]) => v > 0)
       .sort(([, a], [, b]) => b - a)
       .slice(0, 4);
-    const colors = ['#fbbf24', '#818cf8', '#34d399', '#fda4af'];
+    // Color based on severity: mild = green, moderate = amber, severe = red
+    const sevColor = (s: number) => s >= 3 ? '#ef4444' : s >= 2 ? '#f59e0b' : '#78716c';
     return entries.map(([name, sev], i) => {
       const trend = weekTrends[name];
       let weekChange: string | null = null;
@@ -391,7 +406,7 @@ export default function HomeScreen() {
           .trim(),
         rawName: name,
         sev: Math.min(sev, 3),
-        color: colors[i % colors.length],
+        color: sevColor(sev),
         weekChange,
         improving: trend ? trend.thisWeek < trend.lastWeek : false,
       };
@@ -419,11 +434,15 @@ export default function HomeScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header — date, name, avatar */}
+        {/* Header — greeting, name, avatar */}
         <View style={styles.header}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.dateText}>{dateString}</Text>
-            <Text style={styles.greeting}>{isToday ? `Hi, ${firstName}` : formatDateHeader(selectedDate)}</Text>
+            <Text style={styles.dateText}>
+              {isToday
+                ? hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
+                : dateString}
+            </Text>
+            <Text style={styles.greeting}>Hi, {firstName}</Text>
           </View>
           <AnimatedPressable
             onPress={() => { hapticLight(); router.push('/(app)/profile'); }}
@@ -484,234 +503,269 @@ export default function HomeScreen() {
           </View>
         ) : (
           <>
-            {/* Readiness Score Card — dark, with AI activity recommendation */}
-            {(() => {
-              // Prefer server-computed score, fall back to client-side
+            {/* ══════════ STATE 1: BEFORE CHECK-INS ══════════ */}
+            {isToday && !morningDone && !eveningDone && (
+              <AnimatedPressable
+                onPress={() => {
+                  hapticMedium();
+                  router.push({ pathname: '/(app)/quick-log', params: { date: selectedDate, mode: 'morning' } });
+                }}
+                scaleDown={0.97}
+                style={styles.morningHeroCard}
+              >
+                {streak > 0 && (
+                  <View style={styles.heroStreakRow}>
+                    <Text style={{ fontSize: 13 }}>🔥</Text>
+                    <Text style={styles.heroStreakText}>{streak} days in a row</Text>
+                  </View>
+                )}
+                <View style={styles.heroContentRow}>
+                  <View style={styles.heroIconWrap}>
+                    <Text style={{ fontSize: 24 }}>🌤</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.heroTitle}>Morning check-in</Text>
+                    <Text style={styles.heroSubtitle}>How did you sleep? How are you feeling?</Text>
+                  </View>
+                </View>
+                <View style={styles.heroButton}>
+                  <Text style={styles.heroButtonText}>Start check-in</Text>
+                </View>
+                <Text style={styles.heroHint}>Takes about 2 minutes</Text>
+              </AnimatedPressable>
+            )}
+
+            {/* ══════════ STATE 2: MORNING DONE, EVENING PENDING ══════════ */}
+            {isToday && morningDone && !eveningDone && (
+              <View style={styles.comboCard}>
+                {/* Morning done row */}
+                <AnimatedPressable
+                  onPress={() => {
+                    hapticLight();
+                    const amLog = dayLogs.find((e) => e.logType === 'morning');
+                    if (amLog) router.push({ pathname: '/(app)/quick-log', params: { date: selectedDate, mode: 'morning', logId: String(amLog.id) } });
+                  }}
+                  scaleDown={0.98}
+                  style={styles.comboDoneRow}
+                >
+                  <Text style={{ fontSize: 14 }}>🌤</Text>
+                  <Text style={styles.comboDoneText}>Morning check-in ✓</Text>
+                  <Text style={styles.comboDoneTime}>
+                    {dayLogs.find((e) => e.logType === 'morning')?.loggedAt
+                      ? new Date(dayLogs.find((e) => e.logType === 'morning')!.loggedAt!).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+                      : ''}
+                  </Text>
+                </AnimatedPressable>
+                {/* Evening CTA */}
+                <AnimatedPressable
+                  onPress={() => {
+                    hapticMedium();
+                    router.push({ pathname: '/(app)/quick-log', params: { date: selectedDate, mode: 'evening' } });
+                  }}
+                  scaleDown={0.97}
+                  style={styles.comboEveningCta}
+                >
+                  {streak > 0 && (
+                    <View style={styles.heroStreakRow}>
+                      <Text style={{ fontSize: 13 }}>🔥</Text>
+                      <Text style={styles.heroStreakText}>{streak} days in a row — keep it going!</Text>
+                    </View>
+                  )}
+                  <View style={styles.heroContentRow}>
+                    <View style={[styles.heroIconWrap, { backgroundColor: '#ffffff' }]}>
+                      <Text style={{ fontSize: 22 }}>🌙</Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.heroTitle}>Evening check-in</Text>
+                      <Text style={styles.heroSubtitle}>How was your day? Wind down.</Text>
+                    </View>
+                  </View>
+                  <View style={styles.heroButton}>
+                    <Text style={styles.heroButtonText}>Start check-in</Text>
+                  </View>
+                  <Text style={styles.heroHint}>Takes about 2 minutes</Text>
+                </AnimatedPressable>
+              </View>
+            )}
+
+            {/* ══════════ STATE 3: BOTH DONE — Collapsed check-ins ══════════ */}
+            {isToday && morningDone && eveningDone && (
+              <AnimatedPressable
+                onPress={() => { hapticLight(); router.navigate('/(app)/calendar' as any); }}
+                scaleDown={0.98}
+                style={styles.collapsedCheckins}
+              >
+                <View style={styles.collapsedTopRow}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    {streak > 0 && <Text style={{ fontSize: 13 }}>🔥</Text>}
+                    <Text style={styles.collapsedStreakText}>{streak > 0 ? `${streak} days in a row` : 'All done today'}</Text>
+                  </View>
+                  <Text style={styles.seeAll}>View →</Text>
+                </View>
+                <View style={styles.collapsedPillRow}>
+                  <AnimatedPressable
+                    onPress={() => {
+                      hapticLight();
+                      const amLog = dayLogs.find((e) => e.logType === 'morning');
+                      if (amLog) router.push({ pathname: '/(app)/quick-log', params: { date: selectedDate, mode: 'morning', logId: String(amLog.id) } });
+                    }}
+                    scaleDown={0.97}
+                    style={styles.collapsedPill}
+                  >
+                    <Text style={{ fontSize: 14 }}>🌤</Text>
+                    <Text style={styles.collapsedPillText}>Morning ✓</Text>
+                  </AnimatedPressable>
+                  <AnimatedPressable
+                    onPress={() => {
+                      hapticLight();
+                      const pmLog = dayLogs.find((e) => e.logType === 'evening');
+                      if (pmLog) router.push({ pathname: '/(app)/quick-log', params: { date: selectedDate, mode: 'evening', logId: String(pmLog.id) } });
+                    }}
+                    scaleDown={0.97}
+                    style={styles.collapsedPill}
+                  >
+                    <Text style={{ fontSize: 14 }}>🌙</Text>
+                    <Text style={styles.collapsedPillText}>Evening ✓</Text>
+                  </AnimatedPressable>
+                </View>
+              </AnimatedPressable>
+            )}
+
+            {/* Past day — journal card for non-today */}
+            {!isToday && (
+              <View style={styles.journalCard}>
+                <AnimatedPressable
+                  onPress={() => {
+                    hapticMedium();
+                    const amLog = dayLogs.find((e) => e.logType === 'morning');
+                    if (amLog) {
+                      router.push({ pathname: '/(app)/quick-log', params: { date: selectedDate, mode: 'morning', logId: String(amLog.id) } });
+                    } else {
+                      router.push({ pathname: '/(app)/quick-log', params: { date: selectedDate, mode: 'morning' } });
+                    }
+                  }}
+                  scaleDown={0.97}
+                >
+                  <View style={styles.journalCardRow}>
+                    <View style={styles.journalMorningIcon}>
+                      <Text style={{ fontSize: 18, color: '#b45309' }}>☀</Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.journalCardTitle}>{morningDone ? 'Morning ✓' : 'Morning journal'}</Text>
+                      <Text style={styles.journalCardDesc}>{morningDone ? 'Done' : 'Add a morning entry for this day'}</Text>
+                    </View>
+                    {morningDone ? (
+                      <View style={styles.journalCheckDone}><Text style={{ fontSize: 12, color: '#fff', fontWeight: '600' }}>✓</Text></View>
+                    ) : <View style={styles.journalEmptyCheck} />}
+                  </View>
+                </AnimatedPressable>
+                <AnimatedPressable
+                  onPress={() => {
+                    hapticMedium();
+                    const pmLog = dayLogs.find((e) => e.logType === 'evening');
+                    if (pmLog) {
+                      router.push({ pathname: '/(app)/quick-log', params: { date: selectedDate, mode: 'evening', logId: String(pmLog.id) } });
+                    } else {
+                      router.push({ pathname: '/(app)/quick-log', params: { date: selectedDate, mode: 'evening' } });
+                    }
+                  }}
+                  scaleDown={0.97}
+                  style={{ marginTop: 12 }}
+                >
+                  <View style={styles.journalCardRow}>
+                    <View style={styles.journalEveningIcon}>
+                      <Text style={{ fontSize: 18, color: '#6366f1' }}>☽</Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.journalCardTitle}>{eveningDone ? 'Evening ✓' : 'Evening reflection'}</Text>
+                      <Text style={styles.journalCardDesc}>{eveningDone ? 'Done' : 'Add an evening entry for this day'}</Text>
+                    </View>
+                    {eveningDone ? (
+                      <View style={styles.journalCheckDone}><Text style={{ fontSize: 12, color: '#fff', fontWeight: '600' }}>✓</Text></View>
+                    ) : <View style={styles.journalEmptyCheck} />}
+                  </View>
+                </AnimatedPressable>
+              </View>
+            )}
+
+            {/* ══════════ READINESS SCORE — blue gradient (shows after morning done) ══════════ */}
+            {hasLog && (() => {
               const score = serverReadiness ?? readinessScore;
               const scoreNum = score ?? 0;
-              const circumference = 163.4;
+              const circumference = 150.8;
               const arcLength = (scoreNum / 100) * circumference;
-              const activityLabel = (score ?? 0) >= 70 ? 'Good day for activity' : (score ?? 0) >= 40 ? 'Take it easy' : 'Rest & recover';
-              const activityColor = (score ?? 0) >= 70 ? '#34d399' : (score ?? 0) >= 40 ? '#fbbf24' : '#fca5a5';
-              const activityBg = (score ?? 0) >= 70 ? 'rgba(52,211,153,0.12)' : (score ?? 0) >= 40 ? 'rgba(251,191,36,0.12)' : 'rgba(252,165,165,0.12)';
-
-              // Stressor level from contextTags or aggregate
-              const allStressors = new Set<string>();
-              dayLogs.forEach((e) => (e.contextTags || []).forEach((t) => allStressors.add(t)));
-              const stressorCount = allStressors.size;
-              const stressLabel = stressorCount === 0 ? 'Low ✓' : stressorCount <= 2 ? 'Moderate' : 'High';
-
-              // AI narrative: prefer recommendation, then narrative, then smart fallback
+              const activityLabel = scoreNum >= 70 ? 'Your body is ready' : scoreNum >= 40 ? 'Mixed day' : 'Go gentle';
               const aiNarrative = recommendation || narrative || null;
 
               return (
                 <View style={styles.readinessCard}>
-                  <View style={{ flex: 1 }}>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.readinessLabel}>READINESS SCORE</Text>
-                        <Text style={styles.readinessValue}>{score ?? '—'}</Text>
-                      </View>
-                      <View style={styles.readinessRingOuter}>
-                        <View style={styles.readinessRing}>
-                          {score !== null && (
-                            <View style={styles.readinessArcWrap}>
-                              <Svg width={64} height={64} viewBox="0 0 64 64">
-                                <Circle
-                                  cx={32} cy={32} r={26}
-                                  fill="none"
-                                  stroke="#a8a29e"
-                                  strokeWidth={3}
-                                  strokeDasharray={`${arcLength} ${circumference - arcLength}`}
-                                  strokeLinecap="round"
-                                  transform="rotate(-90 32 32)"
-                                />
-                              </Svg>
-                            </View>
-                          )}
-                          <Text style={styles.readinessRingScore}>{score ?? '—'}</Text>
-                        </View>
-                        <Text style={styles.readinessRingLabel}>/100</Text>
-                      </View>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                    <View>
+                      <Text style={styles.readinessLabel}>READINESS SCORE</Text>
+                      <Text style={styles.readinessValue}>{score ?? '—'}</Text>
                     </View>
-                    {hasLog && (
-                      <>
-                        {/* Activity recommendation pill with AI explanation */}
-                        <View style={[styles.readinessActivityPill, { backgroundColor: activityBg }]}>
-                          <Text style={[styles.readinessActivity, { color: activityColor }]}>{activityLabel}</Text>
-                          {(() => {
-                            // Use AI narrative if available, otherwise build a proper client-side one
-                            if (aiNarrative) {
-                              return <Text style={styles.readinessNarrative}>{aiNarrative}</Text>;
-                            }
-                            // Smart client-side fallback using actual log data
-                            const parts: string[] = [];
-                            if (sleepLog?.sleepHours != null) {
-                              const sq = sleepLog.sleepHours >= 7 ? 'Good' : sleepLog.sleepHours >= 5 ? 'Okay' : 'Low';
-                              parts.push(`${sq} sleep (${sleepLog.sleepHours}h)`);
-                            }
-                            if (latestMood) {
-                              parts.push(`${MOOD_LABEL[latestMood]?.toLowerCase() || 'neutral'} mood`);
-                            }
-                            const symLevel = symptomTrends.length === 0 ? 'no' : symptomTrends.length <= 2 ? 'low' : 'moderate';
-                            parts.push(`${symLevel} symptom load`);
-                            const allStress = new Set<string>();
-                            dayLogs.forEach((e) => (e.contextTags || []).forEach((t: string) => allStress.add(t)));
-                            if (allStress.size > 2) parts.push('high stress');
-                            else if (allStress.size > 0) parts.push('moderate stress');
-
-                            const prefix = parts.join(' + ');
-                            let msg = '';
-                            if (scoreNum >= 70) {
-                              msg = `${prefix} means your body is ready for more today. Consider some gentle movement or an activity you enjoy.`;
-                            } else if (scoreNum >= 40) {
-                              msg = `${prefix} — a mixed picture today. Listen to your body and take things at your own pace.`;
-                            } else {
-                              msg = `${prefix} suggests today might feel harder. Be extra gentle with yourself and prioritize rest.`;
-                            }
-                            return <Text style={styles.readinessNarrative}>{msg}</Text>;
-                          })()}
-                        </View>
-                        {/* Stats row — Sleep, Symptoms, Stress */}
-                        <View style={styles.readinessStatsInline}>
-                          <View style={styles.readinessStatItem}>
-                            <Text style={styles.readinessStatText}>
-                              Sleep: {sleepLog?.sleepHours ? `${sleepLog.sleepHours}h` : '—'}
-                            </Text>
-                            {sleepLog?.sleepHours && sleepLog.sleepHours >= 6 && <Text style={styles.readinessStatCheck}> ✓</Text>}
-                          </View>
-                          <View style={styles.readinessStatItem}>
-                            <Text style={styles.readinessStatText}>
-                              Symptoms: {symptomTrends.length > 0 ? (symptomTrends.length <= 2 ? 'Low' : 'Moderate') : 'None'}
-                            </Text>
-                            {symptomTrends.length <= 2 && <Text style={styles.readinessStatCheck}> ✓</Text>}
-                          </View>
-                          <View style={styles.readinessStatItem}>
-                            <Text style={styles.readinessStatText}>
-                              Stress: {stressLabel.replace(' ✓', '')}
-                            </Text>
-                            {stressorCount <= 0 && <Text style={styles.readinessStatCheck}> ✓</Text>}
-                          </View>
-                        </View>
-                      </>
-                    )}
-                    {!hasLog && (
-                      <Text style={styles.readinessHint}>
-                        {isToday ? 'Log today to see your score' : 'No data for this day'}
-                      </Text>
-                    )}
+                    <View style={{ width: 56, height: 56 }}>
+                      <Svg width={56} height={56} viewBox="0 0 56 56">
+                        <Circle cx={28} cy={28} r={24} fill="none" stroke="#bfdbfe" strokeWidth={5} />
+                        {score !== null && (
+                          <Circle
+                            cx={28} cy={28} r={24} fill="none"
+                            stroke="#3b82f6" strokeWidth={5}
+                            strokeDasharray={`${arcLength} ${circumference - arcLength}`}
+                            strokeLinecap="round"
+                            transform="rotate(-90 28 28)"
+                          />
+                        )}
+                      </Svg>
+                    </View>
                   </View>
+                  <Text style={styles.readinessActivityLabel}>{activityLabel}</Text>
+                  {(() => {
+                    if (isRefreshing && !aiNarrative) {
+                      return (
+                        <View style={styles.analyzingRow}>
+                          <ActivityIndicator size="small" color="#94a3b8" />
+                          <Text style={styles.analyzingTextBlue}>Analysing your day...</Text>
+                        </View>
+                      );
+                    }
+                    if (aiNarrative) {
+                      return <Text style={styles.readinessNarrative}>{aiNarrative}</Text>;
+                    }
+                    if (!morningDone && !eveningDone) return null;
+                    const hrs = sleepLog?.sleepHours;
+                    const topSym = symptomTrends.length > 0 ? symptomTrends[0].name.replace(/_/g, ' ') : null;
+                    let msg = '';
+                    if (scoreNum >= 70) {
+                      msg = hrs ? `${hrs} hours of sleep and your body is responding well — a good day to be active.` : 'Your body is doing well today.';
+                    } else if (scoreNum >= 40) {
+                      const sleepNote = hrs ? `${hrs} hours of sleep is keeping things steady` : 'Some things are working in your favour';
+                      const dragNote = topSym ? `, but ${topSym} is weighing on things` : ', though your body could use some care';
+                      msg = `${sleepNote}${dragNote}.${!eveningDone ? ' Your evening check-in will complete today\'s picture.' : ''}`;
+                    } else {
+                      const context = hrs && hrs < 6 ? `Only ${hrs} hours of sleep is making everything feel harder` : topSym ? `${topSym.charAt(0).toUpperCase() + topSym.slice(1)} is weighing heavily today` : 'Your body is carrying a lot today';
+                      msg = `${context}. Be extra gentle with yourself.`;
+                    }
+                    return <Text style={styles.readinessNarrative}>{msg}</Text>;
+                  })()}
                 </View>
               );
             })()}
 
-            {/* Quick actions — SOS + Check-in / Log */}
-            <View style={styles.actionRow}>
-              <AnimatedPressable
-                onPress={() => { hapticMedium(); router.push('/(app)/sos'); }}
-                scaleDown={0.97}
-                style={styles.sosCard}
-              >
-                <View style={styles.sosIcon}>
-                  <Text style={{ fontSize: 18 }}>❄</Text>
-                </View>
-                <Text style={styles.sosTitle}>SOS</Text>
-                <Text style={styles.sosSubtitle}>Hot flash</Text>
-              </AnimatedPressable>
-              <AnimatedPressable
-                onPress={() => {
-                  hapticMedium();
-                  if (!morningDone) {
-                    router.push({ pathname: '/(app)/quick-log', params: { date: selectedDate, mode: 'morning' } });
-                  } else if (!eveningDone) {
-                    router.push({ pathname: '/(app)/quick-log', params: { date: selectedDate, mode: 'evening' } });
-                  } else {
-                    router.navigate('/(app)/log');
-                  }
-                }}
-                scaleDown={0.97}
-                style={styles.checkinCard}
-              >
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.checkinTitle}>
-                    {!morningDone ? '☀ Morning check-in' : !eveningDone ? '☽ Evening check-in' : '+ Log symptoms'}
-                  </Text>
-                  <Text style={styles.checkinSub}>
-                    {!morningDone || !eveningDone
-                      ? `2 min${lastLoggedHoursAgo ? ` · Last logged ${lastLoggedHoursAgo}h ago` : ''}`
-                      : 'Quick symptom log'}
-                  </Text>
-                </View>
-                <View style={styles.checkinArrow}>
-                  <Text style={{ fontSize: 14, color: '#ffffff' }}>→</Text>
-                </View>
-              </AnimatedPressable>
-            </View>
-
-            {/* Daily Journal card — works for today and past days */}
+            {/* ══════════ SOS — slim row ══════════ */}
             <AnimatedPressable
-              onPress={() => {
-                hapticMedium();
-                if (!morningDone) {
-                  router.push({ pathname: '/(app)/quick-log', params: { date: selectedDate, mode: 'morning' } });
-                } else if (!eveningDone) {
-                  router.push({ pathname: '/(app)/quick-log', params: { date: selectedDate, mode: 'evening' } });
-                } else if (isToday) {
-                  router.navigate('/(app)/journal');
-                }
-              }}
+              onPress={() => { hapticMedium(); router.push('/(app)/sos'); }}
               scaleDown={0.97}
-              style={styles.journalCard}
+              style={styles.sosRow}
             >
-              <View style={styles.journalCardRow}>
-                <View style={styles.journalMorningIcon}>
-                  <Text style={{ fontSize: 18, color: '#b45309' }}>☀</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.journalCardTitle}>
-                    {morningDone ? 'Morning ✓' : 'Morning journal'}
-                  </Text>
-                  <Text style={styles.journalCardDesc}>
-                    {morningDone ? 'Completed' : isToday ? "How'd you sleep? 2 min check-in" : 'Log morning for this day'}
-                  </Text>
-                </View>
-                {!morningDone && isToday && hour < 14 && (
-                  <View style={styles.nowBadge}>
-                    <Text style={styles.nowBadgeText}>NOW</Text>
-                  </View>
-                )}
-                {morningDone && (
-                  <View style={styles.journalCheckDone}>
-                    <Text style={{ fontSize: 12, color: '#fff', fontWeight: '600' }}>✓</Text>
-                  </View>
-                )}
-                {!morningDone && (!isToday || hour >= 14) && <View style={styles.journalEmptyCheck} />}
+              <View style={styles.sosIcon}>
+                <Text style={{ fontSize: 14 }}>❄️</Text>
               </View>
-              <View style={[styles.journalCardRow, { marginTop: 12 }]}>
-                <View style={styles.journalEveningIcon}>
-                  <Text style={{ fontSize: 18, color: '#6366f1' }}>☽</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.journalCardTitle, !eveningDone && isToday && hour < 19 && { color: '#57534e' }]}>
-                    {eveningDone ? 'Evening ✓' : 'Evening reflection'}
-                  </Text>
-                  <Text style={styles.journalCardDesc}>
-                    {eveningDone ? 'Completed' : isToday ? (hour >= 19 ? 'How was today?' : 'Available tonight at 7 PM') : 'Log evening for this day'}
-                  </Text>
-                </View>
-                {eveningDone && (
-                  <View style={styles.journalCheckDone}>
-                    <Text style={{ fontSize: 12, color: '#fff', fontWeight: '600' }}>✓</Text>
-                  </View>
-                )}
-                {!eveningDone && <View style={styles.journalEmptyCheck} />}
+              <View style={{ flex: 1 }}>
+                <Text style={styles.sosTitle}>SOS — Hot flash?</Text>
+                <Text style={styles.sosSubtitle}>Breathing exercise + grounding</Text>
               </View>
-              {/* Mini streak */}
-              {streak > 0 && (
-                <View style={styles.journalStreak}>
-                  <Text style={styles.journalStreakText}>{streak} day streak</Text>
-                </View>
-              )}
+              <Text style={{ fontSize: 16, color: '#d6d3d1' }}>›</Text>
             </AnimatedPressable>
 
             {/* Today's Meds */}
@@ -769,6 +823,13 @@ export default function HomeScreen() {
                     <Text style={styles.medsSummaryText}>
                       {medsTakenCount} of {meds.length} taken today
                     </Text>
+                    <AnimatedPressable
+                      onPress={() => { hapticLight(); router.push('/(app)/meds'); }}
+                      scaleDown={0.97}
+                      style={styles.medsAddButton}
+                    >
+                      <Text style={styles.medsAddButtonText}>+ Add</Text>
+                    </AnimatedPressable>
                   </View>
                 </View>
               </View>
@@ -780,9 +841,9 @@ export default function HomeScreen() {
                 <Text style={styles.sectionTitle}>Today's meds</Text>
                 <View style={styles.medsEmptyCard}>
                   <Text style={styles.medsEmptyIcon}>💊</Text>
-                  <Text style={styles.medsEmptyTitle}>Track your medications</Text>
+                  <Text style={styles.medsEmptyTitle}>Meds and supplements</Text>
                   <Text style={styles.medsEmptyDesc}>
-                    Add supplements, HRT, or prescriptions to track daily
+                    Track HRT, supplements, or prescriptions so we can spot what helps
                   </Text>
                   <AnimatedPressable
                     onPress={() => { hapticLight(); router.push('/(app)/meds'); }}
@@ -800,7 +861,7 @@ export default function HomeScreen() {
               <View style={styles.section}>
                 <View style={styles.sectionHeader}>
                   <Text style={styles.sectionTitle}>How you're doing</Text>
-                  <AnimatedPressable onPress={() => { hapticLight(); router.navigate('/(app)/insights'); }} scaleDown={0.97}>
+                  <AnimatedPressable onPress={() => { hapticLight(); router.navigate('/(app)/insights' as any); }} scaleDown={0.97}>
                     <Text style={styles.seeAll}>See why →</Text>
                   </AnimatedPressable>
                 </View>
@@ -847,9 +908,40 @@ export default function HomeScreen() {
                 ) : (
                   <View style={styles.card}>
                     <Text style={styles.cardHintText}>
-                      Log symptoms to see your trends here
+                      Once you log symptoms, your trends will appear here
                     </Text>
                   </View>
+                )}
+
+                {/* Auto-detected sleep card — from HealthKit step data (Rise-style) */}
+                {autoSleep && healthData.connected && !sleepLog?.sleepHours && (
+                  <AnimatedPressable
+                    onPress={() => {
+                      hapticLight();
+                      router.push({ pathname: '/(app)/quick-log', params: { date: selectedDate, mode: 'morning' } });
+                    }}
+                    scaleDown={0.97}
+                    style={[styles.card, { marginTop: 8, borderWidth: 1, borderColor: '#dbeafe' }]}
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                      <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: '#ede9fe', alignItems: 'center', justifyContent: 'center' }}>
+                        <Text style={{ fontSize: 18 }}>🌙</Text>
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                          <Text style={styles.trendName}>
+                            {autoSleep.hours}h sleep detected
+                          </Text>
+                          <View style={{ backgroundColor: '#dbeafe', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 }}>
+                            <Text style={{ fontSize: 10, fontWeight: '500', color: '#2563eb' }}>Auto</Text>
+                          </View>
+                        </View>
+                        <Text style={styles.trendSubtext}>
+                          ~{autoSleep.sleepStart.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} — ~{autoSleep.sleepEnd.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} · Tap to log your morning
+                        </Text>
+                      </View>
+                    </View>
+                  </AnimatedPressable>
                 )}
 
                 {/* Sleep Score card — shows score from readiness components */}
@@ -887,7 +979,6 @@ export default function HomeScreen() {
                           {sleepLog.sleepQuality ? ` · ${sleepLog.sleepQuality}` : ''}
                         </Text>
                       </View>
-                      <Text style={{ fontSize: 14, color: '#78716c' }}>Edit →</Text>
                     </View>
                   </AnimatedPressable>
                 )}
@@ -897,7 +988,7 @@ export default function HomeScreen() {
             {/* Insight nudge — pattern detection (from correlations or AI fallback) */}
             {(insightNudge || topCorrelations.length > 0 || (hasLog && symptomTrends.length > 0)) && (
               <AnimatedPressable
-                onPress={() => { hapticLight(); router.navigate('/(app)/insights'); }}
+                onPress={() => { hapticLight(); router.navigate('/(app)/insights' as any); }}
                 scaleDown={0.98}
                 style={styles.insightCard}
               >
@@ -906,19 +997,23 @@ export default function HomeScreen() {
                   <Text style={styles.insightTitle}>
                     {insightNudge?.title || (
                       topCorrelations.length > 0
-                        ? 'We spotted a pattern'
+                        ? 'Something showed up in your data'
                         : streak >= 14
-                          ? `Overall ${symptomTrends.some((s) => s.improving) ? 'improving' : 'stable'}. ${symptomTrends[0]?.name || 'Your patterns'} trending.`
-                          : 'Building your picture'
+                          ? `${symptomTrends.some((s) => s.improving) ? 'Things are shifting' : 'Holding steady'}`
+                          : streak >= 3
+                            ? 'Building your picture'
+                            : 'Getting started'
                     )}
                   </Text>
                   <Text style={styles.insightDesc}>
                     {insightNudge?.body || (
                       topCorrelations.length > 0
-                        ? topCorrelations[0].humanLabel + (topCorrelations.length > 1 ? ` We found ${topCorrelations.length} patterns so far.` : '')
-                        : streak >= 7
-                          ? `${streak}-day streak! Patterns start emerging after 14 days of data.`
-                          : 'Keep logging daily so we can identify triggers and trends in your symptoms.'
+                        ? topCorrelations[0].humanLabel + (topCorrelations.length > 1 ? ` ${topCorrelations.length} patterns found so far.` : '')
+                        : streak >= 14
+                          ? `${streak} days logged — check your insights for patterns we've found.`
+                          : streak >= 7
+                            ? `${streak} days logged. A few more and we can start connecting the dots.`
+                            : 'Log daily so we can start spotting what triggers your symptoms.'
                     )}
                   </Text>
                   <Text style={[styles.seeAll, { marginTop: 6 }]}>See why →</Text>
@@ -1055,7 +1150,7 @@ export default function HomeScreen() {
                             <Text style={[styles.summaryTitle, { fontWeight: '700' }]}>Evening reflection</Text>
                           </View>
                           <Text style={{ fontSize: 14, color: '#78716c', marginTop: 4 }}>
-                            Ready when you are — 4 steps · under 2 min
+                            Whenever you are ready. 4 quick steps, under 2 min.
                           </Text>
                         </AnimatedPressable>
                       );
@@ -1066,123 +1161,76 @@ export default function HomeScreen() {
               </View>
             )}
 
-            {/* Tonight's plan */}
+            {/* ══════════ TONIGHT'S PLAN ══════════ */}
             {isToday && (
               <View style={styles.section}>
-                <View style={styles.sectionHeader}>
-                  <Text style={styles.sectionTitle}>Tonight's plan ☽</Text>
-                  <Text style={styles.tonightWeekLabel}>Week 2, Day 3</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+                  <Text style={styles.sectionTitle}>Tonight's plan</Text>
+                  <Text style={{ fontSize: 14 }}>🌙</Text>
                 </View>
                 <View style={{ gap: 8 }}>
-                  {/* 1. Program lesson — always first, from 8-week plan */}
+                  {/* Program audio — next episode (no week/day label) */}
                   <AnimatedPressable
-                    onPress={() => { hapticLight(); router.navigate('/(app)/wellness'); }}
+                    onPress={() => { hapticLight(); router.push('/(app)/player' as any); }}
                     scaleDown={0.97}
-                    style={styles.programLessonCard}
+                    style={styles.tonightProgramCard}
                   >
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                      <View style={styles.programLessonIcon}>
-                        <Text style={styles.programLessonIconText}>✦</Text>
+                      <View style={styles.tonightProgramIcon}>
+                        <Text style={{ fontSize: 16, color: '#ffffff' }}>✦</Text>
                       </View>
                       <View style={{ flex: 1 }}>
-                        <Text style={styles.programLessonTitle}>Building a Wind-Down Routine</Text>
-                        <Text style={styles.programLessonDur}>Audio lesson · 10 min</Text>
-                        <Text style={styles.programLessonWeek}>Week 2 · Your program</Text>
+                        <Text style={[styles.tonightProgramTitle, { color: '#ffffff' }]}>
+                          {/* Use suggestedAudio title if from program, else default */}
+                          Why Sleep Changes in Perimenopause
+                        </Text>
+                        <Text style={[styles.tonightProgramSub, { color: '#a8a29e' }]}>Podcast · 20 min</Text>
+                      </View>
+                      <View style={[styles.tonightPlayBtn, { backgroundColor: '#44403c' }]}>
+                        <Text style={{ fontSize: 12, color: '#ffffff', marginLeft: 2 }}>▶</Text>
+                      </View>
+                    </View>
+                  </AnimatedPressable>
+
+                  {/* Evening meditation */}
+                  <AnimatedPressable
+                    onPress={() => { hapticLight(); router.push('/(app)/player' as any); }}
+                    scaleDown={0.97}
+                    style={styles.tonightMeditationCard}
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                      <View style={styles.tonightMeditationIcon}>
+                        <Text style={{ fontSize: 18 }}>🧘‍♀️</Text>
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.tonightProgramTitle}>Body Scan for Sleep</Text>
+                        <Text style={styles.tonightProgramSub}>Meditation · 15 min</Text>
                       </View>
                       <View style={styles.tonightPlayBtn}>
-                        <Text style={{ fontSize: 10, color: '#ffffff' }}>▶</Text>
+                        <Text style={{ fontSize: 12, color: '#a8a29e', marginLeft: 2 }}>▶</Text>
                       </View>
                     </View>
                   </AnimatedPressable>
 
-                  {/* 2. Suggested evening audio — with tag pills */}
-                  <AnimatedPressable
-                    onPress={() => { hapticLight(); router.navigate('/(app)/wellness'); }}
-                    scaleDown={0.97}
-                    style={[styles.card, { flexDirection: 'row', alignItems: 'center', gap: 12 }]}
-                  >
-                    <View style={[styles.planIcon, { backgroundColor: '#e0e7ff' }]}>
-                      <Text style={{ fontSize: 14 }}>🧘</Text>
+                  {/* Tomorrow forecast */}
+                  {tomorrowForecast && (
+                    <View style={styles.tonightInsight}>
+                      <Text style={{ fontSize: 14, color: '#047857', marginTop: 2 }}>💡</Text>
+                      <Text style={styles.tonightInsightText}>
+                        <Text style={{ fontWeight: '500', color: '#44403c' }}>Looking ahead: </Text>
+                        {tomorrowForecast}
+                      </Text>
                     </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.planTitle}>Body Scan for Sleep</Text>
-                      <Text style={styles.planSubtitle}>Meditation · 15 min</Text>
-                      <View style={styles.tonightTagRow}>
-                        {['evening', 'sleep', 'calm'].map((t) => (
-                          <View key={t} style={styles.tonightTag}>
-                            <Text style={styles.tonightTagText}>{t}</Text>
-                          </View>
-                        ))}
-                      </View>
-                    </View>
-                    <View style={styles.tonightPlayBtnLight}>
-                      <Text style={{ fontSize: 10, color: '#78716c' }}>▶</Text>
-                    </View>
-                  </AnimatedPressable>
-
-                  {/* 3. Evening journal — when not done */}
-                  {!eveningDone && (
-                    <AnimatedPressable
-                      onPress={() => {
-                        hapticLight();
-                        router.push({ pathname: '/(app)/quick-log', params: { mode: 'evening' } });
-                      }}
-                      scaleDown={0.97}
-                      style={[styles.card, { flexDirection: 'row', alignItems: 'center', gap: 12 }]}
-                    >
-                      <View style={[styles.planIcon, { backgroundColor: '#e0e7ff' }]}>
-                        <Text style={{ fontSize: 14, color: '#6366f1' }}>☽</Text>
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.planTitle}>Evening journal</Text>
-                        <Text style={styles.planSubtitle}>Reflect on your day · 2 min</Text>
-                      </View>
-                      <View style={styles.planCheckbox} />
-                    </AnimatedPressable>
                   )}
-
-                  {/* Tomorrow's forecast insight */}
-                  <View style={styles.tonightInsight}>
-                    <Text style={{ fontSize: 14, color: '#047857', marginTop: 2 }}>💡</Text>
-                    <Text style={styles.tonightInsightText}>
-                      <Text style={{ fontWeight: '500', color: '#44403c' }}>Tomorrow's forecast: </Text>
-                      Sleep 7+ hours tonight and your readiness could hit 78. Your body responds well to early wind-downs.
-                    </Text>
-                  </View>
                 </View>
               </View>
             )}
 
-            {/* Wellness Centre entry card */}
-            {isToday && (
-              <AnimatedPressable
-                onPress={() => { hapticMedium(); router.navigate('/(app)/wellness'); }}
-                scaleDown={0.97}
-                style={styles.wellnessEntryCard}
-              >
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                  <View style={styles.wellnessEntryIcon}>
-                    <Text style={{ fontSize: 14, fontWeight: '700', color: '#b45309' }}>✦</Text>
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.wellnessEntryTitle}>Wellness Centre</Text>
-                    <Text style={styles.wellnessEntrySubtitle}>Your program, meditations, podcasts & guides</Text>
-                  </View>
-                  <Text style={{ fontSize: 18, color: '#78716c' }}>›</Text>
-                </View>
-                <View style={styles.wellnessProgressBg}>
-                  <View style={[styles.wellnessProgressFill, { width: '18%' }]} />
-                </View>
-                <Text style={styles.wellnessProgressText}>Day 10 of 56 · Week 2: Sleep & Night Sweats</Text>
-              </AnimatedPressable>
-            )}
-
-            {/* Period Tracker Widget — 3 states */}
-            {isToday && periodEnabled && (() => {
+            {/* ══════════ PERIOD WIDGET — perimenopause users only ══════════ */}
+            {isToday && periodEnabled && profile?.stage === 'peri' && (() => {
               const hasCycleData = periodCycle && periodCycle.cycle;
               const isActive = hasCycleData && periodCycle.cycle.status === 'active' && periodCycle.daysSinceStart != null && periodCycle.daysSinceStart <= 10;
 
-              // Helper: human-friendly time since last period
               const timeAgo = (dateStr: string) => {
                 const days = Math.round((Date.now() - new Date(dateStr).getTime()) / 86400000);
                 if (days === 0) return 'Today';
@@ -1194,7 +1242,6 @@ export default function HomeScreen() {
                 return `${months} month${months > 1 ? 's' : ''} ago`;
               };
 
-              // State 3: Active period (promoted, rose card)
               if (isActive) {
                 return (
                   <AnimatedPressable
@@ -1221,8 +1268,6 @@ export default function HomeScreen() {
                   </AnimatedPressable>
                 );
               }
-
-              // State 2: Waiting (has cycle data, not currently active)
               if (hasCycleData) {
                 return (
                   <AnimatedPressable
@@ -1236,17 +1281,13 @@ export default function HomeScreen() {
                       </View>
                       <View style={{ flex: 1 }}>
                         <Text style={styles.periodWidgetWaitingTitle}>Period Tracker</Text>
-                        <Text style={styles.periodWidgetWaitingSub}>
-                          Last period: {timeAgo(periodCycle.cycle.startDate)}
-                        </Text>
+                        <Text style={styles.periodWidgetWaitingSub}>Last period: {timeAgo(periodCycle.cycle.startDate)}</Text>
                       </View>
                       <Text style={{ fontSize: 18, color: '#d6d3d1' }}>›</Text>
                     </View>
                   </AnimatedPressable>
                 );
               }
-
-              // State 1: Empty (enabled but no data yet)
               return (
                 <AnimatedPressable
                   onPress={() => { hapticLight(); router.push('/(app)/period-tracker'); }}
@@ -1267,81 +1308,24 @@ export default function HomeScreen() {
               );
             })()}
 
-            {/* Empty state — no log for selected day */}
-            {!hasLog && (
+            {/* Empty state — no log for past day */}
+            {!hasLog && !isToday && (
               <View style={styles.emptyCard}>
                 <View style={styles.emptyIcon}>
                   <Ionicons name="add-circle-outline" size={36} color="#f59e0b" />
                 </View>
-                <Text style={styles.emptyTitle}>
-                  {isToday ? 'No check-in yet today' : 'No log for this day'}
-                </Text>
-                <Text style={styles.emptyDesc}>
-                  {isToday
-                    ? 'Track your symptoms, mood, and sleep to see patterns over time.'
-                    : 'You can still add a past entry to fill in the gaps.'}
-                </Text>
+                <Text style={styles.emptyTitle}>No log for this day</Text>
+                <Text style={styles.emptyDesc}>You can still log a past entry to fill in the picture.</Text>
                 <AnimatedPressable
                   onPress={() => {
                     hapticMedium();
-                    router.push({
-                      pathname: '/(app)/quick-log',
-                      params: { date: selectedDate, mode: 'morning' },
-                    });
+                    router.push({ pathname: '/(app)/quick-log', params: { date: selectedDate, mode: 'morning' } });
                   }}
                   scaleDown={0.96}
                   style={styles.emptyButton}
                 >
-                  <Text style={styles.emptyButtonText}>
-                    {isToday ? 'Start morning journal' : 'Log this day'}
-                  </Text>
+                  <Text style={styles.emptyButtonText}>Log this day</Text>
                 </AnimatedPressable>
-              </View>
-            )}
-
-            {/* Streak */}
-            {streak > 0 && (
-              <View style={[styles.card, { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 4 }]}>
-                <Text style={{ fontSize: 20 }}>🔥</Text>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.planTitle}>{streak}-day streak</Text>
-                  <Text style={styles.planSubtitle}>
-                    {streak <= 1 ? 'Great start! Keep logging daily.' : `You've been logging for ${streak} days in a row!`}
-                  </Text>
-                </View>
-              </View>
-            )}
-
-            {/* Learn section */}
-            {articles.length > 0 && (
-              <View style={[styles.section, { marginTop: 8 }]}>
-                <View style={styles.sectionHeader}>
-                  <Text style={styles.sectionTitle}>Learn</Text>
-                  <AnimatedPressable onPress={() => { hapticLight(); router.push('/(app)/learn'); }} scaleDown={0.97}>
-                    <Text style={styles.seeAll}>See all →</Text>
-                  </AnimatedPressable>
-                </View>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -24 }} contentContainerStyle={{ paddingHorizontal: 24, gap: 10 }}>
-                  {articles.map((article) => (
-                    <AnimatedPressable
-                      key={article.id}
-                      onPress={() => {
-                        hapticLight();
-                        router.push({ pathname: '/(app)/article', params: { id: String(article.id) } });
-                      }}
-                      scaleDown={0.97}
-                      style={styles.learnCard}
-                    >
-                      <View style={styles.learnImage}>
-                        <Text style={{ fontSize: 24 }}>
-                          {article.category === 'Sleep' ? '🌙' : article.category === 'Hot Flashes' ? '❄️' : article.category === 'Mood' ? '🧠' : article.category === 'Nutrition' ? '🥗' : '🏃‍♀️'}
-                        </Text>
-                      </View>
-                      <Text style={styles.learnMeta}>{article.category || 'General'} · {article.readTime || 3} min</Text>
-                      <Text style={styles.learnTitle} numberOfLines={2}>{article.title}</Text>
-                    </AnimatedPressable>
-                  ))}
-                </ScrollView>
               </View>
             )}
           </>
@@ -1442,29 +1426,175 @@ const styles = StyleSheet.create({
     color: '#78716c',
   },
 
-  // Readiness score
-  readinessCard: {
+  // ═══ State 1: Morning hero CTA ═══
+  morningHeroCard: {
+    backgroundColor: '#fef9c3',
+    borderRadius: 18,
+    padding: 20,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#fef3c7',
+  },
+  heroStreakRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 12,
+  },
+  heroStreakText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#92400e',
+  },
+  heroContentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    marginBottom: 16,
+  },
+  heroIconWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: '#fef3c7',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heroTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#1c1917',
+  },
+  heroSubtitle: {
+    fontSize: 14,
+    color: '#78716c',
+    marginTop: 3,
+  },
+  heroButton: {
     backgroundColor: '#1c1917',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  heroButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#ffffff',
+  },
+  heroHint: {
+    fontSize: 12,
+    color: '#a8a29e',
+    textAlign: 'center',
+  },
+
+  // ═══ State 2: Combo card (morning done + evening CTA) ═══
+  comboCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 18,
+    marginBottom: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#f5f5f4',
+  },
+  comboDoneRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f5f5f4',
+  },
+  comboDoneText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#057a55',
+    flex: 1,
+  },
+  comboDoneTime: {
+    fontSize: 13,
+    color: '#a8a29e',
+  },
+  comboEveningCta: {
+    backgroundColor: '#fef3c7',
+    padding: 18,
+    borderBottomLeftRadius: 18,
+    borderBottomRightRadius: 18,
+  },
+
+  // ═══ State 3: Collapsed check-ins ═══
+  collapsedCheckins: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#f5f5f4',
+  },
+  collapsedTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  collapsedStreakText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1c1917',
+  },
+  collapsedPillRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  collapsedPill: {
+    backgroundColor: '#f0fdf4',
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flex: 1,
+    justifyContent: 'center',
+  },
+  collapsedPillText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#057a55',
+  },
+
+  // Readiness score — blue gradient card
+  readinessCard: {
+    backgroundColor: '#eff6ff',
     borderRadius: 16,
     padding: 20,
     marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#dbeafe',
   },
   readinessLabel: {
     fontSize: 12,
-    color: '#78716c',
+    color: '#1e40af',
     letterSpacing: 1,
-    fontWeight: '300',
+    fontWeight: '500',
     textTransform: 'uppercase',
   },
   readinessValue: {
     fontSize: 40,
     fontWeight: '300',
-    color: '#ffffff',
+    color: '#1e3a5f',
     marginTop: 4,
+  },
+  readinessActivityLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1e40af',
+    marginTop: 2,
   },
   readinessHint: {
     fontSize: 14,
-    color: '#78716c',
+    color: '#64748b',
     marginTop: 4,
   },
   readinessRingOuter: {
@@ -1505,10 +1635,26 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   readinessNarrative: {
-    fontSize: 12,
-    color: '#d6d3d1',
+    fontSize: 13,
+    color: '#64748b',
     marginTop: 6,
-    lineHeight: 18,
+    lineHeight: 19,
+  },
+  analyzingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 8,
+  },
+  analyzingText: {
+    fontSize: 12,
+    color: '#a8a29e',
+    fontStyle: 'italic',
+  },
+  analyzingTextBlue: {
+    fontSize: 12,
+    color: '#94a3b8',
+    fontStyle: 'italic',
   },
   readinessStatsInline: {
     flexDirection: 'row',
@@ -1531,6 +1677,22 @@ const styles = StyleSheet.create({
   readinessStatCheck: {
     fontSize: 12,
     color: '#34d399',
+  },
+  wearableSyncRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 8,
+  },
+  wearableSyncDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#34d399',
+  },
+  wearableSyncText: {
+    fontSize: 11,
+    color: '#78716c',
   },
 
   // Journal card
@@ -1670,66 +1832,47 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     borderTopWidth: 1,
     borderTopColor: '#f5f5f4',
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
   },
   medsSummaryText: {
     fontSize: 14,
     color: '#78716c',
   },
+  medsAddButton: {
+    backgroundColor: '#f5f5f4',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+  },
+  medsAddButtonText: {
+    fontSize: 13,
+    fontWeight: '600' as const,
+    color: '#1c1917',
+  },
 
-  // SOS + Check-in row
-  actionRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 16,
-    marginTop: 4,
-  },
-  sosCard: {
-    backgroundColor: '#ecfdf5',
-    borderWidth: 1,
-    borderColor: '#d1fae5',
-    borderRadius: 16,
-    padding: 16,
-    alignItems: 'center',
-    gap: 8,
-    width: 90,
-  },
-  checkinCard: {
-    flex: 1,
-    backgroundColor: '#1c1917',
-    borderRadius: 16,
-    padding: 16,
+  // SOS — slim row
+  sosRow: {
+    backgroundColor: '#fff1f2',
+    borderRadius: 14,
+    padding: 14,
+    paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-  },
-  checkinTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#ffffff',
-  },
-  checkinSub: {
-    fontSize: 14,
-    color: '#78716c',
-    marginTop: 2,
-  },
-  checkinArrow: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#44403c',
-    alignItems: 'center',
-    justifyContent: 'center',
+    marginBottom: 16,
   },
   sosIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#14b8a6',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#fecdd3',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  sosTitle: { fontSize: 14, fontWeight: '600', color: '#115e59' },
-  sosSubtitle: { fontSize: 14, color: '#5eead4' },
+  sosTitle: { fontSize: 14, fontWeight: '600', color: '#1c1917' },
+  sosSubtitle: { fontSize: 12, color: '#78716c', marginTop: 1 },
 
   // Sections
   section: { marginBottom: 20 },
@@ -2050,7 +2193,57 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  // Wellness Centre entry card
+  // Tonight's Plan — program + meditation cards
+  tonightProgramCard: {
+    backgroundColor: '#1c1917',
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  tonightProgramIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#44403c',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tonightProgramTitle: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#1c1917',
+  },
+  tonightProgramSub: {
+    fontSize: 13,
+    color: '#78716c',
+    marginTop: 2,
+  },
+  tonightMeditationCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#f5f5f4',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  tonightMeditationIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#f5f5f4',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // Wellness Centre entry card (legacy — removed from view)
   wellnessEntryCard: {
     backgroundColor: '#fffbeb',
     borderRadius: 16,

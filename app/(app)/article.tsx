@@ -7,10 +7,13 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
 import Markdown from '@ronradtke/react-native-markdown-display';
+import AnimatedPressable from '@/components/AnimatedPressable';
+import { hapticLight } from '@/lib/haptics';
 import BackButton from '@/components/BackButton';
+import ErrorScreen from '@/components/ErrorScreen';
 import { apiRequest } from '@/lib/api';
 
 interface Article {
@@ -19,13 +22,12 @@ interface Article {
   bodyMarkdown: string | null;
   category: string | null;
   readTime: number | null;
-  durationMinutes?: number | null;
-  format?: string | null;
 }
 
 export default function ArticleScreen() {
-  const { id, source } = useLocalSearchParams<{ id: string; source?: string }>();
+  const { id } = useLocalSearchParams<{ id: string }>();
   const { getToken } = useAuth();
+  const router = useRouter();
   const [article, setArticle] = useState<Article | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -33,31 +35,31 @@ export default function ArticleScreen() {
     (async () => {
       try {
         const token = await getToken();
-        let data: any;
-
-        if (source === 'content') {
-          // Fetch from content API (lessons, guides, medication articles, recipes)
-          data = await apiRequest(`/api/content?id=${id}`, token);
-          // Map content fields to article shape
-          if (data) {
+        // Try articles endpoint first, then fall back to content API
+        let data;
+        try {
+          data = await apiRequest(`/api/articles/${id}`, token);
+        } catch {
+          // Content items use a different endpoint
+          const contentData = await apiRequest(`/api/content?id=${id}`, token);
+          if (contentData) {
             data = {
-              ...data,
-              readTime: data.durationMinutes || data.readTime || null,
+              id: contentData.id,
+              title: contentData.title,
+              bodyMarkdown: contentData.bodyMarkdown || contentData.description || null,
+              category: contentData.category,
+              readTime: contentData.durationMinutes,
             };
           }
-        } else {
-          // Default: fetch from articles API
-          data = await apiRequest(`/api/articles/${id}`, token);
         }
-
-        setArticle(data);
+        if (data) setArticle(data);
       } catch {
         // Non-critical
       } finally {
         setLoading(false);
       }
     })();
-  }, [id, source, getToken]);
+  }, [id, getToken]);
 
   if (loading) {
     return (
@@ -70,13 +72,7 @@ export default function ArticleScreen() {
   }
 
   if (!article) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <Text style={{ color: '#78716c', fontSize: 16 }}>Article not found</Text>
-        </View>
-      </SafeAreaView>
-    );
+    return <ErrorScreen type="not_found" />;
   }
 
   return (
@@ -111,7 +107,7 @@ export default function ArticleScreen() {
         {/* Header meta */}
         <View style={styles.header}>
           <Text style={styles.metaText}>
-            {article.category || 'General'}{article.readTime ? ` · ${article.readTime} min read` : article.durationMinutes ? ` · ${article.durationMinutes} min` : ''}
+            {article.category || 'General'}{article.readTime ? ` · ${article.readTime} min read` : ''}
           </Text>
           <Text style={styles.title}>{article.title}</Text>
         </View>
@@ -138,13 +134,13 @@ export default function ArticleScreen() {
 }
 
 const markdownStyles = StyleSheet.create({
-  body: { color: '#44403c', fontSize: 16, lineHeight: 24 },
+  body: { color: '#44403c', fontSize: 15, lineHeight: 24 },
   heading2: { color: '#1c1917', fontSize: 20, fontWeight: '700', marginTop: 24, marginBottom: 12 },
   heading3: { color: '#1c1917', fontSize: 17, fontWeight: '600', marginTop: 20, marginBottom: 10 },
   paragraph: { marginBottom: 14, lineHeight: 24 },
   strong: { fontWeight: '700', color: '#1c1917' },
   listItem: { marginBottom: 6 },
-  listUnorderedItemIcon: { color: '#78716c', fontSize: 8, marginTop: 8, marginRight: 8 },
+  listUnorderedItemIcon: { color: '#a8a29e', fontSize: 8, marginTop: 8, marginRight: 8 },
   bullet_list: { marginBottom: 14 },
 });
 
@@ -165,7 +161,7 @@ const styles = StyleSheet.create({
   },
   stickyTitle: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
     color: '#1c1917',
     textAlign: 'center',
@@ -180,7 +176,7 @@ const styles = StyleSheet.create({
   },
 
   header: { marginBottom: 20, paddingHorizontal: 24 },
-  metaText: { fontSize: 14, color: '#78716c', marginBottom: 8 },
+  metaText: { fontSize: 12, color: '#a8a29e', marginBottom: 8 },
   title: { fontSize: 22, fontWeight: '700', color: '#1c1917', lineHeight: 30 },
 
   body: { paddingHorizontal: 24 },
@@ -194,11 +190,11 @@ const styles = StyleSheet.create({
     marginHorizontal: 24,
     marginTop: 20,
   },
-  ctaText: { fontSize: 16, color: '#78716c' },
+  ctaText: { fontSize: 12, color: '#78716c' },
 
   disclaimer: {
-    fontSize: 14,
-    color: '#78716c',
+    fontSize: 12,
+    color: '#d6d3d1',
     fontStyle: 'italic',
     marginTop: 24,
     marginHorizontal: 24,

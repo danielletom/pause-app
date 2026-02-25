@@ -11,6 +11,7 @@ import {
 import { useRouter } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
 import AnimatedPressable from '@/components/AnimatedPressable';
+import BackButton from '@/components/BackButton';
 import { hapticMedium, hapticLight, hapticSuccess, hapticSelection } from '@/lib/haptics';
 import { apiRequest } from '@/lib/api';
 
@@ -113,9 +114,7 @@ export default function PeriodBleedingScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.topBar}>
-        <AnimatedPressable onPress={() => { hapticLight(); router.back(); }} scaleDown={0.97}>
-          <Text style={styles.backBtn}>← Back</Text>
-        </AnimatedPressable>
+        <BackButton />
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -278,8 +277,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fafaf9' },
   scrollContent: { paddingHorizontal: 24, paddingBottom: 120 },
   topBar: { paddingHorizontal: 24, paddingTop: 8, paddingBottom: 4 },
-  backBtn: { fontSize: 12, color: '#a8a29e' },
-
   stepTitle: { fontSize: 18, fontWeight: '700', color: '#1c1917', marginBottom: 4, marginTop: 12 },
   stepSub: { fontSize: 12, color: '#a8a29e', marginBottom: 20 },
 

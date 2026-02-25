@@ -10,6 +10,7 @@ import {
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
 import AnimatedPressable from '@/components/AnimatedPressable';
+import BackButton from '@/components/BackButton';
 import { hapticMedium, hapticLight } from '@/lib/haptics';
 import { apiRequest } from '@/lib/api';
 
@@ -128,9 +129,7 @@ export default function PeriodTrackerScreen() {
         {/* Header */}
         <View style={styles.headerRow}>
           <View style={{ flex: 1 }}>
-            <AnimatedPressable onPress={() => { hapticLight(); router.back(); }} scaleDown={0.97}>
-              <Text style={styles.backBtn}>← Home</Text>
-            </AnimatedPressable>
+            <BackButton label="Home" />
             <Text style={styles.title}>Period Tracker</Text>
           </View>
           <AnimatedPressable
@@ -328,7 +327,6 @@ const styles = StyleSheet.create({
   loadingContainer: { paddingTop: 80, alignItems: 'center' },
 
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 },
-  backBtn: { fontSize: 12, color: '#a8a29e', marginBottom: 4 },
   title: { fontSize: 22, fontWeight: '700', color: '#1c1917' },
   settingsBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#f5f5f4', alignItems: 'center', justifyContent: 'center' },
 

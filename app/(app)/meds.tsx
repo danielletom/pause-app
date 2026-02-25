@@ -40,17 +40,16 @@ interface MedLog {
   taken: boolean;
 }
 
-type TabKey = 'supplements' | 'current' | 'hrt' | 'labs';
+type TabKey = 'supplements' | 'current' | 'hrt';
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: 'current', label: 'Current' },
   { key: 'supplements', label: 'Supplements' },
   { key: 'hrt', label: 'HRT' },
-  { key: 'labs', label: 'Labs' },
 ];
 
 const TIME_OPTIONS = ['Morning', 'Afternoon', 'Evening', 'Bedtime', 'Custom'];
-const FREQUENCY_OPTIONS = ['Daily', 'Twice daily', 'Weekly', 'Every 2 weeks', 'Monthly', 'As needed', 'Custom'];
+const FREQUENCY_OPTIONS = ['Daily', 'Twice daily', 'Weekly', 'Every 2 weeks', 'Monthly', 'Custom'];
 const TYPE_OPTIONS = [
   { key: 'hrt', label: 'HRT' },
   { key: 'supplement', label: 'Supplement' },
@@ -449,7 +448,7 @@ export default function MedsScreen() {
                   style={styles.addMedBtn}
                 >
                   <Ionicons name="add" size={18} color="#78716c" />
-                  <Text style={styles.addMedBtnText}>Add medication</Text>
+                  <Text style={styles.addMedBtnText}>Add</Text>
                 </AnimatedPressable>
               </View>
             )}

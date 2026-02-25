@@ -5,6 +5,7 @@ import {
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
 import AnimatedPressable from '@/components/AnimatedPressable';
+import BackButton from '@/components/BackButton';
 import { hapticMedium, hapticLight, hapticSuccess } from '@/lib/haptics';
 import { apiRequest } from '@/lib/api';
 
@@ -85,9 +86,7 @@ export default function GratitudeReflectScreen() {
     return (
       <SafeAreaView style={s.container}>
         <View style={s.topBar}>
-          <AnimatedPressable onPress={() => { hapticLight(); router.back(); }} scaleDown={0.95}>
-            <Text style={s.backBtn}>← Back</Text>
-          </AnimatedPressable>
+          <BackButton light />
         </View>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 }}>
           <Text style={{ fontSize: 48, marginBottom: 16 }}>✦</Text>
@@ -103,9 +102,7 @@ export default function GratitudeReflectScreen() {
   return (
     <SafeAreaView style={s.container}>
       <View style={s.topBar}>
-        <AnimatedPressable onPress={() => { hapticLight(); router.back(); }} scaleDown={0.95}>
-          <Text style={s.backBtn}>← Back</Text>
-        </AnimatedPressable>
+        <BackButton light />
       </View>
 
       <View style={s.center}>
@@ -175,8 +172,6 @@ export default function GratitudeReflectScreen() {
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#1c1917' },
   topBar: { paddingHorizontal: 24, paddingTop: 8 },
-  backBtn: { fontSize: 12, color: '#78716c' },
-
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
 
   // Pre-reveal

@@ -5,6 +5,7 @@ import {
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
 import AnimatedPressable from '@/components/AnimatedPressable';
+import BackButton from '@/components/BackButton';
 import { hapticLight, hapticSelection } from '@/lib/haptics';
 import { apiRequest } from '@/lib/api';
 
@@ -68,9 +69,7 @@ export default function GratitudeThemesScreen() {
       <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={s.topBar}>
-          <AnimatedPressable onPress={() => { hapticLight(); router.back(); }} scaleDown={0.95}>
-            <Text style={s.backBtn}>← Back</Text>
-          </AnimatedPressable>
+          <BackButton />
         </View>
         <Text style={s.label}>AI-DETECTED THEMES</Text>
         <Text style={s.title}>What lights you up</Text>
@@ -182,7 +181,6 @@ const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fafaf9' },
   scroll: { paddingHorizontal: 24, paddingBottom: 120 },
   topBar: { paddingTop: 8, marginBottom: 4 },
-  backBtn: { fontSize: 12, color: '#a8a29e' },
   label: { fontSize: 10, color: '#0d9488', fontWeight: '500', letterSpacing: 1, marginTop: 8 },
   title: { fontSize: 24, fontWeight: '700', color: '#1c1917', marginTop: 2 },
   subtitle: { fontSize: 11, color: '#a8a29e', marginTop: 4, marginBottom: 16, lineHeight: 16 },

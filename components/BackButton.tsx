@@ -1,6 +1,6 @@
 import React from 'react';
 import { Text, StyleSheet, ViewStyle } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useNavigationContainerRef } from 'expo-router';
 import AnimatedPressable from './AnimatedPressable';
 import { hapticLight } from '@/lib/haptics';
 
@@ -21,10 +21,17 @@ interface BackButtonProps {
  */
 export default function BackButton({ label = 'Back', light = false, onPress, style }: BackButtonProps) {
   const router = useRouter();
+  const navRef = useNavigationContainerRef();
+
+  const safeGoBack = () => {
+    if (onPress) { onPress(); return; }
+    if (navRef.canGoBack()) { router.back(); }
+    else { router.navigate('/(app)/(tabs)'); }
+  };
 
   return (
     <AnimatedPressable
-      onPress={() => { hapticLight(); onPress ? onPress() : router.back(); }}
+      onPress={() => { hapticLight(); safeGoBack(); }}
       scaleDown={0.95}
       style={[styles.container, style]}
     >

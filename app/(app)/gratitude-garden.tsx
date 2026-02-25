@@ -6,6 +6,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
 import Svg, { Circle, G } from 'react-native-svg';
 import AnimatedPressable from '@/components/AnimatedPressable';
+import BackButton from '@/components/BackButton';
 import { hapticLight, hapticSelection } from '@/lib/haptics';
 import { apiRequest } from '@/lib/api';
 
@@ -98,9 +99,7 @@ export default function GratitudeGardenScreen() {
       <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={s.topBar}>
-          <AnimatedPressable onPress={() => { hapticLight(); router.back(); }} scaleDown={0.95}>
-            <Text style={s.backBtn}>← Back</Text>
-          </AnimatedPressable>
+          <BackButton light />
         </View>
         <Text style={s.label}>YOUR GRATITUDE</Text>
         <Text style={s.title}>Garden</Text>
@@ -113,8 +112,11 @@ export default function GratitudeGardenScreen() {
           <View style={s.gardenContainer}>
             {entries.length === 0 ? (
               <View style={s.gardenEmpty}>
-                <Text style={{ fontSize: 32, marginBottom: 8 }}>🌸</Text>
-                <Text style={s.gardenEmptyText}>Log your first gratitude to plant a bloom</Text>
+                <View style={s.gardenEmptyGlow}>
+                  <Text style={{ fontSize: 36 }}>🌱</Text>
+                </View>
+                <Text style={s.gardenEmptyTitle}>Your garden is ready</Text>
+                <Text style={s.gardenEmptyText}>Each gratitude you log plants a bloom here. Start your morning journal to see your garden grow.</Text>
               </View>
             ) : (
               <Svg width={svgSize} height={svgSize * 0.85} viewBox="0 0 100 100">
@@ -198,7 +200,6 @@ const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#1c1917' },
   scroll: { paddingHorizontal: 24, paddingBottom: 120 },
   topBar: { paddingTop: 8, marginBottom: 4 },
-  backBtn: { fontSize: 12, color: '#78716c' },
   label: { fontSize: 10, color: 'rgba(245,158,11,0.6)', fontWeight: '500', letterSpacing: 1, marginTop: 8 },
   title: { fontSize: 24, fontWeight: '700', color: '#ffffff', marginTop: 2 },
   subtitle: { fontSize: 11, color: '#78716c', marginTop: 4, marginBottom: 16, lineHeight: 16 },
@@ -210,7 +211,14 @@ const s = StyleSheet.create({
     overflow: 'hidden', alignItems: 'center', paddingVertical: 8,
   },
   gardenEmpty: { padding: 48, alignItems: 'center' },
-  gardenEmptyText: { fontSize: 12, color: '#78716c', textAlign: 'center' },
+  gardenEmptyGlow: {
+    width: 80, height: 80, borderRadius: 40,
+    backgroundColor: 'rgba(245,158,11,0.08)', borderWidth: 1,
+    borderColor: 'rgba(245,158,11,0.15)',
+    alignItems: 'center', justifyContent: 'center', marginBottom: 16,
+  },
+  gardenEmptyTitle: { fontSize: 16, fontWeight: '600', color: '#ffffff', marginBottom: 8, textAlign: 'center' },
+  gardenEmptyText: { fontSize: 13, color: '#78716c', textAlign: 'center', lineHeight: 20 },
 
   bloomOverlay: {
     position: 'absolute', bottom: 12, left: 12, right: 12,

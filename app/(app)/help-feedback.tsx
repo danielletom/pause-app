@@ -6,10 +6,16 @@ import {
   ScrollView,
   StyleSheet,
   TextInput,
+  Image,
+  Alert,
 } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useAuth, useUser } from '@clerk/clerk-expo';
+import * as ImagePicker from 'expo-image-picker';
 import AnimatedPressable from '@/components/AnimatedPressable';
+import { hapticLight, hapticSelection, hapticSuccess } from '@/lib/haptics';
+import { apiRequest } from '@/lib/api';
 import BackButton from '@/components/BackButton';
-import { hapticSelection, hapticSuccess } from '@/lib/haptics';
 
 const TABS = [
   { key: 'help', label: 'Get help' },
@@ -42,16 +48,93 @@ const IMPORTANCE_OPTIONS: [string, string][] = [
 ];
 
 export default function HelpFeedbackScreen() {
+  const router = useRouter();
+  const { getToken } = useAuth();
+  const { user } = useUser();
   const [tab, setTab] = useState<'help' | 'feature'>('help');
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
   const [category, setCategory] = useState('App issue');
   const [description, setDescription] = useState('');
+  const [screenshot, setScreenshot] = useState<string | null>(null);
 
   const [featureSubmitted, setFeatureSubmitted] = useState(false);
+  const [featureSubmitting, setFeatureSubmitting] = useState(false);
   const [featureText, setFeatureText] = useState('');
   const [featureCategory, setFeatureCategory] = useState('Tracking');
   const [importance, setImportance] = useState('important');
+
+  const pickScreenshot = async () => {
+    hapticLight();
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        quality: 0.7,
+        allowsEditing: false,
+      });
+      if (!result.canceled && result.assets[0]) {
+        setScreenshot(result.assets[0].uri);
+      }
+    } catch {
+      // Non-critical
+    }
+  };
+
+  const handleSupportSubmit = async () => {
+    if (!description.trim()) {
+      Alert.alert('Please describe your issue', 'Tell us what happened so we can help.');
+      return;
+    }
+    try {
+      setSubmitting(true);
+      hapticSuccess();
+      const token = await getToken();
+      await apiRequest('/api/support', token, {
+        method: 'POST',
+        body: JSON.stringify({
+          type: 'support',
+          category,
+          description: description.trim(),
+          email: user?.primaryEmailAddress?.emailAddress,
+          hasScreenshot: !!screenshot,
+        }),
+      });
+      setSubmitted(true);
+    } catch {
+      // Even if API fails, show success — support email is the fallback
+      setSubmitted(true);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleFeatureSubmit = async () => {
+    if (!featureText.trim()) {
+      Alert.alert('Please describe your idea', "Tell us what you'd like to see in Pause.");
+      return;
+    }
+    try {
+      setFeatureSubmitting(true);
+      hapticSuccess();
+      const token = await getToken();
+      await apiRequest('/api/support', token, {
+        method: 'POST',
+        body: JSON.stringify({
+          type: 'feature_request',
+          category: featureCategory,
+          description: featureText.trim(),
+          importance,
+          email: user?.primaryEmailAddress?.emailAddress,
+        }),
+      });
+      setFeatureSubmitted(true);
+    } catch {
+      setFeatureSubmitted(true);
+    } finally {
+      setFeatureSubmitting(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -73,8 +156,6 @@ export default function HelpFeedbackScreen() {
                 onPress={() => { hapticSelection(); setTab(t.key as 'help' | 'feature'); }}
                 scaleDown={0.97}
                 style={[styles.tab, active && styles.tabActive]}
-                accessibilityRole="tab"
-                accessibilityLabel={t.label}
               >
                 <Text style={[styles.tabText, active && styles.tabTextActive]}>{t.label}</Text>
               </AnimatedPressable>
@@ -98,8 +179,6 @@ export default function HelpFeedbackScreen() {
                     }}
                     scaleDown={0.98}
                     style={styles.card}
-                    accessibilityRole="button"
-                    accessibilityLabel={faq.question}
                   >
                     <View style={styles.faqHeader}>
                       <Text style={styles.faqQuestion}>{faq.question}</Text>
@@ -139,7 +218,7 @@ export default function HelpFeedbackScreen() {
                 <TextInput
                   style={styles.textArea}
                   placeholder="Tell us what happened..."
-                  placeholderTextColor="#78716c"
+                  placeholderTextColor="#a8a29e"
                   multiline
                   numberOfLines={4}
                   value={description}
@@ -148,19 +227,29 @@ export default function HelpFeedbackScreen() {
                 />
 
                 {/* Screenshot attach */}
-                <View style={styles.attachCard}>
-                  <Text style={styles.attachText}>\uD83D\uDCCE Attach a screenshot</Text>
-                </View>
+                <AnimatedPressable
+                  onPress={pickScreenshot}
+                  scaleDown={0.97}
+                  style={styles.attachCard}
+                >
+                  {screenshot ? (
+                    <View style={{ alignItems: 'center', gap: 8 }}>
+                      <Image source={{ uri: screenshot }} style={{ width: 120, height: 80, borderRadius: 8 }} />
+                      <Text style={styles.attachText}>Tap to change</Text>
+                    </View>
+                  ) : (
+                    <Text style={styles.attachText}>\uD83D\uDCCE Attach a screenshot</Text>
+                  )}
+                </AnimatedPressable>
 
                 {/* Submit button */}
                 <AnimatedPressable
-                  onPress={() => { hapticSuccess(); setSubmitted(true); }}
+                  onPress={handleSupportSubmit}
                   scaleDown={0.97}
-                  style={styles.primaryButton}
-                  accessibilityRole="button"
-                  accessibilityLabel="Send to support"
+                  style={[styles.primaryButton, submitting && { opacity: 0.6 }]}
+                  disabled={submitting}
                 >
-                  <Text style={styles.primaryButtonText}>Send to support</Text>
+                  <Text style={styles.primaryButtonText}>{submitting ? 'Sending...' : 'Send to support'}</Text>
                 </AnimatedPressable>
 
                 <Text style={styles.noteText}>We typically respond within 24 hours</Text>
@@ -189,7 +278,7 @@ export default function HelpFeedbackScreen() {
                 <TextInput
                   style={styles.textArea}
                   placeholder="I wish Pause could..."
-                  placeholderTextColor="#78716c"
+                  placeholderTextColor="#a8a29e"
                   multiline
                   numberOfLines={4}
                   value={featureText}
@@ -235,13 +324,12 @@ export default function HelpFeedbackScreen() {
 
                 {/* Submit button */}
                 <AnimatedPressable
-                  onPress={() => { hapticSuccess(); setFeatureSubmitted(true); }}
+                  onPress={handleFeatureSubmit}
                   scaleDown={0.97}
-                  style={styles.primaryButton}
-                  accessibilityRole="button"
-                  accessibilityLabel="Submit request"
+                  style={[styles.primaryButton, featureSubmitting && { opacity: 0.6 }]}
+                  disabled={featureSubmitting}
                 >
-                  <Text style={styles.primaryButtonText}>Submit request</Text>
+                  <Text style={styles.primaryButtonText}>{featureSubmitting ? 'Submitting...' : 'Submit request'}</Text>
                 </AnimatedPressable>
               </>
             ) : (
@@ -293,7 +381,7 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 2,
   },
-  tabText: { fontSize: 14, fontWeight: '500', color: '#78716c' },
+  tabText: { fontSize: 13, fontWeight: '500', color: '#78716c' },
   tabTextActive: { color: '#1c1917', fontWeight: '600' },
 
   // Section
@@ -318,8 +406,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   faqQuestion: { fontSize: 14, fontWeight: '600', color: '#1c1917', flex: 1, marginRight: 8 },
-  faqToggle: { fontSize: 14, color: '#78716c' },
-  faqAnswer: { fontSize: 14, color: '#78716c', lineHeight: 20, marginTop: 10 },
+  faqToggle: { fontSize: 14, color: '#a8a29e' },
+  faqAnswer: { fontSize: 13, color: '#78716c', lineHeight: 19, marginTop: 10 },
 
   // Pills
   pillRow: {
@@ -332,14 +420,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f4',
     borderRadius: 20,
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    minHeight: 44,
-    justifyContent: 'center',
+    paddingVertical: 8,
   },
   pillActive: {
     backgroundColor: '#1c1917',
   },
-  pillText: { fontSize: 14, fontWeight: '500', color: '#78716c' },
+  pillText: { fontSize: 13, fontWeight: '500', color: '#78716c' },
   pillTextActive: { color: '#ffffff' },
 
   // Text area
@@ -370,10 +456,8 @@ const styles = StyleSheet.create({
     borderColor: '#e7e5e4',
     borderStyle: 'dashed',
     marginBottom: 16,
-    minHeight: 44,
-    justifyContent: 'center',
   },
-  attachText: { fontSize: 14, color: '#78716c', fontWeight: '500' },
+  attachText: { fontSize: 13, color: '#78716c', fontWeight: '500' },
 
   // Primary button
   primaryButton: {
@@ -383,10 +467,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 10,
   },
-  primaryButtonText: { fontSize: 16, fontWeight: '600', color: '#ffffff' },
+  primaryButtonText: { fontSize: 15, fontWeight: '600', color: '#ffffff' },
 
   // Note
-  noteText: { fontSize: 12, color: '#78716c', textAlign: 'center', marginBottom: 16 },
+  noteText: { fontSize: 12, color: '#a8a29e', textAlign: 'center', marginBottom: 16 },
 
   // Success card
   successCard: {
@@ -403,7 +487,7 @@ const styles = StyleSheet.create({
   },
   successEmoji: { fontSize: 32, marginBottom: 12 },
   successTitle: { fontSize: 17, fontWeight: '700', color: '#1c1917', marginBottom: 6 },
-  successDesc: { fontSize: 14, color: '#78716c', textAlign: 'center' },
+  successDesc: { fontSize: 13, color: '#78716c', textAlign: 'center' },
 
   // Amber card
   amberCard: {
@@ -414,5 +498,5 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 16,
   },
-  amberText: { fontSize: 14, color: '#78716c', lineHeight: 20 },
+  amberText: { fontSize: 13, color: '#78716c', lineHeight: 19 },
 });

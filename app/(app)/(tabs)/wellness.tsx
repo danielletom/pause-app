@@ -18,18 +18,11 @@ import { apiRequest } from '@/lib/api';
 const CONTENT_TABS = [
   { key: 'all', label: 'All' },
   { key: 'lessons', label: 'Lessons' },
-  { key: 'medication', label: 'Medication' },
+  { key: 'meditations', label: 'Meditations' },
   { key: 'guides', label: 'Guides' },
   { key: 'recipes', label: 'Recipes' },
 ];
 
-/* ─── Focused Programs (static — these are curated program entries) ── */
-const FOCUSED_PROGRAMS = [
-  { title: 'Better Sleep', icon: '☽', bgColor: '#e0e7ff', iconColor: '#6366f1' },
-  { title: 'Hot Flash Relief', icon: '❄', bgColor: '#ccfbf1', iconColor: '#0f766e' },
-  { title: 'Mood & Calm', icon: '◉', bgColor: '#d1fae5', iconColor: '#047857' },
-  { title: 'Movement', icon: '♡', bgColor: '#ffe4e6', iconColor: '#be123c' },
-];
 
 /* ─── Visual mapping for content cards (category → colors/icons) ── */
 const CATEGORY_STYLES: Record<string, { icon: string; bgColor: string; iconColor: string }> = {
@@ -70,6 +63,15 @@ function durationText(minutes: number | null | undefined, format?: string): stri
   return `${minutes} min`;
 }
 
+/* ─── Route helper: audio content → player, text → article ── */
+function isAudioContent(item: { contentType: string; format: string; audioUrl: string | null }): boolean {
+  const audioTypes = ['podcast', 'meditation', 'lesson', 'audio_lesson', 'affirmation', 'reflection'];
+  if (audioTypes.includes(item.contentType)) return true;
+  if (item.format === 'audio') return true;
+  if (item.audioUrl) return true;
+  return false;
+}
+
 /* ─── Types for API content items ── */
 type ContentItem = {
   id: number;
@@ -84,6 +86,17 @@ type ContentItem = {
   category: string | null;
   tags: string[] | null;
   sortOrder: number;
+  programId: string | null;
+  programWeek: number | null;
+  programDay: number | null;
+};
+
+type ArticleItem = {
+  id: number;
+  title: string;
+  category: string | null;
+  readTime: number | null;
+  thumbnailUrl: string | null;
 };
 
 export default function WellnessScreen() {
@@ -104,6 +117,7 @@ export default function WellnessScreen() {
   const [medicationArticles, setMedicationArticles] = useState<ContentItem[]>([]);
   const [guides, setGuides] = useState<ContentItem[]>([]);
   const [recipes, setRecipes] = useState<ContentItem[]>([]);
+  const [articles, setArticles] = useState<ArticleItem[]>([]);
   const [contentLoading, setContentLoading] = useState(true);
 
   // Fetch program progress + all content library sections
@@ -115,34 +129,47 @@ export default function WellnessScreen() {
           setContentLoading(true);
           const token = await getToken();
 
-          // Fetch everything in parallel
-          const [
-            progressData,
-            lessonsData,
-            meditationsData,
-            medicationData,
-            guidesData,
-            recipesData,
-          ] = await Promise.all([
+          // Fetch progress + all published content + articles in parallel
+          const [progressData, allContent, articlesData] = await Promise.all([
             apiRequest('/api/program/progress', token).catch(() => null),
-            apiRequest('/api/content?type=lesson', token).catch(() => []),
-            apiRequest('/api/content?type=meditation', token).catch(() => []),
-            apiRequest('/api/content?type=article&category=medication', token).catch(() => []),
-            apiRequest('/api/content?type=guide', token).catch(() => []),
-            apiRequest('/api/content?type=article&category=recipes', token).catch(() => []),
+            apiRequest('/api/content', token).catch(() => []),
+            apiRequest('/api/articles', token).catch(() => []),
           ]);
 
           if (progressData) setProgramProgress(progressData);
 
-          // Lessons: standalone lessons (exclude program episodes — those have programWeek set)
-          const standaloneLessons = Array.isArray(lessonsData)
-            ? lessonsData.filter((l: any) => !l.programWeek)
-            : [];
+          // Categorize content from the unified response
+          const items: ContentItem[] = Array.isArray(allContent) ? allContent : [];
+
+          // Lessons & podcasts (standalone only — exclude program episodes)
+          const standaloneLessons = items.filter(
+            (l) => !l.programWeek && ['lesson', 'audio_lesson', 'podcast'].includes(l.contentType)
+          );
           setLessons(standaloneLessons);
-          setMeditations(Array.isArray(meditationsData) ? meditationsData : []);
-          setMedicationArticles(Array.isArray(medicationData) ? medicationData : []);
-          setGuides(Array.isArray(guidesData) ? guidesData : []);
-          setRecipes(Array.isArray(recipesData) ? recipesData : []);
+
+          // Meditations & affirmations (standalone only)
+          setMeditations(items.filter(
+            (l) => !l.programWeek && ['meditation', 'affirmation'].includes(l.contentType)
+          ));
+
+          // Medication articles (any content about medication/HRT/supplements)
+          const medCategories = ['medication', 'hrt', 'supplements'];
+          setMedicationArticles(items.filter(
+            (l) => medCategories.includes((l.category || '').toLowerCase())
+          ));
+
+          // Guides
+          setGuides(items.filter(
+            (l) => l.contentType === 'guide' || l.format === 'pdf'
+          ));
+
+          // Recipes
+          setRecipes(items.filter(
+            (l) => (l.category || '').toLowerCase() === 'recipes' || (l.category || '').toLowerCase() === 'nutrition'
+          ));
+
+          // Articles (from separate articles table — educational content)
+          setArticles(Array.isArray(articlesData) ? articlesData : []);
         } catch {
           // Default states are fine — UI handles empty arrays gracefully
         } finally {
@@ -153,21 +180,46 @@ export default function WellnessScreen() {
     }, [])
   );
 
-  // Merge lessons + meditations for the Lessons tab
-  const allLessons = [...lessons, ...meditations];
+  // Convert articles to ContentItem shape for unified display
+  const articleContentItems: ContentItem[] = articles.map((a) => ({
+    id: a.id + 10000, // Offset to avoid ID collision with content table
+    title: a.title,
+    slug: null,
+    contentType: 'article',
+    format: 'text',
+    description: null,
+    audioUrl: null,
+    thumbnailUrl: a.thumbnailUrl || null,
+    durationMinutes: a.readTime || null,
+    category: a.category,
+    tags: null,
+    sortOrder: 0,
+    programId: null,
+    programWeek: null,
+    programDay: null,
+    _articleId: a.id, // Track real article ID for navigation
+  }));
+
+  // Merge lessons + meditations + articles for the Lessons tab
+  const allLessons = [...lessons, ...meditations, ...articleContentItems];
   const featuredLessons = allLessons.slice(0, 6);
   const gridLessons = allLessons.slice(6, 10);
 
   const showLessons = activeTab === 'all' || activeTab === 'lessons';
-  const showMedication = activeTab === 'all' || activeTab === 'medication';
+  const showMeditation = activeTab === 'all' || activeTab === 'meditations';
   const showGuides = activeTab === 'all' || activeTab === 'guides';
   const showRecipes = activeTab === 'all' || activeTab === 'recipes';
 
-  const pct = programProgress ? Math.round((programProgress.totalDone / 40) * 100) : 0;
-  const weekTitle = programProgress?.weekTitle || 'Week 2: Sleep & Night Sweats';
+  const totalEpisodes = (programProgress as any)?.totalEpisodes || 40;
+  const totalDone = programProgress?.totalDone ?? 0;
+  const pct = programProgress ? Math.min(Math.round((totalDone / totalEpisodes) * 100), 100) : 0;
+  const weekTitle = programProgress?.weekTitle || 'Week 1: Understanding Menopause';
+  const totalDay = (programProgress as any)?.totalDay ?? 1;
   const progressLabel = programProgress
-    ? `Day ${programProgress.day} of 56 · ${programProgress.totalDone} of 40 lessons done`
-    : 'Ready to begin · 40 lessons';
+    ? totalDone === 0
+      ? 'Ready to begin your journey'
+      : `Day ${totalDay} of ${totalEpisodes} · ${totalDone} lessons done`
+    : 'Ready to begin';
 
   return (
     <SafeAreaView style={styles.container}>
@@ -175,12 +227,12 @@ export default function WellnessScreen() {
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>Wellness Centre</Text>
-          <Text style={styles.subtitle}>Your program, lessons, guides & recipes</Text>
+          <Text style={styles.subtitle}>Your program, lessons, guides, and recipes</Text>
         </View>
 
         {/* ── YOUR 8-WEEK PROGRAM (Pause Pod) ── */}
         <AnimatedPressable
-          onPress={() => { hapticMedium(); /* Future: navigate to Pause Pod detail */ }}
+          onPress={() => { hapticMedium(); router.push('/(app)/learn' as any); }}
           scaleDown={0.97}
           style={styles.programCard}
         >
@@ -211,7 +263,7 @@ export default function WellnessScreen() {
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.sosTitle}>Hot Flash SOS</Text>
-            <Text style={styles.sosSubtitle}>Guided breathing for instant relief</Text>
+            <Text style={styles.sosSubtitle}>Guided breathing to help right now</Text>
           </View>
           <Text style={styles.chevron}>›</Text>
         </AnimatedPressable>
@@ -219,7 +271,7 @@ export default function WellnessScreen() {
         {/* ── CONTENT LIBRARY ── */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Content Library</Text>
-          <Text style={styles.sectionSubtitle}>Lessons, medication info, guides & recipes</Text>
+          <Text style={styles.sectionSubtitle}>Lessons, medication info, guides, and recipes</Text>
         </View>
 
         {/* Filter tabs */}
@@ -269,10 +321,19 @@ export default function WellnessScreen() {
                 >
                   {featuredLessons.map((l) => {
                     const style = getCategoryStyle(l.category);
+                    const isArticle = l.contentType === 'article' && (l as any)._articleId;
                     return (
                       <AnimatedPressable
-                        key={l.id}
-                        onPress={() => { hapticLight(); router.push({ pathname: '/(app)/article', params: { id: l.id, source: 'content' } }); }}
+                        key={`${l.contentType}-${l.id}`}
+                        onPress={() => {
+                          hapticLight();
+                          if (isArticle) {
+                            router.push({ pathname: '/(app)/article' as any, params: { id: (l as any)._articleId } });
+                          } else {
+                            const dest = isAudioContent(l) ? '/(app)/player' : '/(app)/article';
+                            router.push({ pathname: dest as any, params: { id: l.id, source: 'content' } });
+                          }
+                        }}
                         scaleDown={0.97}
                         style={styles.lessonHorizCard}
                       >
@@ -293,19 +354,30 @@ export default function WellnessScreen() {
                 {/* 2x2 grid of more lessons */}
                 {gridLessons.length > 0 && (
                   <View style={styles.grid}>
-                    {gridLessons.map((l) => (
-                      <AnimatedPressable
-                        key={l.id}
-                        onPress={() => { hapticLight(); router.push({ pathname: '/(app)/article', params: { id: l.id, source: 'content' } }); }}
-                        scaleDown={0.97}
-                        style={styles.lessonCard}
-                      >
-                        <Text style={styles.lessonTitle}>{l.title}</Text>
-                        <Text style={styles.lessonDur}>
-                          {l.contentType === 'meditation' ? 'Meditation' : 'Audio'} · {durationText(l.durationMinutes, l.format)}
-                        </Text>
-                      </AnimatedPressable>
-                    ))}
+                    {gridLessons.map((l) => {
+                      const isArticle = l.contentType === 'article' && (l as any)._articleId;
+                      return (
+                        <AnimatedPressable
+                          key={`${l.contentType}-${l.id}`}
+                          onPress={() => {
+                            hapticLight();
+                            if (isArticle) {
+                              router.push({ pathname: '/(app)/article' as any, params: { id: (l as any)._articleId } });
+                            } else {
+                              const dest = isAudioContent(l) ? '/(app)/player' : '/(app)/article';
+                              router.push({ pathname: dest as any, params: { id: l.id, source: 'content' } });
+                            }
+                          }}
+                          scaleDown={0.97}
+                          style={styles.lessonCard}
+                        >
+                          <Text style={styles.lessonTitle}>{l.title}</Text>
+                          <Text style={styles.lessonDur}>
+                            {isArticle ? `${durationText(l.durationMinutes, l.format)} read` : `${l.contentType === 'meditation' ? 'Meditation' : 'Audio'} · ${durationText(l.durationMinutes, l.format)}`}
+                          </Text>
+                        </AnimatedPressable>
+                      );
+                    })}
                   </View>
                 )}
               </>
@@ -313,30 +385,32 @@ export default function WellnessScreen() {
           </View>
         )}
 
-        {/* ── Medication & Supplements ── */}
-        {showMedication && (
+        {/* ── Meditations ── */}
+        {showMeditation && (
           <View style={styles.sectionBlock}>
             <View style={styles.sectionHeaderRow}>
-              <Text style={styles.sectionLabel}>Medication & Supplements</Text>
+              <Text style={styles.sectionLabel}>Meditations</Text>
               <Text style={styles.sectionCount}>
-                {medicationArticles.length > 0 ? `${medicationArticles.length} articles` : 'Loading...'}
+                {meditations.length > 0 ? `${meditations.length} meditations` : 'Loading...'}
               </Text>
             </View>
             {contentLoading ? (
               <ActivityIndicator size="small" color="#78716c" style={{ marginVertical: 20 }} />
-            ) : medicationArticles.length === 0 ? (
+            ) : meditations.length === 0 ? (
               <View style={styles.emptyState}>
-                <Text style={styles.emptyText}>Medication articles coming soon</Text>
+                <Text style={styles.emptyText}>Meditations coming soon</Text>
               </View>
             ) : (
               <View style={{ gap: 8 }}>
-                {medicationArticles.map((a) => {
+                {meditations.map((a) => {
                   const style = getCategoryStyle(a.category);
-                  const tagLabel = (a.tags as string[] | null)?.[0] || a.category || '';
                   return (
                     <AnimatedPressable
                       key={a.id}
-                      onPress={() => { hapticLight(); router.push({ pathname: '/(app)/article', params: { id: a.id, source: 'content' } }); }}
+                      onPress={() => {
+                        hapticLight();
+                        router.push({ pathname: '/(app)/player' as any, params: { id: a.id, source: 'content' } });
+                      }}
                       scaleDown={0.97}
                       style={styles.medCard}
                     >
@@ -347,11 +421,6 @@ export default function WellnessScreen() {
                         <Text style={styles.medTitle} numberOfLines={2}>{a.title}</Text>
                         <Text style={styles.medDur}>{durationText(a.durationMinutes, a.format)}</Text>
                       </View>
-                      {tagLabel ? (
-                        <View style={styles.medTagBadge}>
-                          <Text style={styles.medTagText}>{tagLabel}</Text>
-                        </View>
-                      ) : null}
                     </AnimatedPressable>
                   );
                 })}
@@ -382,7 +451,11 @@ export default function WellnessScreen() {
                   return (
                     <AnimatedPressable
                       key={g.id}
-                      onPress={() => { hapticLight(); router.push({ pathname: '/(app)/article', params: { id: g.id, source: 'content' } }); }}
+                      onPress={() => {
+                        hapticLight();
+                        const dest = isAudioContent(g) ? '/(app)/player' : '/(app)/article';
+                        router.push({ pathname: dest as any, params: { id: g.id, source: 'content' } });
+                      }}
                       scaleDown={0.97}
                       style={styles.guideCard}
                     >
@@ -428,7 +501,11 @@ export default function WellnessScreen() {
                   return (
                     <AnimatedPressable
                       key={r.id}
-                      onPress={() => { hapticLight(); router.push({ pathname: '/(app)/article', params: { id: r.id, source: 'content' } }); }}
+                      onPress={() => {
+                        hapticLight();
+                        const dest = isAudioContent(r) ? '/(app)/player' : '/(app)/article';
+                        router.push({ pathname: dest as any, params: { id: r.id, source: 'content' } });
+                      }}
                       scaleDown={0.97}
                       style={styles.recipeCard}
                     >
@@ -452,25 +529,6 @@ export default function WellnessScreen() {
           </View>
         )}
 
-        {/* ── Focused Programs — 2x2 grid ── */}
-        <View style={styles.sectionBlock}>
-          <Text style={styles.sectionLabel}>Focused programs</Text>
-          <View style={[styles.grid, { marginTop: 8 }]}>
-            {FOCUSED_PROGRAMS.map((p) => (
-              <AnimatedPressable
-                key={p.title}
-                onPress={() => { hapticLight(); /* Future: navigate to program */ }}
-                scaleDown={0.97}
-                style={styles.focusedCard}
-              >
-                <View style={[styles.focusedIcon, { backgroundColor: p.bgColor }]}>
-                  <Text style={{ fontSize: 14, color: p.iconColor }}>{p.icon}</Text>
-                </View>
-                <Text style={styles.focusedTitle}>{p.title}</Text>
-              </AnimatedPressable>
-            ))}
-          </View>
-        </View>
       </ScrollView>
     </SafeAreaView>
   );

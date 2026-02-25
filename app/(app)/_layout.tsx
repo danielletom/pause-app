@@ -48,6 +48,8 @@ export default function AppLayout() {
         <Stack.Screen name="gratitude-garden" />
         <Stack.Screen name="gratitude-themes" />
         <Stack.Screen name="gratitude-reflect" />
+        {/* Wearable devices settings */}
+        <Stack.Screen name="wearables" />
         {/* Audio player (full screen) */}
         <Stack.Screen name="player" options={{ animation: 'slide_from_bottom' }} />
       </Stack>

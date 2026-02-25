@@ -15,13 +15,6 @@ import { hapticLight, hapticSelection } from '@/lib/haptics';
 import { apiRequest } from '@/lib/api';
 
 // ─── Constants ──────────────────────────────────────────
-const PERIODS = [
-  { key: '1w', label: '1W' },
-  { key: '4w', label: '4W' },
-  { key: '3m', label: '3M' },
-  { key: 'all', label: 'All' },
-];
-
 const TABS = [
   { key: 'patterns', label: 'My patterns' },
   { key: 'normal', label: 'Am I normal?' },
@@ -31,6 +24,20 @@ const SYMPTOM_EMOJI: Record<string, string> = {
   hot_flash: '🔥', brain_fog: '😶‍🌫️', irritability: '😤', joint_pain: '💪',
   anxiety: '😰', fatigue: '😩', nausea: '🤢', heart_racing: '💓',
   night_sweats: '🌊', headache: '🤕', mood_swings: '🎭', insomnia: '😴',
+};
+
+// Map benchmark display names → log key (for navigation to symptom-detail)
+const DISPLAY_TO_KEY: Record<string, string> = {
+  'hot flashes': 'hot_flash',
+  'night sweats': 'night_sweats',
+  'joint pain': 'joint_pain',
+  'brain fog': 'brain_fog',
+  'mood changes': 'mood_swings',
+  'sleep disruption': 'insomnia',
+  'headaches': 'headache',
+  'heart palpitations': 'heart_racing',
+  'fatigue': 'fatigue',
+  'anxiety': 'anxiety',
 };
 
 // ─── API response types ─────────────────────────────────
@@ -43,6 +50,25 @@ interface CorrelationItem {
   occurrences: number;
   lagDays: number;
   humanLabel: string;
+  // Pipeline enrichments (optional — present when AI pipeline has run)
+  explanation?: string;
+  recommendation?: string;
+  mechanism?: string;
+  caveat?: string;
+}
+
+interface PipelineHelpsHurtsEntry {
+  factor: string;
+  symptom: string;
+  explanation: string;
+  strength: number;
+}
+
+interface ContradictionEntry {
+  factor: string;
+  helpsSymptom: string;
+  hurtsSymptom: string;
+  explanation: string;
 }
 
 interface CorrelationsResponse {
@@ -50,6 +76,12 @@ interface CorrelationsResponse {
   lastComputed: string | null;
   dataQuality: 'building' | 'moderate' | 'strong';
   totalFound: number;
+  // Pipeline enrichments (optional)
+  helpsHurts?: {
+    helps: PipelineHelpsHurtsEntry[];
+    hurts: PipelineHelpsHurtsEntry[];
+  };
+  contradictions?: ContradictionEntry[];
 }
 
 interface BenchmarkSymptom {
@@ -69,10 +101,10 @@ interface BenchmarksResponse {
 }
 
 const NORMALIZATION_FACTS = [
-  { emoji: '🧠', title: 'Brain fog is hormonal', desc: 'Estrogen fluctuations directly affect memory and focus. It\'s not "just stress" — your brain is adapting.' },
-  { emoji: '💓', title: 'Heart pounding is hormonal', desc: 'Palpitations during perimenopause are caused by estrogen changes affecting your cardiovascular system.' },
-  { emoji: '📊', title: 'Often misdiagnosed', desc: '73% of women experience perimenopause symptoms but only 1 in 4 are correctly identified by their doctor.' },
-  { emoji: '💪', title: 'Joint pain is real', desc: 'Estrogen helps protect your joints. As levels drop, inflammation can increase — this is not "getting old."' },
+  { emoji: '🧠', title: 'Brain fog is hormonal', desc: "Estrogen changes affect memory and focus directly. It is not \"just stress\" — your brain is adapting to a new normal." },
+  { emoji: '💓', title: 'Heart pounding is hormonal', desc: "That racing heart feeling? Estrogen shifts can do that. It is more common than most women realise." },
+  { emoji: '📊', title: 'Often missed by doctors', desc: "73% of women experience perimenopause symptoms, but only 1 in 4 get the right diagnosis first time." },
+  { emoji: '💪', title: 'Joint pain is real', desc: "Estrogen helps protect joints. As levels shift, inflammation can increase. This is hormonal, not just ageing." },
 ];
 
 interface LogEntry {
@@ -92,7 +124,15 @@ interface LogEntry {
 // ─── Helper functions ───────────────────────────────────
 
 function formatSymptomName(name: string): string {
-  return name.replace(/_/g, ' ').replace(/([A-Z])/g, ' $1').replace(/^./, (c) => c.toUpperCase());
+  // Strip "Med " or "med_" prefix from factor names (e.g. "Med Vitamin D" → "Vitamin D")
+  let cleaned = name.replace(/^Med\s+/i, '').replace(/^med_/i, '');
+  return cleaned.replace(/_/g, ' ').replace(/([A-Z])/g, ' $1').replace(/^./, (c) => c.toUpperCase()).trim();
+}
+
+function strengthLabel(pct: number): string {
+  if (pct >= 35) return 'Strong link';
+  if (pct >= 15) return 'Moderate';
+  return 'Weak signal';
 }
 
 // (correlations and benchmarks now fetched from API — mock functions removed)
@@ -178,24 +218,24 @@ function computeWeeklyStory(logs: LogEntry[]) {
     const olderCount = older7.filter((l) => l.symptomsJson?.[topSymptom[0]]).length;
     if (olderCount > 0 && daysWithIt < olderCount) {
       const drop = Math.round(((olderCount - daysWithIt) / olderCount) * 100);
-      narrative = `Your ${name.toLowerCase()} dropped ${drop}% this week.`;
+      narrative = `${name} dropped ${drop}% compared to last week.`;
     } else if (daysWithIt >= 5) {
-      narrative = `${name} showed up ${daysWithIt} of 7 days this week.`;
+      narrative = `${name} showed up ${daysWithIt} of 7 days this week. Worth watching.`;
     } else {
       narrative = `${name} appeared ${daysWithIt} time${daysWithIt === 1 ? '' : 's'} this week.`;
     }
   }
 
   if (goodSleepDays >= 5) {
-    narrative += ` Great sleep — you hit 7+ hours on ${goodSleepDays} nights.`;
+    narrative += ` Sleep was solid — 7+ hours on ${goodSleepDays} nights.`;
   } else if (goodSleepDays <= 2) {
-    narrative += ` Sleep was rough — only ${goodSleepDays} nights of 7+ hours.`;
+    narrative += ` Sleep was rough this week — only ${goodSleepDays} nights over 7 hours.`;
   }
 
   return {
     narrative,
-    bestDay: bestDay ? new Date(bestDay.date).toLocaleDateString('en', { weekday: 'long' }) : null,
-    worstDay: worstDay ? new Date(worstDay.date).toLocaleDateString('en', { weekday: 'long' }) : null,
+    bestDay: bestDay ? new Date(bestDay.date).toLocaleDateString('en', { weekday: 'short', month: 'short', day: 'numeric' }) : null,
+    worstDay: worstDay ? new Date(worstDay.date).toLocaleDateString('en', { weekday: 'short', month: 'short', day: 'numeric' }) : null,
     bestMood: bestDay?.mood ?? 3,
     worstMood: worstDay?.mood ?? 3,
   };
@@ -208,14 +248,17 @@ export default function InsightsScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ symptom?: string }>();
   const [activeTab, setActiveTab] = useState<'patterns' | 'normal'>('patterns');
-  const [period, setPeriod] = useState('4w');
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const hasLoadedOnce = useRef(false);
+  const maxDaysEver = useRef(0);
 
   // API-backed state for correlations
   const [correlations, setCorrelations] = useState<CorrelationItem[]>([]);
   const [dataQuality, setDataQuality] = useState<string>('building');
+  // Pipeline enrichments from naturopath agent
+  const [pipelineHelpsHurts, setPipelineHelpsHurts] = useState<CorrelationsResponse['helpsHurts'] | null>(null);
+  const [contradictions, setContradictions] = useState<ContradictionEntry[]>([]);
 
   // API-backed state for benchmarks
   const [benchmarkData, setBenchmarkData] = useState<BenchmarksResponse | null>(null);
@@ -228,7 +271,7 @@ export default function InsightsScreen() {
     try {
       if (!hasLoadedOnce.current) setLoading(true);
       const token = await getToken();
-      const range = period === '1w' ? '7d' : period === '4w' ? '28d' : period === '3m' ? '90d' : '365d';
+      const range = '90d';
 
       const todayDate = new Date().toISOString().split('T')[0];
 
@@ -240,7 +283,12 @@ export default function InsightsScreen() {
         apiRequest(`/api/logs?date=${todayDate}`, token).catch(() => []),
       ]);
 
-      setLogs(Array.isArray(logsData) ? logsData : []);
+      const parsedLogs = Array.isArray(logsData) ? logsData : [];
+      setLogs(parsedLogs);
+
+      // Track max unique days ever seen (so learning state doesn't regress on short periods)
+      const uniqueDateCount = new Set(parsedLogs.map((l: any) => l.date)).size;
+      if (uniqueDateCount > maxDaysEver.current) maxDaysEver.current = uniqueDateCount;
 
       // Check today's morning/evening status
       const todayEntries = Array.isArray(todayLogs) ? todayLogs : [];
@@ -251,8 +299,13 @@ export default function InsightsScreen() {
       if (correlationsData?.correlations) {
         setCorrelations(correlationsData.correlations);
         setDataQuality(correlationsData.dataQuality || 'building');
+        // Pipeline enrichments (optional)
+        setPipelineHelpsHurts(correlationsData.helpsHurts ?? null);
+        setContradictions(correlationsData.contradictions ?? []);
       } else {
         setCorrelations([]);
+        setPipelineHelpsHurts(null);
+        setContradictions([]);
       }
 
       // Set benchmark data from API
@@ -266,7 +319,7 @@ export default function InsightsScreen() {
     } finally {
       setLoading(false);
     }
-  }, [period]);
+  }, [getToken]);
 
   useFocusEffect(
     useCallback(() => {
@@ -302,27 +355,105 @@ export default function InsightsScreen() {
       .slice(0, 6);
   }, [logs]);
 
-  // Derive helps/hurts from API correlations (positive direction = helps, negative = hurts)
+  // Derive helps/hurts with separated factor/symptom for new card design
+  interface HHEntry {
+    factorName: string;
+    symptomName: string;
+    pct: number;
+    key: string;
+    explanation?: string;
+    recommendation?: string;
+    lagDays?: number;
+    strength: string;
+  }
+
   const helpsHurts = useMemo(() => {
-    const helps: { label: string; pct: number }[] = [];
-    const hurts: { label: string; pct: number }[] = [];
+    // Prefer AI-enriched pipeline data when available
+    if (pipelineHelpsHurts) {
+      return {
+        helps: pipelineHelpsHurts.helps.map((h) => ({
+          factorName: formatSymptomName(h.factor),
+          symptomName: formatSymptomName(h.symptom),
+          pct: Math.round(h.strength),
+          key: `${h.factor}_${h.symptom}`,
+          explanation: h.explanation,
+          strength: strengthLabel(Math.round(h.strength)),
+        })).slice(0, 4) as HHEntry[],
+        hurts: pipelineHelpsHurts.hurts.map((h) => ({
+          factorName: formatSymptomName(h.factor),
+          symptomName: formatSymptomName(h.symptom),
+          pct: Math.round(h.strength),
+          key: `${h.factor}_${h.symptom}`,
+          explanation: h.explanation,
+          strength: strengthLabel(Math.round(h.strength)),
+        })).slice(0, 4) as HHEntry[],
+      };
+    }
+    // Fallback: derive from raw correlations
+    const bestHelps = new Map<string, HHEntry>();
+    const bestHurts = new Map<string, HHEntry>();
     for (const c of correlations) {
       const pct = Math.round(Math.abs(c.effectSizePct));
       if (pct < 10) continue;
-      const label = formatSymptomName(c.factor);
+      const entry: HHEntry = {
+        factorName: formatSymptomName(c.factor),
+        symptomName: formatSymptomName(c.symptom),
+        pct,
+        key: `${c.factor}_${c.symptom}`,
+        explanation: c.explanation,
+        recommendation: c.recommendation,
+        lagDays: c.lagDays,
+        strength: strengthLabel(pct),
+      };
       if (c.direction === 'negative') {
-        helps.push({ label, pct });
+        const existing = bestHelps.get(c.factor);
+        if (!existing || pct > existing.pct) bestHelps.set(c.factor, entry);
       } else {
-        hurts.push({ label, pct });
+        const existing = bestHurts.get(c.factor);
+        if (!existing || pct > existing.pct) bestHurts.set(c.factor, entry);
       }
     }
     return {
-      helps: helps.sort((a, b) => b.pct - a.pct).slice(0, 4),
-      hurts: hurts.sort((a, b) => b.pct - a.pct).slice(0, 4),
+      helps: [...bestHelps.values()].sort((a, b) => b.pct - a.pct).slice(0, 4),
+      hurts: [...bestHurts.values()].sort((a, b) => b.pct - a.pct).slice(0, 4),
     };
-  }, [correlations]);
+  }, [correlations, pipelineHelpsHurts]);
   const sleepData = useMemo(() => computeSleepScore(logs), [logs]);
   const weeklyStory = useMemo(() => computeWeeklyStory(logs), [logs]);
+
+  // Dynamic "Looking ahead" text derived from actual correlations
+  const lookingAheadText = useMemo(() => {
+    if (correlations.length === 0) {
+      return 'Keep logging and we will start showing you personalised insights about what helps your symptoms.';
+    }
+
+    // Find the strongest "helps" correlation (direction === 'negative')
+    const helps = correlations
+      .filter((c) => c.direction === 'negative')
+      .sort((a, b) => Math.abs(b.effectSizePct) - Math.abs(a.effectSizePct));
+
+    if (helps.length > 0) {
+      const best = helps[0];
+      const factorLabel = formatSymptomName(best.factor).toLowerCase();
+      const symptomLabel = formatSymptomName(best.symptom).toLowerCase();
+      const pct = Math.round(Math.abs(best.effectSizePct));
+      return `On days when you have ${factorLabel}, ${symptomLabel} drops by ${pct}%. Worth trying this week.`;
+    }
+
+    // Fallback: strongest "hurts" correlation
+    const hurts = correlations
+      .filter((c) => c.direction === 'positive')
+      .sort((a, b) => Math.abs(b.effectSizePct) - Math.abs(a.effectSizePct));
+
+    if (hurts.length > 0) {
+      const worst = hurts[0];
+      const factorLabel = formatSymptomName(worst.factor).toLowerCase();
+      const symptomLabel = formatSymptomName(worst.symptom).toLowerCase();
+      return `Your data shows ${factorLabel} tends to increase ${symptomLabel}. Something to watch.`;
+    }
+
+    return 'Keep logging and we will start showing personalised insights here.';
+  }, [correlations]);
 
   const hasData = logs.length > 0;
   // Unique days with at least one log
@@ -382,11 +513,11 @@ export default function InsightsScreen() {
     const topSymptom = earlySymptomSummary[0];
     if (!topSymptom) return null;
     const shortSleepDays = logs.filter((l) => (l.sleepHours ?? 8) < 6).length;
-    let text = `You've logged ${topSymptom.displayName.toLowerCase()} on ${topSymptom.daysLogged} of ${totalDays} days`;
+    let text = `${topSymptom.displayName} showed up on ${topSymptom.daysLogged} of ${totalDays} days`;
     if (shortSleepDays > 0) {
-      text += ` and sleep under 6h ${shortSleepDays} time${shortSleepDays > 1 ? 's' : ''}`;
+      text += `, and you slept under 6 hours ${shortSleepDays} time${shortSleepDays > 1 ? 's' : ''}`;
     }
-    text += '. We\'re starting to look for a connection — a few more days and we\'ll know.';
+    text += '. We are looking for a connection. A few more days and we should know.';
     return text;
   }, [totalDays, earlySymptomSummary, logs]);
 
@@ -400,17 +531,15 @@ export default function InsightsScreen() {
     return symptoms.size;
   }, [logs]);
 
-  // Learning state thresholds
-  const patternsLearning = totalDays < 7;
-  const normalLearning = totalDays < 14;
+  // Learning state thresholds — use maxDaysEver so switching to 1W doesn't regress
+  const patternsLearning = maxDaysEver.current < 7;
+  const normalLearning = maxDaysEver.current < 14;
 
   const headerSub = totalDays > 0
     ? patternsLearning
-      ? `${totalDays} days of data · Learning mode`
-      : normalLearning
-        ? `${totalDays} days of data · Benchmarks unlocking soon`
-        : `${totalDays} days of data · Updated today`
-    : 'Start logging to see insights';
+      ? `${totalDays} days logged. Still learning your patterns.`
+      : `${totalDays} days of data. Insights updated daily.`
+    : 'Log a few days and your patterns will start appearing here.';
 
   return (
     <SafeAreaView style={styles.container}>
@@ -439,30 +568,6 @@ export default function InsightsScreen() {
             );
           })}
         </View>
-
-        {/* Period pills (patterns tab only, not in learning state) */}
-        {activeTab === 'patterns' && !patternsLearning && (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.periodStrip}
-            contentContainerStyle={styles.periodContent}
-          >
-            {PERIODS.map((p) => {
-              const active = p.key === period;
-              return (
-                <AnimatedPressable
-                  key={p.key}
-                  onPress={() => { hapticSelection(); setPeriod(p.key); }}
-                  scaleDown={0.95}
-                  style={[styles.periodPill, active && styles.periodPillActive]}
-                >
-                  <Text style={[styles.periodText, active && styles.periodTextActive]}>{p.label}</Text>
-                </AnimatedPressable>
-              );
-            })}
-          </ScrollView>
-        )}
 
         {loading ? (
           <View style={styles.loadingContainer}>
@@ -494,9 +599,11 @@ export default function InsightsScreen() {
                   </View>
                 </View>
               </View>
-              <Text style={ls.heroTitle}>We're learning your patterns</Text>
+              <Text style={ls.heroTitle}>{totalDays === 0 ? 'Your insights start here' : 'Your patterns are building'}</Text>
               <Text style={ls.heroDesc}>
-                {7 - totalDays} more day{7 - totalDays > 1 ? 's' : ''} of logging and we can start showing you what affects your symptoms, sleep, and mood.
+                {totalDays === 0
+                  ? 'Complete your first morning check-in and we\'ll start learning your patterns. After 7 days, your personalised insights unlock.'
+                  : `${7 - totalDays} more day${7 - totalDays > 1 ? 's' : ''} and we can start showing you what affects your symptoms, sleep, and mood.`}
               </Text>
 
               {/* Day progress dots — Day 1 starts at first circle */}
@@ -520,7 +627,7 @@ export default function InsightsScreen() {
               </View>
 
               {totalDays >= 4 && (
-                <Text style={ls.heroEncouragement}>Keep it up — you're over halfway there</Text>
+                <Text style={ls.heroEncouragement}>Over halfway. The picture is getting clearer.</Text>
               )}
             </View>
 
@@ -575,7 +682,7 @@ export default function InsightsScreen() {
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>While we're learning</Text>
               <Text style={ls.subtitleText}>
-                The more consistently you log — morning and evening — the more accurate your patterns will be.
+                Morning and evening check-ins give us the clearest picture. Even a quick one helps.
               </Text>
 
               <AnimatedPressable
@@ -690,7 +797,7 @@ export default function InsightsScreen() {
                           <Text style={ls.symptomRawName}>{s.emoji} {s.displayName}</Text>
                           <Text style={ls.symptomRawDays}>{s.daysLogged} days logged</Text>
                         </View>
-                        <Text style={{ fontSize: 14, color: '#78716c' }}>Building data...</Text>
+                        <Text style={{ fontSize: 14, color: '#78716c' }}>Gathering data</Text>
                       </View>
                     );
                   })}
@@ -702,7 +809,7 @@ export default function InsightsScreen() {
             <View style={ls.motivationCard}>
               <Text style={ls.motivationLabel}>Remember</Text>
               <Text style={ls.motivationText}>
-                Every check-in teaches us something about your body. The patterns are there — we just need a few more days to see them clearly.
+                Every check-in teaches us something about your body. The patterns are already forming — a few more days and they will be clear enough to share.
               </Text>
             </View>
           </>
@@ -733,9 +840,11 @@ export default function InsightsScreen() {
                   </View>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={ls.heroTitle}>Building your benchmark</Text>
+                  <Text style={ls.heroTitle}>{totalDays === 0 ? 'Start tracking to compare' : 'Almost ready to compare'}</Text>
                   <Text style={[ls.heroDesc, { marginBottom: 0 }]}>
-                    {14 - totalDays} more day{14 - totalDays > 1 ? 's' : ''} and we can compare your experience to{' '}
+                    {totalDays === 0
+                      ? 'Log your first check-in to begin. After 14 days we can show you how your experience compares to '
+                      : `${14 - totalDays} more day${14 - totalDays > 1 ? 's' : ''} and we can show you how your experience compares to `}
                     <Text style={{ color: '#78716c' }}>12,847 other women</Text> in perimenopause.
                   </Text>
                 </View>
@@ -755,7 +864,7 @@ export default function InsightsScreen() {
               </View>
               <View style={ls.dotGridLabels}>
                 <Text style={ls.dotGridLabelText}>Day 1</Text>
-                <Text style={[ls.dotGridLabelText, { color: '#78716c', fontWeight: '500' }]}>Day {totalDays} ←</Text>
+                <Text style={[ls.dotGridLabelText, { color: '#78716c', fontWeight: '500' }]}>{totalDays === 0 ? 'Start →' : `Day ${totalDays} ←`}</Text>
                 <Text style={ls.dotGridLabelText}>Day 14</Text>
               </View>
             </View>
@@ -769,7 +878,7 @@ export default function InsightsScreen() {
                 <View style={{ flex: 1 }}>
                   <Text style={ls.explainerTitle}>Why do we need 14 days?</Text>
                   <Text style={ls.explainerDesc}>
-                    Menopause symptoms fluctuate week to week. Two weeks gives us enough data to reliably place you within your peer group — so the comparison is meaningful, not misleading.
+                    Menopause symptoms fluctuate week to week. Two weeks gives us enough data to place you reliably within your peer group, so the comparison is meaningful.
                   </Text>
                 </View>
               </View>
@@ -785,7 +894,7 @@ export default function InsightsScreen() {
                 {[
                   { emoji: '👥', title: 'Early perimenopause', sub: 'Your menopause stage' },
                   { emoji: '🎂', title: 'Ages 40–49', sub: 'Your age bracket' },
-                  { emoji: '📊', title: 'Moderate symptoms', sub: `Based on your first ${totalDays} days` },
+                  { emoji: '📊', title: 'Moderate symptoms', sub: totalDays === 0 ? 'Will refine as you log' : `Based on your first ${totalDays} days` },
                 ].map((item, i) => (
                   <View key={i} style={ls.peerGroupRow}>
                     <View style={ls.peerGroupIcon}>
@@ -829,8 +938,8 @@ export default function InsightsScreen() {
                       </View>
                     </View>
                     <View style={ls.blurPopBar}>
-                      <View style={[ls.blurPopBarFill, { width: bm.fillPct }]} />
-                      <View style={[ls.blurPopMarker, { left: bm.markerPct }]} />
+                      <View style={[ls.blurPopBarFill, { width: bm.fillPct as any }]} />
+                      <View style={[ls.blurPopMarker, { left: bm.markerPct as any }]} />
                     </View>
                     {i === 0 && (
                       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 }}>
@@ -897,13 +1006,13 @@ export default function InsightsScreen() {
                 </View>
               </View>
               <Text style={ls.journeyDesc}>
-                You're building a picture of your health that no one else has. {14 - totalDays} more days and we'll show you exactly where you stand.
+                You are building a picture of your health that only you have. {14 - totalDays} more days and we can show you where you stand.
               </Text>
             </View>
 
             {/* ─── CTA ─── */}
             <AnimatedPressable
-              onPress={() => { hapticLight(); router.navigate('/(app)/log'); }}
+              onPress={() => { hapticLight(); router.navigate('/(app)/log' as any); }}
               scaleDown={0.97}
               style={ls.bigCta}
             >
@@ -914,10 +1023,10 @@ export default function InsightsScreen() {
         ) : activeTab === 'patterns' ? (
           /* ═══════════════ MY PATTERNS TAB ═══════════════ */
           <>
-            {/* ─── This week's story ────────────────── */}
+            {/* ─── Your story ───────────────────────── */}
             {weeklyStory && weeklyStory.narrative ? (
               <View style={styles.storyCard}>
-                <Text style={styles.storyLabel}>This week's story</Text>
+                <Text style={styles.storyLabel}>YOUR STORY THIS WEEK</Text>
                 <Text style={styles.storyNarrative}>{weeklyStory.narrative}</Text>
                 {weeklyStory.bestDay && weeklyStory.worstDay && (
                   <View style={styles.storyDays}>
@@ -936,45 +1045,124 @@ export default function InsightsScreen() {
               </View>
             ) : null}
 
-            {/* ─── What we've connected (correlations) ─ */}
-            {correlations.length > 0 && (
+            {/* ─── What's helping (green) ─────────── */}
+            {helpsHurts.helps.length > 0 && (
               <View style={styles.section}>
-                <View style={styles.sectionHeaderRow}>
-                  <Text style={styles.sectionTitle}>What we've connected</Text>
-                  {dataQuality !== 'strong' && (
-                    <View style={styles.qualityBadge}>
-                      <Text style={styles.qualityBadgeText}>
-                        {dataQuality === 'building' ? '📊 Building' : '📈 Moderate'}
-                      </Text>
-                    </View>
-                  )}
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                  <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#10b981' }} />
+                  <Text style={styles.sectionTitle}>What's helping</Text>
                 </View>
                 <View style={{ gap: 8 }}>
-                  {correlations.slice(0, 4).map((c, i) => {
-                    const pct = Math.round(Math.abs(c.effectSizePct));
-                    const lagLabel = c.lagDays > 0 ? ` (${c.lagDays}d lag)` : '';
-                    return (
-                      <View
-                        key={i}
-                        style={[
-                          styles.correlationCard,
-                          c.direction === 'negative' ? styles.correlationPositive : styles.correlationNegative,
-                        ]}
-                      >
-                        <Text style={styles.correlationFactor}>{c.humanLabel}</Text>
-                        <Text style={styles.correlationArrow}>
-                          {formatSymptomName(c.factor)} → {formatSymptomName(c.symptom)}{' '}
-                          <Text style={{ color: c.direction === 'negative' ? '#047857' : '#dc2626' }}>
-                            {c.direction === 'negative' ? `↓${pct}%` : `↑${pct}%`}
+                  {helpsHurts.helps.map((h) => (
+                    <View key={h.key} style={styles.helpsCardNew}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                        <View style={styles.helpsIconWrap}>
+                          <Text style={{ fontSize: 14 }}>💊</Text>
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.corrFactorName}>{h.factorName}</Text>
+                          <Text style={styles.corrDesc}>
+                            {h.symptomName} improves by{' '}
+                            <Text style={{ color: '#059669', fontWeight: '600' }}>{h.pct}%</Text>
                           </Text>
-                          {lagLabel}
-                        </Text>
-                        <Text style={styles.correlationConfidence}>
-                          Seen {c.occurrences} times · {Math.round(c.confidence * 100)}% confidence
-                        </Text>
+                        </View>
                       </View>
-                    );
-                  })}
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 }}>
+                        <View style={styles.corrBarBg}>
+                          <View style={[styles.corrBarFill, { width: `${Math.min(h.pct, 100)}%`, backgroundColor: '#10b981' }]} />
+                        </View>
+                        <View style={[styles.corrTag, { backgroundColor: '#ecfdf5' }]}>
+                          <Text style={[styles.corrTagText, { color: '#059669' }]}>{h.strength}</Text>
+                        </View>
+                      </View>
+                      {h.explanation && (
+                        <Text style={styles.corrExplanation}>
+                          {h.lagDays && h.lagDays > 0 ? `Takes ~${h.lagDays} day${h.lagDays > 1 ? 's' : ''} to notice. ` : ''}{h.explanation}
+                        </Text>
+                      )}
+                    </View>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            {/* ─── What's making things worse (red) ── */}
+            {helpsHurts.hurts.length > 0 && (
+              <View style={styles.section}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                  <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#ef4444' }} />
+                  <Text style={styles.sectionTitle}>What's making things worse</Text>
+                </View>
+                <View style={{ gap: 8 }}>
+                  {helpsHurts.hurts.map((h) => (
+                    <View key={h.key} style={styles.hurtsCardNew}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                        <View style={styles.hurtsIconWrap}>
+                          <Text style={{ fontSize: 14 }}>💊</Text>
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.corrFactorName}>{h.factorName}</Text>
+                          <Text style={styles.corrDesc}>
+                            {h.symptomName} increases by{' '}
+                            <Text style={{ color: '#dc2626', fontWeight: '600' }}>{h.pct}%</Text>
+                          </Text>
+                        </View>
+                      </View>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 }}>
+                        <View style={[styles.corrBarBg, { backgroundColor: '#fef2f2' }]}>
+                          <View style={[styles.corrBarFill, { width: `${Math.min(h.pct, 100)}%`, backgroundColor: '#ef4444' }]} />
+                        </View>
+                        <View style={[styles.corrTag, { backgroundColor: '#fef2f2' }]}>
+                          <Text style={[styles.corrTagText, { color: '#dc2626' }]}>{h.strength}</Text>
+                        </View>
+                      </View>
+                      {h.recommendation && (
+                        <View style={styles.corrTipCard}>
+                          <Text style={{ fontSize: 14, marginTop: 1 }}>💡</Text>
+                          <Text style={styles.corrTipText}>{h.recommendation}</Text>
+                        </View>
+                      )}
+                      {!h.recommendation && h.explanation && (
+                        <Text style={styles.corrExplanation}>{h.explanation}</Text>
+                      )}
+                    </View>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            {/* ─── It's complicated (amber) ────────── */}
+            {contradictions.length > 0 && (
+              <View style={styles.section}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                  <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#f59e0b' }} />
+                  <Text style={styles.sectionTitle}>It's complicated</Text>
+                </View>
+                <View style={{ gap: 8 }}>
+                  {contradictions.map((c, i) => (
+                    <View key={i} style={styles.complicatedCard}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                        <View style={styles.complicatedIconWrap}>
+                          <Text style={{ fontSize: 14 }}>💊</Text>
+                        </View>
+                        <View>
+                          <Text style={styles.corrFactorName}>{formatSymptomName(c.factor)}</Text>
+                          <Text style={{ fontSize: 12, color: '#78716c', marginTop: 2 }}>Helps some things, hurts others</Text>
+                        </View>
+                      </View>
+                      <View style={{ flexDirection: 'row', gap: 8, marginBottom: 10 }}>
+                        <View style={styles.complicatedHelpsBox}>
+                          <Text style={{ fontSize: 11, fontWeight: '600', color: '#059669', marginBottom: 4 }}>✓ Helps</Text>
+                          <Text style={{ fontSize: 12, fontWeight: '500', color: '#1c1917' }}>{formatSymptomName(c.helpsSymptom)}</Text>
+                        </View>
+                        <View style={styles.complicatedHurtsBox}>
+                          <Text style={{ fontSize: 11, fontWeight: '600', color: '#dc2626', marginBottom: 4 }}>✗ Hurts</Text>
+                          <Text style={{ fontSize: 12, fontWeight: '500', color: '#1c1917' }}>{formatSymptomName(c.hurtsSymptom)}</Text>
+                        </View>
+                      </View>
+                      <Text style={{ fontSize: 12, color: '#78716c', lineHeight: 17 }}>{c.explanation}</Text>
+                    </View>
+                  ))}
                 </View>
               </View>
             )}
@@ -1033,53 +1221,10 @@ export default function InsightsScreen() {
                 </View>
               ) : (
                 <View style={styles.card}>
-                  <Text style={styles.cardHint}>Log symptoms to see your trends here</Text>
+                  <Text style={styles.cardHint}>Your symptom trends will appear here once you have a few days logged</Text>
                 </View>
               )}
             </View>
-
-            {/* ─── What helps vs what hurts ─────────── */}
-            {(helpsHurts.helps.length > 0 || helpsHurts.hurts.length > 0) && (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>What helps vs. what hurts</Text>
-                <View style={styles.helpsHurtsRow}>
-                  {/* Helps */}
-                  <View style={[styles.helpsHurtsCard, styles.helpsCard]}>
-                    <Text style={styles.helpsHurtsLabel}>Helps ↓</Text>
-                    {helpsHurts.helps.length > 0 ? helpsHurts.helps.map((h) => (
-                      <View key={h.label} style={styles.hhItem}>
-                        <View style={styles.hhRow}>
-                          <Text style={styles.hhName}>{h.label}</Text>
-                          <Text style={[styles.hhPct, { color: '#047857' }]}>{h.pct}%</Text>
-                        </View>
-                        <View style={styles.hhBarBg}>
-                          <View style={[styles.hhBarFill, { width: `${h.pct}%`, backgroundColor: '#059669' }]} />
-                        </View>
-                      </View>
-                    )) : (
-                      <Text style={styles.hhEmpty}>Keep logging to find patterns</Text>
-                    )}
-                  </View>
-                  {/* Hurts */}
-                  <View style={[styles.helpsHurtsCard, styles.hurtsCard]}>
-                    <Text style={styles.helpsHurtsLabel}>Hurts ↑</Text>
-                    {helpsHurts.hurts.length > 0 ? helpsHurts.hurts.map((h) => (
-                      <View key={h.label} style={styles.hhItem}>
-                        <View style={styles.hhRow}>
-                          <Text style={styles.hhName}>{h.label}</Text>
-                          <Text style={[styles.hhPct, { color: '#dc2626' }]}>{h.pct}%</Text>
-                        </View>
-                        <View style={styles.hhBarBg}>
-                          <View style={[styles.hhBarFill, { width: `${h.pct}%`, backgroundColor: '#dc2626' }]} />
-                        </View>
-                      </View>
-                    )) : (
-                      <Text style={styles.hhEmpty}>Need more data</Text>
-                    )}
-                  </View>
-                </View>
-              </View>
-            )}
 
             {/* ─── Sleep Analysis ──────────────────── */}
             {sleepData && (
@@ -1123,12 +1268,10 @@ export default function InsightsScreen() {
               </View>
             )}
 
-            {/* ─── What to expect ──────────────────── */}
+            {/* ─── Looking ahead (dynamic from correlations) ── */}
             <View style={styles.expectCard}>
-              <Text style={styles.expectLabel}>💡 What to expect this week</Text>
-              <Text style={styles.expectDesc}>
-                Based on your patterns, focus on sleep quality. Your symptoms tend to be milder after nights with 7+ hours.
-              </Text>
+              <Text style={styles.expectLabel}>💡 Looking ahead</Text>
+              <Text style={styles.expectDesc}>{lookingAheadText}</Text>
             </View>
           </>
         ) : (
@@ -1176,7 +1319,8 @@ export default function InsightsScreen() {
                       key={bm.name}
                       onPress={() => {
                         hapticLight();
-                        router.push({ pathname: '/(app)/symptom-detail', params: { symptom: bm.name } });
+                        const key = DISPLAY_TO_KEY[bm.name.toLowerCase()] || bm.name.toLowerCase().replace(/\s+/g, '_');
+                        router.push({ pathname: '/(app)/symptom-detail', params: { symptom: key } });
                       }}
                       scaleDown={0.98}
                       style={styles.benchmarkCard}
@@ -1316,19 +1460,6 @@ const styles = StyleSheet.create({
   tabText: { fontSize: 14, fontWeight: '500', color: '#78716c' },
   tabTextActive: { color: '#1c1917', fontWeight: '600' },
 
-  // Period pills
-  periodStrip: { marginBottom: 20, marginHorizontal: -24, maxHeight: 44 },
-  periodContent: { paddingHorizontal: 24, gap: 8 },
-  periodPill: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#f5f5f4',
-  },
-  periodPillActive: { backgroundColor: '#1c1917' },
-  periodText: { fontSize: 14, fontWeight: '500', color: '#78716c' },
-  periodTextActive: { color: '#ffffff' },
-
   loadingContainer: { flex: 1, alignItems: 'center', paddingTop: 60 },
   emptyContainer: { alignItems: 'center', paddingTop: 60, paddingHorizontal: 20 },
   emptyTitle: { fontSize: 18, fontWeight: '700', color: '#1c1917', marginBottom: 8 },
@@ -1446,6 +1577,123 @@ const styles = StyleSheet.create({
   hhBarBg: { height: 4, backgroundColor: 'rgba(0,0,0,0.06)', borderRadius: 2 },
   hhBarFill: { height: 4, borderRadius: 2 },
   hhEmpty: { fontSize: 14, color: '#78716c', fontStyle: 'italic' },
+
+  // ═══ New correlation cards (mockup design) ═══
+  helpsCardNew: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 14,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: '#d1fae5',
+  },
+  hurtsCardNew: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 14,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: '#fecaca',
+  },
+  helpsIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: '#ecfdf5',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  hurtsIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: '#fef2f2',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  corrFactorName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1c1917',
+  },
+  corrDesc: {
+    fontSize: 12,
+    color: '#6b7280',
+    marginTop: 2,
+  },
+  corrBarBg: {
+    flex: 1,
+    height: 4,
+    backgroundColor: '#ecfdf5',
+    borderRadius: 99,
+    overflow: 'hidden',
+  },
+  corrBarFill: {
+    height: 4,
+    borderRadius: 99,
+  },
+  corrTag: {
+    borderRadius: 99,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+  },
+  corrTagText: {
+    fontSize: 11,
+    fontWeight: '500',
+  },
+  corrExplanation: {
+    fontSize: 12,
+    color: '#78716c',
+    marginTop: 8,
+    lineHeight: 17,
+  },
+  corrTipCard: {
+    backgroundColor: '#fffbeb',
+    borderRadius: 10,
+    padding: 10,
+    paddingHorizontal: 12,
+    marginTop: 10,
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'flex-start',
+  },
+  corrTipText: {
+    fontSize: 12,
+    color: '#92400e',
+    fontWeight: '500',
+    lineHeight: 17,
+    flex: 1,
+  },
+  complicatedCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 14,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: '#fde68a',
+  },
+  complicatedIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: '#fffbeb',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  complicatedHelpsBox: {
+    flex: 1,
+    backgroundColor: '#ecfdf5',
+    borderRadius: 10,
+    padding: 10,
+    paddingHorizontal: 12,
+  },
+  complicatedHurtsBox: {
+    flex: 1,
+    backgroundColor: '#fef2f2',
+    borderRadius: 10,
+    padding: 10,
+    paddingHorizontal: 12,
+  },
 
   // Sleep analysis
   sleepCard: {

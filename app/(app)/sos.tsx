@@ -6,7 +6,7 @@ import {
   StyleSheet,
   Dimensions,
 } from 'react-native';
-import { useRouter, useFocusEffect } from 'expo-router';
+import { useRouter, useFocusEffect, useNavigationContainerRef } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
@@ -17,8 +17,8 @@ import Animated, {
   runOnJS,
 } from 'react-native-reanimated';
 import AnimatedPressable from '@/components/AnimatedPressable';
-import BackButton from '@/components/BackButton';
 import { hapticMedium, hapticLight, hapticSelection } from '@/lib/haptics';
+import BackButton from '@/components/BackButton';
 import { apiRequest } from '@/lib/api';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -35,6 +35,11 @@ type Rating = 'better' | 'same' | 'worse';
 export default function SOSScreen() {
   const { getToken } = useAuth();
   const router = useRouter();
+  const navRef = useNavigationContainerRef();
+  const safeBack = () => {
+    if (navRef.canGoBack()) safeBack();
+    else router.replace('/(app)/(tabs)' as any);
+  };
   const [step, setStep] = useState<Step>('intro');
   const [cycle, setCycle] = useState(1);
   const [phase, setPhase] = useState<'inhale' | 'hold' | 'exhale'>('inhale');
@@ -184,9 +189,7 @@ export default function SOSScreen() {
         <SafeAreaView style={styles.flex}>
           <View style={styles.centered}>
             {/* Back */}
-            <View style={styles.backButton}>
-              <BackButton />
-            </View>
+            <BackButton style={{ position: 'absolute', top: 16, left: 0 }} />
 
             {/* Large teal circle with snowflake */}
             <View style={styles.introCircle}>
@@ -195,10 +198,10 @@ export default function SOSScreen() {
 
             <Text style={styles.introTitle}>Hot Flash SOS</Text>
             <Text style={styles.introDesc}>
-              Guided breathing to help you through it. Takes about 3 minutes.
+              Guided breathing to help right now. About 3 minutes.
             </Text>
             <Text style={styles.socialProof}>
-              Used 847 times by Pause members this week
+              Used by hundreds of Pause members this week
             </Text>
           </View>
 
@@ -220,10 +223,10 @@ export default function SOSScreen() {
   if (step === 'breathing') {
     const phaseLabel = phase === 'inhale' ? 'Breathe in' : phase === 'hold' ? 'Hold' : 'Breathe out';
     const phaseHint = phase === 'inhale'
-      ? 'Inhale through your nose... 4 seconds'
+      ? 'In through your nose... nice and slow'
       : phase === 'hold'
-        ? 'Gently hold...'
-        : 'Exhale slowly... 6 seconds';
+        ? 'Hold gently...'
+        : 'Let it go... slow exhale';
 
     const CIRCLE_SIZE = SCREEN_WIDTH * 0.6;
 
@@ -329,9 +332,9 @@ export default function SOSScreen() {
             <Text style={styles.doneCheckMark}>✓</Text>
           </View>
 
-          <Text style={styles.doneTitle}>You did great</Text>
+          <Text style={styles.doneTitle}>That took courage</Text>
           <Text style={styles.doneDesc}>
-            3 minutes of calm. Your body thanks you.
+            3 minutes of calm. You showed up for yourself.
           </Text>
 
           {/* Rating */}
@@ -379,7 +382,7 @@ export default function SOSScreen() {
               setCycle(1);
               setPhase('inhale');
               setRating(null);
-              router.back();
+              safeBack();
             }}
             scaleDown={0.96}
             style={styles.doneButton}
@@ -406,9 +409,9 @@ export default function SOSScreen() {
                 setCycle(1);
                 setPhase('inhale');
                 setRating(null);
-                router.back();
+                safeBack();
               } catch {
-                router.back();
+                safeBack();
               }
             }}
             scaleDown={0.96}
@@ -431,9 +434,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   darkContainer: { flex: 1, backgroundColor: '#0c0a09' },
-
-  // Back button
-  backButton: { position: 'absolute', top: 16, left: 0, padding: 8 },
 
   // ─── Intro ──────────────────────
   introCircle: {
@@ -458,15 +458,15 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   introDesc: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#78716c',
     textAlign: 'center',
     lineHeight: 22,
     marginBottom: 8,
   },
   socialProof: {
-    fontSize: 14,
-    color: '#78716c',
+    fontSize: 12,
+    color: '#d6d3d1',
     textAlign: 'center',
   },
 
@@ -487,7 +487,7 @@ const styles = StyleSheet.create({
 
   // ─── Breathing ──────────────────
   endSessionButton: { position: 'absolute', top: 16, left: 0, padding: 8 },
-  endSessionText: { fontSize: 14, color: '#78716c' },
+  endSessionText: { fontSize: 13, color: '#57534e' },
 
   circleContainer: {
     alignItems: 'center',
@@ -505,15 +505,15 @@ const styles = StyleSheet.create({
     color: '#ffffff',
   },
   phaseHint: {
-    fontSize: 14,
-    color: '#78716c',
+    fontSize: 12,
+    color: '#57534e',
     letterSpacing: 1,
     textTransform: 'uppercase',
   },
   countdownText: {
     fontSize: 28,
     fontWeight: '300',
-    color: '#78716c',
+    color: '#44403c',
     marginTop: 20,
     fontVariant: ['tabular-nums'],
   },
@@ -534,8 +534,8 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   cycleText: {
-    fontSize: 14,
-    color: '#78716c',
+    fontSize: 12,
+    color: '#57534e',
   },
   finishEarlyButton: {
     backgroundColor: '#0d9488',
@@ -546,7 +546,7 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
   },
-  finishEarlyText: { color: '#ffffff', fontSize: 16, fontWeight: '600' },
+  finishEarlyText: { color: '#ffffff', fontSize: 15, fontWeight: '600' },
 
   // ─── Done ───────────────────────
   doneCheckCircle: {
@@ -570,7 +570,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   doneDesc: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#78716c',
     textAlign: 'center',
     marginBottom: 24,
@@ -579,8 +579,8 @@ const styles = StyleSheet.create({
   // Rating
   ratingSection: { alignSelf: 'stretch', marginBottom: 20 },
   ratingQuestion: {
-    fontSize: 14,
-    color: '#78716c',
+    fontSize: 13,
+    color: '#a8a29e',
     textAlign: 'center',
     marginBottom: 12,
   },
@@ -595,8 +595,8 @@ const styles = StyleSheet.create({
   ratingPillSelected: {
     backgroundColor: '#ccfbf1',
   },
-  ratingPillText: { fontSize: 14, color: '#78716c', fontWeight: '500' },
-  ratingThanks: { fontSize: 14, color: '#78716c', textAlign: 'center' },
+  ratingPillText: { fontSize: 11, color: '#78716c', fontWeight: '500' },
+  ratingThanks: { fontSize: 14, color: '#a8a29e', textAlign: 'center' },
 
   // Done buttons
   doneButton: {
@@ -614,7 +614,7 @@ const styles = StyleSheet.create({
   },
   ghostButtonText: {
     color: '#78716c',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '500',
   },
 });

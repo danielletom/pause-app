@@ -7,9 +7,11 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
-import { useLocalSearchParams, useFocusEffect } from 'expo-router';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
+import AnimatedPressable from '@/components/AnimatedPressable';
 import BackButton from '@/components/BackButton';
+import { hapticLight } from '@/lib/haptics';
 import { apiRequest } from '@/lib/api';
 
 /* ─── Benchmark data (hardcoded for V2) ─── */
@@ -46,6 +48,7 @@ interface LogEntry {
 }
 
 export default function SymptomDetailScreen() {
+  const router = useRouter();
   const { getToken } = useAuth();
   const { symptom } = useLocalSearchParams<{ symptom?: string }>();
   const [logs, setLogs] = useState<LogEntry[]>([]);
@@ -54,6 +57,10 @@ export default function SymptomDetailScreen() {
 
   const symptomKey = (symptom || '').toLowerCase().replace(/\s+/g, '_');
   const symptomLabel = (symptom || '').replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').replace(/^./, (s) => s.toUpperCase());
+
+  /** Format a snake_case tag to natural English: "family_stress" → "Family stress" */
+  const formatTag = (tag: string) =>
+    tag.replace(/_/g, ' ').replace(/^./, (s) => s.toUpperCase());
 
   useFocusEffect(
     useCallback(() => {
@@ -155,9 +162,7 @@ export default function SymptomDetailScreen() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.nav}>
-        <View style={styles.navSide}>
-          <BackButton />
-        </View>
+        <BackButton />
         <Text style={styles.navTitle}>Symptom Detail</Text>
         <View style={styles.navSide} />
       </View>
@@ -212,7 +217,7 @@ export default function SymptomDetailScreen() {
                 <Text style={styles.statLabel}>Avg severity</Text>
               </View>
               <View style={styles.statCard}>
-                <Text style={[styles.statValue, { color: changePct < 0 ? '#047857' : changePct > 0 ? '#b45309' : '#78716c' }]}>
+                <Text style={[styles.statValue, { color: changePct < 0 ? '#059669' : changePct > 0 ? '#d97706' : '#a8a29e' }]}>
                   {changePct > 0 ? `+${changePct}%` : changePct < 0 ? `${changePct}%` : '—'}
                 </Text>
                 <Text style={styles.statLabel}>vs last period</Text>
@@ -227,7 +232,7 @@ export default function SymptomDetailScreen() {
                   {triggers.map((t) => (
                     <View key={t.tag}>
                       <View style={styles.triggerRow}>
-                        <Text style={styles.triggerLabel}>{t.tag}</Text>
+                        <Text style={styles.triggerLabel}>{formatTag(t.tag)}</Text>
                         <Text style={styles.triggerPct}>{t.pct}%</Text>
                       </View>
                       <View style={styles.triggerBarBg}>
@@ -289,14 +294,15 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   navSide: { width: 60 },
-  navTitle: { fontSize: 14, color: '#78716c', fontWeight: '500' },
+  navBackText: { fontSize: 13, color: '#a8a29e' },
+  navTitle: { fontSize: 13, color: '#a8a29e', fontWeight: '500' },
 
   title: { fontSize: 24, fontWeight: '700', color: '#1c1917', marginBottom: 4 },
-  subtitle: { fontSize: 14, color: '#78716c', marginBottom: 24 },
+  subtitle: { fontSize: 13, color: '#a8a29e', marginBottom: 24 },
 
   /* Chart */
   chartSection: { marginBottom: 24 },
-  sectionLabel: { fontSize: 14, fontWeight: '600', color: '#78716c', marginBottom: 10 },
+  sectionLabel: { fontSize: 13, fontWeight: '600', color: '#78716c', marginBottom: 10 },
   chartRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -310,7 +316,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginTop: 6,
   },
-  chartLabelText: { fontSize: 14, color: '#78716c' },
+  chartLabelText: { fontSize: 10, color: '#a8a29e' },
 
   /* Stats */
   statsRow: { flexDirection: 'row', gap: 8, marginBottom: 24 },
@@ -327,14 +333,14 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   statValue: { fontSize: 20, fontWeight: '700', color: '#1c1917', marginBottom: 2 },
-  statLabel: { fontSize: 14, color: '#78716c' },
+  statLabel: { fontSize: 11, color: '#a8a29e' },
 
   /* Triggers */
   section: { marginBottom: 24 },
-  sectionTitle: { fontSize: 16, fontWeight: '600', color: '#1c1917', marginBottom: 12 },
+  sectionTitle: { fontSize: 14, fontWeight: '600', color: '#1c1917', marginBottom: 12 },
   triggerRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-  triggerLabel: { fontSize: 14, color: '#44403c' },
-  triggerPct: { fontSize: 14, color: '#78716c' },
+  triggerLabel: { fontSize: 12, color: '#44403c' },
+  triggerPct: { fontSize: 12, color: '#a8a29e' },
   triggerBarBg: { height: 6, backgroundColor: '#f5f5f4', borderRadius: 3 },
   triggerBarFill: { height: 6, backgroundColor: '#44403c', borderRadius: 3 },
 
@@ -358,8 +364,8 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     marginBottom: 8,
   },
-  benchmarkBadgeText: { fontSize: 12, fontWeight: '600', color: '#78716c' },
-  benchmarkNote: { fontSize: 16, color: '#44403c', lineHeight: 22, marginBottom: 12 },
+  benchmarkBadgeText: { fontSize: 11, fontWeight: '600', color: '#78716c' },
+  benchmarkNote: { fontSize: 13, color: '#44403c', lineHeight: 18, marginBottom: 12 },
   benchmarkBar: {
     height: 8,
     backgroundColor: '#e7e5e4',
@@ -377,7 +383,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   benchmarkYouLabel: {
-    fontSize: 14,
+    fontSize: 9,
     fontWeight: '700',
     color: '#1c1917',
     backgroundColor: '#fbbf24',
@@ -398,5 +404,5 @@ const styles = StyleSheet.create({
     borderColor: '#fef3c7',
   },
   recIcon: { fontSize: 16, marginTop: 1 },
-  recText: { fontSize: 16, color: '#44403c', flex: 1, lineHeight: 22 },
+  recText: { fontSize: 13, color: '#44403c', flex: 1, lineHeight: 18 },
 });

@@ -8,9 +8,9 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
+import BackButton from '@/components/BackButton';
 import { useAuth } from '@clerk/clerk-expo';
 import AnimatedPressable from '@/components/AnimatedPressable';
-import BackButton from '@/components/BackButton';
 import { hapticLight, hapticMedium } from '@/lib/haptics';
 import { apiRequest } from '@/lib/api';
 
@@ -145,9 +145,7 @@ export default function JournalDoneScreen() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.nav}>
-        <View style={styles.navBack}>
-          <BackButton />
-        </View>
+        <BackButton />
         <View style={styles.navSpacer} />
       </View>
 
@@ -157,9 +155,9 @@ export default function JournalDoneScreen() {
             {/* Celebration header */}
             <View style={styles.celebHeader}>
               <Text style={styles.celebEmoji}>🎉</Text>
-              <Text style={styles.celebTitle}>Day complete!</Text>
+              <Text style={styles.celebTitle}>Day logged</Text>
               <Text style={styles.celebSubtitle}>
-                Both morning and evening check-ins are done. You're building a clear picture of your health.
+                Morning and evening done. That gives us a full picture of today.
               </Text>
             </View>
 
@@ -168,8 +166,8 @@ export default function JournalDoneScreen() {
               <View style={styles.streakRow}>
                 <Text style={styles.streakFlame}>🔥</Text>
                 <View>
-                  <Text style={styles.streakCount}>{streak} day streak</Text>
-                  <Text style={styles.streakLabel}>Keep the momentum going</Text>
+                  <Text style={styles.streakCount}>{streak} days in a row</Text>
+                  <Text style={styles.streakLabel}>Each day sharpens the picture</Text>
                 </View>
               </View>
             </View>
@@ -234,7 +232,7 @@ export default function JournalDoneScreen() {
             <AnimatedPressable
               onPress={() => {
                 hapticMedium();
-                router.navigate('/(app)/insights');
+                router.navigate('/(app)/insights' as any);
               }}
               scaleDown={0.96}
               style={styles.actionButton}
@@ -256,7 +254,7 @@ export default function JournalDoneScreen() {
             {/* Encouraging message */}
             <View style={styles.encourageCard}>
               <Text style={styles.encourageText}>
-                Every day you track helps us spot patterns and give you better insights. See you tomorrow!
+                Each day you log makes your insights more personal. See you tomorrow.
               </Text>
             </View>
           </View>
@@ -264,13 +262,13 @@ export default function JournalDoneScreen() {
           /* Not both complete */
           <View style={styles.incompleteState}>
             <Text style={styles.incompleteEmoji}>📝</Text>
-            <Text style={styles.incompleteTitle}>Almost there!</Text>
+            <Text style={styles.incompleteTitle}>Nearly there</Text>
             <Text style={styles.incompleteDesc}>
               {!morningLog && !eveningLog
-                ? 'Complete both your morning and evening check-ins to see your full day summary.'
+                ? 'Both check-ins give us a full day to work with. Start whenever you are ready.'
                 : !morningLog
-                  ? 'Complete your morning check-in to unlock the full day view.'
-                  : 'Complete your evening check-in to see your full day summary.'}
+                  ? 'A morning check-in rounds out today. Takes about 2 minutes.'
+                  : 'An evening reflection completes the picture. Under 2 minutes.'}
             </Text>
 
             {!morningLog && (
@@ -319,6 +317,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   navBack: { paddingVertical: 4 },
+  navBackText: { fontSize: 13, color: '#a8a29e' },
   navSpacer: { width: 50 },
 
   /* Celebration header */
@@ -331,7 +330,7 @@ const styles = StyleSheet.create({
   celebEmoji: { fontSize: 56, marginBottom: 16 },
   celebTitle: { fontSize: 26, fontWeight: '700', color: '#1c1917', marginBottom: 8 },
   celebSubtitle: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#78716c',
     textAlign: 'center',
     lineHeight: 22,
@@ -354,7 +353,7 @@ const styles = StyleSheet.create({
   },
   streakFlame: { fontSize: 28 },
   streakCount: { fontSize: 18, fontWeight: '700', color: '#92400e' },
-  streakLabel: { fontSize: 14, color: '#b45309', marginTop: 2 },
+  streakLabel: { fontSize: 12, color: '#b45309', marginTop: 2 },
 
   /* Summary card */
   summaryCard: {
@@ -369,7 +368,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 1,
   },
-  summaryTitle: { fontSize: 16, fontWeight: '600', color: '#1c1917', marginBottom: 14 },
+  summaryTitle: { fontSize: 14, fontWeight: '600', color: '#1c1917', marginBottom: 14 },
   summaryRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -377,7 +376,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   summaryIcon: { fontSize: 16, width: 24 },
-  summaryText: { fontSize: 16, color: '#44403c', flex: 1, lineHeight: 20 },
+  summaryText: { fontSize: 13, color: '#44403c', flex: 1, lineHeight: 20 },
 
   /* Action buttons */
   actionButton: {
@@ -388,7 +387,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     alignItems: 'center',
   },
-  actionButtonText: { color: '#ffffff', fontSize: 16, fontWeight: '600' },
+  actionButtonText: { color: '#ffffff', fontSize: 15, fontWeight: '600' },
 
   secondaryButton: {
     marginHorizontal: 24,
@@ -400,7 +399,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e7e5e4',
   },
-  secondaryButtonText: { color: '#1c1917', fontSize: 16, fontWeight: '600' },
+  secondaryButtonText: { color: '#1c1917', fontSize: 15, fontWeight: '600' },
 
   /* Encourage card */
   encourageCard: {
@@ -412,7 +411,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#bbf7d0',
   },
-  encourageText: { fontSize: 14, color: '#166534', lineHeight: 20, textAlign: 'center' },
+  encourageText: { fontSize: 13, color: '#166534', lineHeight: 20, textAlign: 'center' },
 
   /* Incomplete state */
   incompleteState: {
@@ -423,8 +422,8 @@ const styles = StyleSheet.create({
   incompleteEmoji: { fontSize: 48, marginBottom: 16 },
   incompleteTitle: { fontSize: 18, fontWeight: '700', color: '#1c1917', marginBottom: 8 },
   incompleteDesc: {
-    fontSize: 14,
-    color: '#78716c',
+    fontSize: 13,
+    color: '#a8a29e',
     textAlign: 'center',
     lineHeight: 20,
   },

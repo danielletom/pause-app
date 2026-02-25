@@ -11,6 +11,7 @@ import {
 import { useRouter } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
 import AnimatedPressable from '@/components/AnimatedPressable';
+import BackButton from '@/components/BackButton';
 import { hapticMedium, hapticLight, hapticSuccess, hapticSelection } from '@/lib/haptics';
 import { apiRequest } from '@/lib/api';
 
@@ -157,16 +158,7 @@ export default function PeriodLogScreen() {
         <>
           {/* Progress & Back */}
           <View style={styles.topBar}>
-            <AnimatedPressable
-              onPress={() => {
-                hapticLight();
-                if (step === 0) router.back();
-                else setStep(step - 1);
-              }}
-              scaleDown={0.97}
-            >
-              <Text style={styles.backBtn}>← Back</Text>
-            </AnimatedPressable>
+            <BackButton onPress={() => { if (step === 0) router.back(); else setStep(s => s - 1); }} />
             <View style={styles.progressRow}>
               {[0, 1, 2].map(i => (
                 <View key={i} style={[styles.progressBar, { backgroundColor: i <= step ? '#f43f5e' : '#e7e5e4' }]} />
@@ -387,7 +379,6 @@ const styles = StyleSheet.create({
   scrollContent: { paddingHorizontal: 24, paddingBottom: 120 },
 
   topBar: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 24, paddingTop: 8, paddingBottom: 4 },
-  backBtn: { fontSize: 12, color: '#a8a29e' },
   progressRow: { flex: 1, flexDirection: 'row', gap: 4 },
   progressBar: { flex: 1, height: 4, borderRadius: 2 },
 

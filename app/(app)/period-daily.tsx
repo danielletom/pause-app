@@ -11,6 +11,7 @@ import {
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
 import AnimatedPressable from '@/components/AnimatedPressable';
+import BackButton from '@/components/BackButton';
 import { hapticMedium, hapticLight, hapticSuccess, hapticSelection } from '@/lib/haptics';
 import { apiRequest } from '@/lib/api';
 
@@ -122,9 +123,7 @@ export default function PeriodDailyScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.topBar}>
-        <AnimatedPressable onPress={() => { hapticLight(); router.back(); }} scaleDown={0.97}>
-          <Text style={styles.backBtn}>← Back</Text>
-        </AnimatedPressable>
+        <BackButton />
       </View>
 
       {loading ? (
@@ -226,8 +225,6 @@ const styles = StyleSheet.create({
   scrollContent: { paddingHorizontal: 24, paddingBottom: 120 },
   loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   topBar: { paddingHorizontal: 24, paddingTop: 8, paddingBottom: 4 },
-  backBtn: { fontSize: 12, color: '#a8a29e' },
-
   activeBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     backgroundColor: '#ffe4e6', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16,

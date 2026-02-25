@@ -9,20 +9,61 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
 import AnimatedPressable from '@/components/AnimatedPressable';
+import { hapticLight, hapticMedium, hapticSelection } from '@/lib/haptics';
 import BackButton from '@/components/BackButton';
-import { hapticMedium, hapticSelection } from '@/lib/haptics';
 import { apiRequest } from '@/lib/api';
 import { useProfile } from '@/lib/useProfile';
 
-const STAGE_OPTIONS = ['Perimenopause', 'Menopause', 'Post-menopause', "I'm not sure"];
-const RELATIONSHIP_OPTIONS = ['Single', 'In a relationship', 'Married', 'Divorced', 'Widowed', 'Prefer not to say'];
-const WORK_OPTIONS = ['Working full-time', 'Working part-time', 'Self-employed', 'Stay-at-home', 'Retired', 'Other'];
-const CHILDREN_OPTIONS = ['0', '1', '2', '3', '4+'];
-const EXERCISE_OPTIONS = ['Rarely', '1-2x/week', '3-4x/week', '5+/week'];
+// Map between API values (stored in DB) and display labels
+const STAGE_MAP: [string, string][] = [
+  ['peri', 'Perimenopause'],
+  ['meno', 'Menopause'],
+  ['post', 'Post-menopause'],
+  ['unsure', "I'm not sure"],
+];
+
+const RELATIONSHIP_MAP: [string, string][] = [
+  ['single', 'Single'],
+  ['partnered', 'In a relationship'],
+  ['married', 'Married'],
+  ['divorced', 'Divorced'],
+  ['widowed', 'Widowed'],
+  ['prefer_not_to_say', 'Prefer not to say'],
+];
+
+const WORK_MAP: [string, string][] = [
+  ['full_time', 'Working full-time'],
+  ['part_time', 'Working part-time'],
+  ['self_employed', 'Self-employed'],
+  ['stay_at_home', 'Stay-at-home'],
+  ['retired', 'Retired'],
+  ['other', 'Other'],
+];
+
+const CHILDREN_MAP: [string, string][] = [
+  ['0', '0'], ['1', '1'], ['2', '2'], ['3', '3'], ['4+', '4+'],
+];
+
+const EXERCISE_MAP: [string, string][] = [
+  ['rarely', 'Rarely'],
+  ['1_2_per_week', '1-2x/week'],
+  ['3_per_week', '3-4x/week'],
+  ['5_plus_per_week', '5+/week'],
+];
+
+function getLabel(map: [string, string][], value: string): string {
+  return map.find(([v]) => v === value)?.[1] || value;
+}
+
+function getValue(map: [string, string][], label: string): string {
+  return map.find(([, l]) => l === label)?.[0] || label;
+}
 
 export default function AboutMeScreen() {
+  const router = useRouter();
   const { getToken } = useAuth();
   const { profile, refetch } = useProfile();
 
@@ -39,20 +80,22 @@ export default function AboutMeScreen() {
 
   useEffect(() => {
     if (!profile) return;
-    if (profile.dateOfBirth) setDateOfBirth(profile.dateOfBirth);
-    if ((profile as any).height) {
-      const match = (profile as any).height.match(/^(\d+)'(\d+)$/);
+    const p = profile as any;
+    if (p.dateOfBirth) setDateOfBirth(p.dateOfBirth);
+    if (p.height) {
+      const match = String(p.height).match(/^(\d+)'(\d+)$/);
       if (match) {
         setHeightFeet(match[1]);
         setHeightInches(match[2]);
       }
     }
-    if ((profile as any).weight) setWeight(String((profile as any).weight));
-    if (profile.stage) setStage(profile.stage);
-    if ((profile as any).relationship) setRelationship((profile as any).relationship);
-    if ((profile as any).workStatus) setWorkStatus((profile as any).workStatus);
-    if ((profile as any).children) setChildren((profile as any).children);
-    if ((profile as any).exerciseFrequency) setExerciseFrequency((profile as any).exerciseFrequency);
+    if (p.weight) setWeight(String(p.weight));
+    // Map API codes → display labels for pill selections
+    if (p.stage) setStage(getLabel(STAGE_MAP, p.stage));
+    if (p.relationship) setRelationship(getLabel(RELATIONSHIP_MAP, p.relationship));
+    if (p.workStatus) setWorkStatus(getLabel(WORK_MAP, p.workStatus));
+    if (p.children) setChildren(getLabel(CHILDREN_MAP, p.children));
+    if (p.exerciseFrequency) setExerciseFrequency(getLabel(EXERCISE_MAP, p.exerciseFrequency));
   }, [profile]);
 
   const computedAge = (() => {
@@ -83,11 +126,11 @@ export default function AboutMeScreen() {
           dateOfBirth: dateOfBirth || undefined,
           height: heightFeet && heightInches ? `${heightFeet}'${heightInches}` : undefined,
           weight: weight || undefined,
-          stage: stage || undefined,
-          relationship: relationship || undefined,
-          workStatus: workStatus || undefined,
-          children: children || undefined,
-          exerciseFrequency: exerciseFrequency || undefined,
+          stage: stage ? getValue(STAGE_MAP, stage) : undefined,
+          relationship: relationship ? getValue(RELATIONSHIP_MAP, relationship) : undefined,
+          workStatus: workStatus ? getValue(WORK_MAP, workStatus) : undefined,
+          children: children ? getValue(CHILDREN_MAP, children) : undefined,
+          exerciseFrequency: exerciseFrequency ? getValue(EXERCISE_MAP, exerciseFrequency) : undefined,
         }),
       });
       await refetch();
@@ -155,7 +198,7 @@ export default function AboutMeScreen() {
             value={dateOfBirth}
             onChangeText={setDateOfBirth}
             placeholder="YYYY-MM-DD"
-            placeholderTextColor="#78716c"
+            placeholderTextColor="#a8a29e"
             autoCapitalize="none"
           />
           {computedAge !== null && (
@@ -174,7 +217,7 @@ export default function AboutMeScreen() {
               value={heightFeet}
               onChangeText={setHeightFeet}
               placeholder="5"
-              placeholderTextColor="#78716c"
+              placeholderTextColor="#a8a29e"
               keyboardType="numeric"
               maxLength={1}
             />
@@ -184,7 +227,7 @@ export default function AboutMeScreen() {
               value={heightInches}
               onChangeText={setHeightInches}
               placeholder="6"
-              placeholderTextColor="#78716c"
+              placeholderTextColor="#a8a29e"
               keyboardType="numeric"
               maxLength={2}
             />
@@ -201,7 +244,7 @@ export default function AboutMeScreen() {
               value={weight}
               onChangeText={setWeight}
               placeholder="148"
-              placeholderTextColor="#78716c"
+              placeholderTextColor="#a8a29e"
               keyboardType="numeric"
               maxLength={3}
             />
@@ -212,31 +255,31 @@ export default function AboutMeScreen() {
         {/* Menopause stage */}
         <View style={styles.fieldGroup}>
           <Text style={styles.label}>Menopause stage</Text>
-          {renderPills(STAGE_OPTIONS, stage, setStage, true)}
+          {renderPills(STAGE_MAP.map(([, l]) => l), stage, setStage, true)}
         </View>
 
         {/* Relationship status */}
         <View style={styles.fieldGroup}>
           <Text style={styles.label}>Relationship status</Text>
-          {renderPills(RELATIONSHIP_OPTIONS, relationship, setRelationship, true)}
+          {renderPills(RELATIONSHIP_MAP.map(([, l]) => l), relationship, setRelationship, true)}
         </View>
 
         {/* Work status */}
         <View style={styles.fieldGroup}>
           <Text style={styles.label}>Work status</Text>
-          {renderPills(WORK_OPTIONS, workStatus, setWorkStatus, true)}
+          {renderPills(WORK_MAP.map(([, l]) => l), workStatus, setWorkStatus, true)}
         </View>
 
         {/* Number of children */}
         <View style={styles.fieldGroup}>
           <Text style={styles.label}>Number of children</Text>
-          {renderPills(CHILDREN_OPTIONS, children, setChildren)}
+          {renderPills(CHILDREN_MAP.map(([, l]) => l), children, setChildren)}
         </View>
 
         {/* Exercise frequency */}
         <View style={styles.fieldGroup}>
           <Text style={styles.label}>Exercise frequency</Text>
-          {renderPills(EXERCISE_OPTIONS, exerciseFrequency, setExerciseFrequency)}
+          {renderPills(EXERCISE_MAP.map(([, l]) => l), exerciseFrequency, setExerciseFrequency)}
         </View>
 
         {/* Save button */}
@@ -275,15 +318,15 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   infoText: {
-    fontSize: 16,
+    fontSize: 13,
     color: '#1c1917',
-    lineHeight: 22,
+    lineHeight: 19,
   },
 
   // Fields
   fieldGroup: { marginBottom: 20 },
   label: {
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: '600',
     color: '#1c1917',
     marginBottom: 8,
@@ -293,12 +336,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f4',
     borderRadius: 12,
     padding: 14,
-    fontSize: 16,
+    fontSize: 14,
     color: '#1c1917',
   },
   fieldHint: {
-    fontSize: 16,
-    color: '#78716c',
+    fontSize: 12,
+    color: '#a8a29e',
     marginTop: 6,
     marginLeft: 2,
   },
@@ -314,7 +357,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   unitText: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#78716c',
     fontWeight: '500',
   },
@@ -342,14 +385,12 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 8,
-    minHeight: 44,
-    justifyContent: 'center',
   },
   pillActive: {
     backgroundColor: '#1c1917',
   },
   pillText: {
-    fontSize: 16,
+    fontSize: 13,
     color: '#78716c',
     fontWeight: '500',
   },
@@ -366,7 +407,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   saveButtonText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
     color: '#ffffff',
   },
