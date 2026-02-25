@@ -52,7 +52,6 @@ const SYMPTOM_LIST = [
   { key: 'fatigue', label: 'Fatigue', emoji: '😩' },
   { key: 'nausea', label: 'Nausea', emoji: '🤢' },
   { key: 'heart_racing', label: 'Heart racing', emoji: '💓' },
-  { key: 'feeling_good', label: 'Feeling good', emoji: '🌟' },
   { key: 'headache', label: 'Headache', emoji: '🤕' },
   { key: 'night_sweats', label: 'Night sweats', emoji: '💦' },
 ];

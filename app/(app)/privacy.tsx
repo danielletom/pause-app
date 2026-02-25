@@ -12,7 +12,7 @@ const SECTIONS = [
   },
   {
     heading: '2. How We Use It',
-    body: 'To provide personalized insights and patterns based on your tracking data. To deliver your 8-week program content. To generate doctor reports you request. To send you reminders (push and SMS, with your consent). To improve the App through aggregated, anonymized analytics. To ship your Pause supplement (Pause+ subscribers).',
+    body: 'To provide personalized insights and patterns based on your tracking data. To deliver your program content. To generate doctor reports you request. To send you reminders (push and SMS, with your consent). To improve the App through aggregated, anonymized analytics.',
   },
   {
     heading: '3. \u2018Am I Normal?\u2019 & Benchmarks',
