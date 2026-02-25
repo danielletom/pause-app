@@ -17,9 +17,11 @@
       "supportsTablet": true,
       "infoPlist": {
         "UIBackgroundModes": [
+          "audio",
           "audio"
         ]
-      }
+      },
+      "bundleIdentifier": "com.danielletom.pause-app"
     },
     "android": {
       "adaptiveIcon": {
@@ -27,7 +29,8 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.danielletom.pauseapp"
     },
     "web": {
       "bundler": "metro",
@@ -38,11 +41,14 @@
       "expo-router",
       "expo-secure-store",
       "expo-web-browser",
-      ["@kingstinct/react-native-healthkit", {
-        "NSHealthShareUsageDescription": "Pause reads your activity data to automatically track your sleep and improve your health insights.",
-        "NSHealthUpdateUsageDescription": false,
-        "background": false
-      }]
+      [
+        "@kingstinct/react-native-healthkit",
+        {
+          "NSHealthShareUsageDescription": "Pause reads your activity data to automatically track your sleep and improve your health insights.",
+          "NSHealthUpdateUsageDescription": false,
+          "background": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
