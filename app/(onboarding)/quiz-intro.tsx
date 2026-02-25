@@ -21,13 +21,13 @@ export default function QuizIntroScreen() {
         </View>
 
         <Text style={styles.heading}>
-          Get a personalized{'\n'}supplement recommendation
+          See your personalized{'\n'}symptom profile
         </Text>
         <Text style={styles.subheading}>
-          Answer 3 quick questions and we'll tell you if the Pause supplement
-          could help with your specific symptoms.
+          Answer 3 quick questions so we can tailor your experience to your
+          specific symptoms.
         </Text>
-        <Text style={styles.hint}>Takes about 60 seconds. No obligation.</Text>
+        <Text style={styles.hint}>Takes about 60 seconds.</Text>
       </View>
 
       <View style={styles.footer}>

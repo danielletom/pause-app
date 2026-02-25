@@ -367,16 +367,6 @@ export default function SOSScreen() {
             </View>
           )}
 
-          {/* Upsell at 5+ uses — dark card */}
-          {sosCount >= 5 && (
-            <View style={styles.upsellCard}>
-              <Text style={styles.upsellLabel}>Did you know?</Text>
-              <Text style={styles.upsellTitle}>
-                Women on Pause+ see 54% fewer hot flashes after 8 weeks.
-              </Text>
-              <Text style={styles.upsellLink}>Learn about Pause+ →</Text>
-            </View>
-          )}
         </View>
 
         {/* Bottom actions */}
@@ -607,28 +597,6 @@ const styles = StyleSheet.create({
   },
   ratingPillText: { fontSize: 14, color: '#78716c', fontWeight: '500' },
   ratingThanks: { fontSize: 14, color: '#78716c', textAlign: 'center' },
-
-  // Upsell — dark card per wireframe
-  upsellCard: {
-    backgroundColor: '#1c1917',
-    borderRadius: 14,
-    padding: 16,
-    alignSelf: 'stretch',
-    marginBottom: 8,
-  },
-  upsellLabel: { fontSize: 14, color: '#78716c' },
-  upsellTitle: {
-    fontSize: 16,
-    color: '#ffffff',
-    fontWeight: '500',
-    marginTop: 4,
-  },
-  upsellLink: {
-    fontSize: 14,
-    color: '#fbbf24',
-    fontWeight: '500',
-    marginTop: 6,
-  },
 
   // Done buttons
   doneButton: {

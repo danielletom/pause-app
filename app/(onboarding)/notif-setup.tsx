@@ -42,7 +42,6 @@ const notifItems: NotifItem[] = [
     icon: '💬',
     label: 'SMS medication alerts',
     desc: 'Get a text when it\u2019s time for your meds',
-    badge: 'Premium',
   },
   {
     key: 'insights',

@@ -16,8 +16,8 @@ const SECTIONS = [
     body: 'Pause is a wellness tracking tool. It is not a medical device and does not provide medical diagnoses, treatment recommendations, or clinical advice. Content provided through the App, including insights, patterns, and program materials, is for informational and educational purposes only. Always consult a qualified healthcare provider before making health decisions, starting supplements, or changing medications.',
   },
   {
-    heading: '4. Account & Subscriptions',
-    body: 'You are responsible for maintaining the security of your account. Subscriptions (Pause Premium and Pause+) are billed through your Apple ID or Google Play account. You may cancel at any time through your device\u2019s subscription settings. Pause+ subscribers receive a physical supplement shipment; the 90-day money-back guarantee applies from first shipment date. Refunds for digital subscriptions follow Apple/Google\u2019s refund policies.',
+    heading: '4. Account',
+    body: 'You are responsible for maintaining the security of your account. You may delete your account and all associated data at any time through the App.',
   },
   {
     heading: '5. Supplements',

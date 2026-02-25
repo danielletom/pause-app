@@ -161,8 +161,7 @@ export default function EditProfileScreen() {
                 journal entries, and reports. This cannot be undone.
               </Text>
               <Text style={styles.deleteCardNote}>
-                If you have a Pause+ subscription, please cancel it first in
-                your Apple ID settings.
+                You can reactivate your account at any time by signing back in.
               </Text>
 
               <AnimatedPressable

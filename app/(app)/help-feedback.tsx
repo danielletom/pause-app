@@ -18,10 +18,6 @@ const TABS = [
 
 const FAQ_DATA = [
   {
-    question: 'How do I cancel my subscription?',
-    answer: 'Go to Profile \u2192 Manage subscription, or manage in your Apple ID settings.',
-  },
-  {
     question: 'How do I track a new symptom?',
     answer: 'Go to Journal \u2192 Custom tracking to add any symptom you want to monitor.',
   },
@@ -35,7 +31,7 @@ const FAQ_DATA = [
   },
 ];
 
-const SUPPORT_CATEGORIES = ['App issue', 'Subscription', 'Supplement', 'Shipping', 'Other'];
+const SUPPORT_CATEGORIES = ['App issue', 'Supplement', 'Other'];
 
 const FEATURE_CATEGORIES = ['Tracking', 'Insights', 'Program', 'Supplement', 'Design', 'Other'];
 

@@ -21,11 +21,10 @@ const __DEV__ = process.env.NODE_ENV !== 'production';
 const MENU_ITEMS = [
   { label: 'Edit profile', desc: 'Name, email, account', icon: '✏️', route: '/(app)/edit-profile' },
   { label: 'About me', desc: 'Weight, height, birthday, stage', icon: '👤', route: '/(app)/about-me' },
-  { label: 'Medications', desc: 'Supplements, HRT, labs & tracking', icon: '💊', route: '/(app)/meds' },
+  { label: 'Medications', desc: 'HRT, meds, labs & tracking', icon: '💊', route: '/(app)/meds' },
   { label: 'Custom tracking', desc: 'Add your own symptoms or triggers', icon: '✦', route: '/(app)/custom-tracking' },
   { label: 'Notifications', desc: 'Reminders, insights, SMS', icon: '🔔' },
-  { label: 'Manage subscription', desc: 'Plan, billing, upgrade', icon: '⭐' },
-  { label: 'Wearable devices', desc: 'Apple Watch, Oura Ring', icon: '⌚', badge: 'Premium' },
+  { label: 'Wearable devices', desc: 'Apple Watch, Oura Ring', icon: '⌚' },
   { label: 'Export my data', desc: 'Download your full history', icon: '📤', route: '/(app)/export-data' },
   { label: 'Terms & Privacy', desc: 'Terms of service, privacy policy', icon: '📄', route: '/(app)/legal' },
   { label: 'Help & feedback', desc: 'Contact us or request a feature', icon: '💬', route: '/(app)/help-feedback' },
@@ -105,19 +104,6 @@ export default function ProfileScreen() {
           </View>
         ) : (
           <>
-            {/* Subscription Card — dark */}
-            <View style={styles.subCard}>
-              <Text style={styles.subLabel}>Your plan</Text>
-              <Text style={styles.subTitle}>You're on the free plan</Text>
-              <Text style={styles.subDesc}>Basic logging, SOS, limited insights</Text>
-              <TouchableOpacity style={styles.subButtonPrimary} activeOpacity={0.8}>
-                <Text style={styles.subButtonPrimaryText}>Get Pause Premium — $7.99/mo</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.subButtonGold} activeOpacity={0.8}>
-                <Text style={styles.subButtonGoldText}>Try Pause+ — from $39/mo</Text>
-              </TouchableOpacity>
-            </View>
-
             {/* Account Info Card */}
             <View style={styles.accountCard}>
               <View style={styles.accountRow}>
@@ -150,14 +136,7 @@ export default function ProfileScreen() {
                 >
                   <Text style={styles.menuIcon}>{item.icon}</Text>
                   <View style={{ flex: 1 }}>
-                    <View style={styles.menuLabelRow}>
-                      <Text style={styles.menuLabel}>{item.label}</Text>
-                      {item.badge && (
-                        <View style={styles.badge}>
-                          <Text style={styles.badgeText}>{item.badge}</Text>
-                        </View>
-                      )}
-                    </View>
+                    <Text style={styles.menuLabel}>{item.label}</Text>
                     <Text style={styles.menuDesc}>{item.desc}</Text>
                   </View>
                   <Text style={styles.menuChevron}>›</Text>
@@ -221,32 +200,6 @@ const styles = StyleSheet.create({
   header: { marginBottom: 16 },
   title: { fontSize: 22, fontWeight: '700', color: '#1c1917' },
 
-  // Subscription card
-  subCard: {
-    backgroundColor: '#1c1917',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 10,
-  },
-  subLabel: { fontSize: 16, color: '#78716c', marginBottom: 6 },
-  subTitle: { fontSize: 16, fontWeight: '500', color: '#ffffff', marginBottom: 2 },
-  subDesc: { fontSize: 16, color: '#a8a29e', marginBottom: 16 },
-  subButtonPrimary: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    paddingVertical: 11,
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  subButtonPrimaryText: { fontSize: 16, fontWeight: '600', color: '#1c1917' },
-  subButtonGold: {
-    backgroundColor: '#fbbf24',
-    borderRadius: 12,
-    paddingVertical: 11,
-    alignItems: 'center',
-  },
-  subButtonGoldText: { fontSize: 16, fontWeight: '600', color: '#1c1917' },
-
   // Account info
   accountCard: {
     backgroundColor: '#ffffff',
@@ -297,17 +250,9 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   menuIcon: { fontSize: 16 },
-  menuLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   menuLabel: { fontSize: 17, fontWeight: '500', color: '#1c1917' },
   menuDesc: { fontSize: 14, color: '#57534e', marginTop: 1 },
   menuChevron: { fontSize: 18, color: '#57534e' },
-  badge: {
-    backgroundColor: '#f5f5f4',
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-  },
-  badgeText: { fontSize: 12, fontWeight: '600', color: '#78716c' },
 
   // Dev section
   devSection: { marginBottom: 20 },

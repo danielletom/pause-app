@@ -102,6 +102,7 @@ export default function MedsScreen() {
   const [newTime, setNewTime] = useState('Morning');
   const [newFrequency, setNewFrequency] = useState('Daily');
   const [newType, setNewType] = useState<string | null>(null);
+  const [waitlisted, setWaitlisted] = useState(false);
   const [smsReminder, setSmsReminder] = useState(false);
   const [smsPhone, setSmsPhone] = useState('');
   const [customTime, setCustomTime] = useState('');
@@ -283,28 +284,26 @@ export default function MedsScreen() {
             {/* ─── Supplements Tab ─── */}
             {activeTab === 'supplements' && (
               <View style={styles.tabContent}>
-                {/* Pause Supplement — upsell since user doesn't have it yet */}
-                <View style={styles.pauseUpsellCard}>
-                  <View style={styles.pauseSupplementHeader}>
-                    <View style={styles.pauseSupplementLogo}>
-                      <View style={styles.pauseLogoDotOuter}>
-                        <View style={styles.pauseLogoDotInner} />
-                      </View>
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.pauseSupplementName}>Pause Supplement</Text>
-                      <Text style={styles.pauseSupplementDesc}>Pueraria mirifica + L-theanine</Text>
-                    </View>
-                    <View style={styles.pausePlusBadge}>
-                      <Text style={styles.pausePlusBadgeText}>Pause+</Text>
-                    </View>
-                  </View>
-                  <Text style={styles.pauseUpsellBody}>
-                    Clinically studied ingredients to support hormonal balance, reduce hot flashes, and improve sleep quality.
+                {/* Pause Supplement — waitlist */}
+                <View style={styles.waitlistCard}>
+                  <Text style={styles.waitlistIcon}>✦</Text>
+                  <Text style={styles.waitlistHeadline}>Pause supplement — coming soon</Text>
+                  <Text style={styles.waitlistBody}>
+                    A daily capsule designed for your symptoms. Join the waitlist and we'll notify you when it's available.
                   </Text>
-                  <TouchableOpacity style={styles.pauseUpsellBtn} activeOpacity={0.8}>
-                    <Text style={styles.pauseUpsellBtnText}>Learn about Pause+ →</Text>
-                  </TouchableOpacity>
+                  {!waitlisted ? (
+                    <AnimatedPressable
+                      onPress={() => setWaitlisted(true)}
+                      scaleDown={0.97}
+                      style={styles.waitlistButton}
+                    >
+                      <Text style={styles.waitlistButtonText}>Notify me</Text>
+                    </AnimatedPressable>
+                  ) : (
+                    <View style={styles.waitlistConfirmed}>
+                      <Text style={styles.waitlistConfirmedText}>✓ You're on the list — we'll let you know</Text>
+                    </View>
+                  )}
                 </View>
 
                 {/* User's supplements with adherence */}
@@ -362,17 +361,6 @@ export default function MedsScreen() {
                   </View>
                 )}
 
-                {/* Personalized upsell nudge */}
-                <View style={styles.upsellCard}>
-                  <Text style={styles.upsellIcon}>✦</Text>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.upsellTitle}>Personalized for you</Text>
-                    <Text style={styles.upsellDesc}>
-                      Women in your profile report 40-60% fewer hot flashes after 8 weeks with the Pause supplement.
-                    </Text>
-                    <Text style={styles.upsellLink}>See the research →</Text>
-                  </View>
-                </View>
               </View>
             )}
 
@@ -534,12 +522,7 @@ export default function MedsScreen() {
               <View style={styles.tabContent}>
                 {/* Upload options */}
                 <View style={[styles.card, { borderWidth: 1, borderColor: '#e7e5e4' }]}>
-                  <View style={styles.labsHeaderRow}>
-                    <Text style={styles.cardTitle}>Add lab results</Text>
-                    <View style={styles.premiumBadge}>
-                      <Text style={styles.premiumBadgeText}>Premium</Text>
-                    </View>
-                  </View>
+                  <Text style={styles.cardTitle}>Add lab results</Text>
                   <View style={styles.uploadGrid}>
                     <TouchableOpacity style={styles.uploadOption} activeOpacity={0.8}>
                       <View style={styles.uploadIconCircle}>
@@ -917,47 +900,21 @@ const styles = StyleSheet.create({
   loadingContainer: { paddingTop: 60, alignItems: 'center' },
   tabContent: { gap: 12 },
 
-  // ── Supplements tab: Pause Supplement upsell ──
-  pauseUpsellCard: {
-    backgroundColor: '#ffffff', borderRadius: 16, padding: 18,
-    borderWidth: 1, borderColor: '#e7e5e4', borderStyle: 'dashed',
+  // ── Supplements tab: Waitlist card ──
+  waitlistCard: {
+    backgroundColor: '#fefbeb', borderWidth: 1, borderColor: '#fef3c7',
+    borderRadius: 16, padding: 16,
   },
-  pauseUpsellBody: {
-    fontSize: 16, color: '#78716c', lineHeight: 22, marginBottom: 14,
+  waitlistIcon: { fontSize: 20, color: '#f59e0b', marginBottom: 8 },
+  waitlistHeadline: { fontSize: 16, fontWeight: '700', color: '#1c1917', marginBottom: 6 },
+  waitlistBody: { fontSize: 14, color: '#78716c', lineHeight: 20, marginBottom: 14 },
+  waitlistButton: {
+    backgroundColor: '#ffffff', borderWidth: 1, borderColor: '#e7e5e4',
+    borderRadius: 12, paddingVertical: 12, alignItems: 'center',
   },
-  pauseUpsellBtn: {
-    backgroundColor: '#1c1917', borderRadius: 12, paddingVertical: 12, alignItems: 'center',
-  },
-  pauseUpsellBtnText: { fontSize: 16, fontWeight: '600', color: '#ffffff' },
-  pauseSupplementHeader: {
-    flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12,
-  },
-  pauseSupplementLogo: {
-    width: 48, height: 48, borderRadius: 14, backgroundColor: '#1c1917',
-    alignItems: 'center', justifyContent: 'center',
-  },
-  pauseLogoDotOuter: {
-    width: 16, height: 16, borderRadius: 8,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center', justifyContent: 'center',
-  },
-  pauseLogoDotInner: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#ffffff' },
-  pauseSupplementName: { fontSize: 16, fontWeight: '700', color: '#1c1917' },
-  pauseSupplementDesc: { fontSize: 14, color: '#78716c', marginTop: 1 },
-  pausePlusBadge: {
-    backgroundColor: '#f5f5f4', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3,
-  },
-  pausePlusBadgeText: { fontSize: 12, fontWeight: '600', color: '#78716c' },
-
-  // Upsell card
-  upsellCard: {
-    backgroundColor: '#fffbeb', borderRadius: 16, padding: 16,
-    flexDirection: 'row', gap: 12, borderWidth: 1, borderColor: '#fef3c7',
-  },
-  upsellIcon: { fontSize: 18, color: '#b45309' },
-  upsellTitle: { fontSize: 16, fontWeight: '600', color: '#1c1917', marginBottom: 4 },
-  upsellDesc: { fontSize: 14, color: '#78716c', lineHeight: 20 },
-  upsellLink: { fontSize: 14, fontWeight: '600', color: '#1c1917', marginTop: 8, textDecorationLine: 'underline' },
+  waitlistButtonText: { fontSize: 14, fontWeight: '600', color: '#1c1917' },
+  waitlistConfirmed: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  waitlistConfirmedText: { fontSize: 14, fontWeight: '500', color: '#166534' },
 
   // ── Current tab: Adherence card ──
   adherenceCard: {
