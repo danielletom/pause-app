@@ -256,17 +256,17 @@ const s = StyleSheet.create({
   scroll: { paddingHorizontal: 24, paddingBottom: 120 },
   topBar: { paddingTop: 8, marginBottom: 4 },
   hero: { marginBottom: 16 },
-  heroLabel: { fontSize: 10, color: '#f59e0b', fontWeight: '500', letterSpacing: 1 },
+  heroLabel: { fontSize: 12, color: '#f59e0b', fontWeight: '500', letterSpacing: 1 },
   heroCount: { fontSize: 28, fontWeight: '700', color: '#1c1917', marginTop: 2 },
-  heroSub: { fontSize: 11, color: '#a8a29e', marginTop: 2 },
+  heroSub: { fontSize: 14, color: '#a8a29e', marginTop: 2 },
 
   statBar: {
     backgroundColor: '#1c1917', borderRadius: 16, padding: 16,
     flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16,
   },
-  statBarLabel: { fontSize: 10, color: '#78716c' },
-  statBarValue: { fontSize: 15, fontWeight: '600', color: '#ffffff', marginTop: 2 },
-  statBarSub: { fontSize: 10, color: '#f59e0b', marginTop: 4 },
+  statBarLabel: { fontSize: 13, color: '#78716c' },
+  statBarValue: { fontSize: 17, fontWeight: '600', color: '#ffffff', marginTop: 2 },
+  statBarSub: { fontSize: 12, color: '#f59e0b', marginTop: 4 },
   statBarEmoji: {
     width: 52, height: 52, borderRadius: 26,
     backgroundColor: 'rgba(245,158,11,0.15)', alignItems: 'center', justifyContent: 'center',
@@ -276,8 +276,8 @@ const s = StyleSheet.create({
   navPill: {
     flex: 1, borderRadius: 16, borderWidth: 1, padding: 12,
   },
-  navPillTitle: { fontSize: 12, fontWeight: '600', color: '#1c1917', marginTop: 4 },
-  navPillSub: { fontSize: 10, color: '#a8a29e' },
+  navPillTitle: { fontSize: 14, fontWeight: '600', color: '#1c1917', marginTop: 4 },
+  navPillSub: { fontSize: 12, color: '#a8a29e' },
 
   filterScroll: { marginBottom: 16, marginHorizontal: -24 },
   filterRow: { paddingHorizontal: 24, gap: 6 },
@@ -286,27 +286,27 @@ const s = StyleSheet.create({
     backgroundColor: '#f5f5f4',
   },
   filterChipActive: { backgroundColor: '#1c1917' },
-  filterChipText: { fontSize: 12, fontWeight: '500', color: '#a8a29e' },
+  filterChipText: { fontSize: 14, fontWeight: '500', color: '#a8a29e' },
   filterChipTextActive: { color: '#ffffff' },
 
   dayGroup: { marginBottom: 20 },
   dayHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
-  dayLabel: { fontSize: 11, fontWeight: '600', color: '#78716c' },
+  dayLabel: { fontSize: 13, fontWeight: '600', color: '#78716c' },
   dayLine: { flex: 1, height: 1, backgroundColor: '#f5f5f4' },
-  dayCount: { fontSize: 11, color: '#d6d3d1' },
+  dayCount: { fontSize: 13, color: '#d6d3d1' },
 
   entryCard: {
     borderRadius: 16, padding: 14, borderWidth: 1, marginBottom: 8,
   },
   entryTop: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
   entryDot: { width: 7, height: 7, borderRadius: 4 },
-  entryTheme: { fontSize: 11, fontWeight: '500', flex: 1 },
-  entryTime: { fontSize: 11, color: '#d6d3d1' },
-  entryText: { fontSize: 13, color: '#44403c', lineHeight: 20, fontStyle: 'italic', fontWeight: '500' },
+  entryTheme: { fontSize: 13, fontWeight: '500', flex: 1 },
+  entryTime: { fontSize: 13, color: '#d6d3d1' },
+  entryText: { fontSize: 15, color: '#44403c', lineHeight: 22, fontStyle: 'italic', fontWeight: '500' },
 
   flourish: { alignItems: 'center', paddingVertical: 32 },
-  flourishText: { fontSize: 11, color: '#d6d3d1' },
-  flourishSub: { fontSize: 11, color: '#e7e5e4', marginTop: 4 },
+  flourishText: { fontSize: 13, color: '#d6d3d1' },
+  flourishSub: { fontSize: 13, color: '#e7e5e4', marginTop: 4 },
 
   emptyGarden: { marginBottom: 24, alignItems: 'center' },
   emptyGardenRing: {

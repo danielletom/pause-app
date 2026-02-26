@@ -96,6 +96,11 @@ export default function NotifSetupScreen() {
         <Text style={styles.subheading}>
           Gentle nudges, not noise. Customize anytime.
         </Text>
+        <View style={styles.trialPromise}>
+          <Text style={styles.trialPromiseText}>
+            We'll remind you before your free period ends — no surprises, ever.
+          </Text>
+        </View>
 
         <View style={styles.notifList}>
           {notifItems.map((item) => (
@@ -196,8 +201,20 @@ const styles = StyleSheet.create({
   subheading: {
     fontSize: 14,
     color: '#78716c',
-    marginBottom: 24,
+    marginBottom: 12,
     lineHeight: 20,
+  },
+  trialPromise: {
+    backgroundColor: '#f5f5f4',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 20,
+  },
+  trialPromiseText: {
+    fontSize: 13,
+    color: '#57534e',
+    textAlign: 'center',
+    lineHeight: 18,
   },
   notifList: {
     gap: 0,

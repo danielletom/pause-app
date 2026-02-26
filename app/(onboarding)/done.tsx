@@ -74,8 +74,11 @@ export default function DoneScreen() {
 
             <Text style={styles.heading}>You're all set</Text>
             <Text style={styles.subheading}>
-              Pause learns from you. The more you log, the better we can show
-              you why you feel the way you do.
+              Everything is free for 20 days. The more you log, the better
+              we can show you why you feel the way you do.
+            </Text>
+            <Text style={styles.trialNote}>
+              We'll remind you before your free period ends — no surprises.
             </Text>
 
             {error ? (
@@ -101,7 +104,7 @@ export default function DoneScreen() {
       {!saving && (
         <View style={styles.footer}>
           <OnboardingButton onPress={handleStart}>
-            Start tracking
+            Start your first check-in
           </OnboardingButton>
         </View>
       )}
@@ -142,6 +145,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 22,
     marginBottom: 8,
+  },
+  trialNote: {
+    fontSize: 13,
+    color: '#a8a29e',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 4,
   },
   errorText: {
     fontSize: 14,
