@@ -13,7 +13,7 @@ import Svg, { Circle } from 'react-native-svg';
 import AnimatedPressable from '@/components/AnimatedPressable';
 import { hapticLight, hapticSelection } from '@/lib/haptics';
 import { apiRequest } from '@/lib/api';
-import { getTrialDay } from '@/lib/trial';
+import { getTrialDay, isTrialExpired } from '@/lib/trial';
 import { useProfile } from '@/lib/useProfile';
 import { useDelight, DELIGHT_KEYS } from '@/lib/delight-context';
 
@@ -253,6 +253,7 @@ export default function InsightsScreen() {
   const { profile } = useProfile();
   const { hasSeen, markSeen } = useDelight();
   const trialDay = getTrialDay(profile?.createdAt);
+  const trialExpired = isTrialExpired(profile?.createdAt);
   const [activeTab, setActiveTab] = useState<'patterns' | 'normal'>('patterns');
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -591,7 +592,30 @@ export default function InsightsScreen() {
           })}
         </View>
 
-        {loading ? (
+        {/* Trial expired gate */}
+        {trialExpired ? (
+          <View style={styles.lockedInsights}>
+            <Text style={{ fontSize: 32, marginBottom: 12 }}>{'\uD83D\uDD12'}</Text>
+            <Text style={styles.lockedInsightsTitle}>Your insights are waiting</Text>
+            <Text style={styles.lockedInsightsSub}>
+              Subscribe to keep tracking and see your evolving patterns, correlations, and benchmarks.
+            </Text>
+            <AnimatedPressable
+              onPress={() => router.push('/(app)/paywall' as any)}
+              scaleDown={0.97}
+              style={styles.lockedInsightsBtn}
+            >
+              <Text style={styles.lockedInsightsBtnText}>See plans</Text>
+            </AnimatedPressable>
+            <AnimatedPressable
+              onPress={() => router.push('/(app)/calendar')}
+              scaleDown={0.97}
+              style={{ marginTop: 10 }}
+            >
+              <Text style={{ fontSize: 13, color: '#78716c' }}>View past data {'\u2192'}</Text>
+            </AnimatedPressable>
+          </View>
+        ) : loading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#1c1917" />
           </View>
@@ -1299,6 +1323,20 @@ export default function InsightsScreen() {
         ) : (
           /* ═══════════════ AM I NORMAL? TAB ═══════════════ */
           <>
+            {/* ──── Unlock celebration (shows once on first visit) ──── */}
+            {trialDay >= 14 && trialDay <= 16 && !hasSeen('normal_unlock_seen') && (
+              <View style={styles.normalUnlockCard}>
+                <Text style={{ fontSize: 20, textAlign: 'center', marginBottom: 6 }}>{'\u2728'}</Text>
+                <Text style={styles.normalUnlockTitle}>Am I Normal? is ready</Text>
+                <Text style={styles.normalUnlockSub}>
+                  14 days of data unlocked your personalised comparison. See how your symptoms compare to thousands of other women.
+                </Text>
+                <AnimatedPressable onPress={() => markSeen('normal_unlock_seen')} scaleDown={0.97} style={styles.normalUnlockBtn}>
+                  <Text style={styles.normalUnlockBtnText}>Let{'\u2019'}s see</Text>
+                </AnimatedPressable>
+              </View>
+            )}
+
             {/* ─── Comparison group ────────────────── */}
             <View style={styles.storyCard}>
               <Text style={styles.storyLabel}>Your comparison group</Text>
@@ -1898,6 +1936,42 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   cardHint: { fontSize: 14, color: '#78716c', textAlign: 'center' },
+
+  // Normal unlock celebration
+  normalUnlockCard: {
+    backgroundColor: '#eef2ff',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#c7d2fe',
+    alignItems: 'center',
+  },
+  normalUnlockTitle: { fontSize: 16, fontWeight: '700', color: '#4338ca', marginBottom: 4 },
+  normalUnlockSub: { fontSize: 13, color: '#6366f1', lineHeight: 19, textAlign: 'center', marginBottom: 10 },
+  normalUnlockBtn: {
+    backgroundColor: '#6366f1',
+    borderRadius: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+  },
+  normalUnlockBtnText: { fontSize: 13, fontWeight: '600', color: '#ffffff' },
+
+  // Locked insights (trial expired)
+  lockedInsights: {
+    alignItems: 'center',
+    paddingVertical: 40,
+    paddingHorizontal: 20,
+  },
+  lockedInsightsTitle: { fontSize: 18, fontWeight: '700', color: '#1c1917', marginBottom: 6, textAlign: 'center' },
+  lockedInsightsSub: { fontSize: 14, color: '#78716c', textAlign: 'center', lineHeight: 20, marginBottom: 16 },
+  lockedInsightsBtn: {
+    backgroundColor: '#1c1917',
+    borderRadius: 14,
+    paddingHorizontal: 28,
+    paddingVertical: 12,
+  },
+  lockedInsightsBtnText: { fontSize: 14, fontWeight: '600', color: '#ffffff' },
 });
 
 // ─── Learning State Styles ──────────────────────────────

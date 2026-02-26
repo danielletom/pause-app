@@ -13,6 +13,7 @@ import AnimatedPressable from '@/components/AnimatedPressable';
 import { hapticLight, hapticMedium } from '@/lib/haptics';
 import BackButton from '@/components/BackButton';
 import { apiRequest } from '@/lib/api';
+import { useDelight, DELIGHT_KEYS } from '@/lib/delight-context';
 
 /* ─── Week metadata ── */
 const WEEK_TITLES: Record<number, string> = {
@@ -115,11 +116,13 @@ export default function LearnScreen() {
     }, [])
   );
 
+  const { hasSeen, markSeen } = useDelight();
   const completedSet = new Set(data?.completedIds ?? []);
   const currentWeek = data?.week ?? 1;
   const totalDone = data?.totalDone ?? 0;
   const totalEpisodes = data?.totalEpisodes ?? 40;
   const pct = totalEpisodes > 0 ? Math.min(Math.round((totalDone / totalEpisodes) * 100), 100) : 0;
+  const podComplete = totalDone > 0 && totalDone >= totalEpisodes;
 
   // Group episodes by week
   const weekMap = new Map<number, Episode[]>();
@@ -150,6 +153,20 @@ export default function LearnScreen() {
             <View style={[styles.progressBarFill, { width: `${pct}%` as any }]} />
           </View>
         </View>
+
+        {/* ══════════ DELIGHT: Pod completion celebration ══════════ */}
+        {podComplete && !hasSeen(DELIGHT_KEYS.POD_COMPLETION) && (
+          <View style={styles.podCompleteCard}>
+            <Text style={{ fontSize: 24, textAlign: 'center', marginBottom: 8 }}>🎉</Text>
+            <Text style={styles.podCompleteTitle}>You finished the Pause Pod!</Text>
+            <Text style={styles.podCompleteSub}>
+              All {totalEpisodes} episodes complete. You now have a deep understanding of your body during menopause.
+            </Text>
+            <AnimatedPressable onPress={() => markSeen(DELIGHT_KEYS.POD_COMPLETION)} scaleDown={0.97} style={styles.podCompleteBtn}>
+              <Text style={styles.podCompleteBtnText}>Celebrate {'\u2728'}</Text>
+            </AnimatedPressable>
+          </View>
+        )}
 
         {loading ? (
           <ActivityIndicator size="large" color="#1c1917" style={{ marginTop: 40 }} />
@@ -409,4 +426,35 @@ const styles = StyleSheet.create({
     marginLeft: 40,
   },
   currentBadgeText: { fontSize: 11, fontWeight: '700', color: '#ffffff' },
+
+  // Pod completion celebration
+  podCompleteCard: {
+    marginHorizontal: 24,
+    marginBottom: 16,
+    backgroundColor: '#1c1917',
+    borderRadius: 20,
+    padding: 20,
+    alignItems: 'center',
+  },
+  podCompleteTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#ffffff',
+    textAlign: 'center',
+    marginBottom: 6,
+  },
+  podCompleteSub: {
+    fontSize: 13,
+    color: '#a8a29e',
+    textAlign: 'center',
+    lineHeight: 19,
+    marginBottom: 12,
+  },
+  podCompleteBtn: {
+    backgroundColor: '#f59e0b',
+    borderRadius: 12,
+    paddingHorizontal: 24,
+    paddingVertical: 10,
+  },
+  podCompleteBtnText: { fontSize: 14, fontWeight: '700', color: '#1c1917' },
 });

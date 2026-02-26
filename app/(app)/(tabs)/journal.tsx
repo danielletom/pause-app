@@ -12,7 +12,7 @@ import { useAuth } from '@clerk/clerk-expo';
 import AnimatedPressable from '@/components/AnimatedPressable';
 import { hapticMedium, hapticLight } from '@/lib/haptics';
 import { apiRequest } from '@/lib/api';
-import { getTrialDay, getDaysUntilInsights } from '@/lib/trial';
+import { getTrialDay, isTrialExpired, getDaysUntilInsights } from '@/lib/trial';
 import { useProfile } from '@/lib/useProfile';
 import { useDelight, DELIGHT_KEYS } from '@/lib/delight-context';
 
@@ -27,6 +27,7 @@ export default function JournalScreen() {
   const { profile } = useProfile();
   const { hasSeen, markSeen } = useDelight();
   const trialDay = getTrialDay(profile?.createdAt);
+  const trialExpired = isTrialExpired(profile?.createdAt);
   const [loading, setLoading] = useState(true);
   const [streak, setStreak] = useState(0);
   const [weekData, setWeekData] = useState<{ am: boolean; pm: boolean }[]>(
@@ -168,7 +169,31 @@ export default function JournalScreen() {
           </View>
         </View>
 
+        {/* Trial expired gate */}
+        {trialExpired && (
+          <View style={styles.lockedJournal}>
+            <Text style={{ fontSize: 24, marginBottom: 8 }}>{'\uD83D\uDD12'}</Text>
+            <Text style={styles.lockedJournalTitle}>Journal locked</Text>
+            <Text style={styles.lockedJournalSub}>Subscribe to keep tracking your symptoms, sleep, and mood daily.</Text>
+            <AnimatedPressable
+              onPress={() => router.push('/(app)/paywall' as any)}
+              scaleDown={0.97}
+              style={styles.lockedJournalBtn}
+            >
+              <Text style={styles.lockedJournalBtnText}>See plans</Text>
+            </AnimatedPressable>
+            <AnimatedPressable
+              onPress={() => router.push('/(app)/calendar')}
+              scaleDown={0.97}
+              style={{ marginTop: 10 }}
+            >
+              <Text style={{ fontSize: 13, color: '#78716c' }}>View past entries {'\u2192'}</Text>
+            </AnimatedPressable>
+          </View>
+        )}
+
         {/* Morning card */}
+        {!trialExpired && (<>
         <AnimatedPressable
           onPress={() => {
             hapticMedium();
@@ -239,6 +264,7 @@ export default function JournalScreen() {
             )}
           </View>
         </AnimatedPressable>
+        </>)}
 
         {/* ══════════ DELIGHT: Evening unlock notice (Day 3+) ══════════ */}
         {!hasSeen(DELIGHT_KEYS.DAY3_EVENING_UNLOCK) && trialDay >= 3 && trialDay <= 5 && (
@@ -305,6 +331,35 @@ export default function JournalScreen() {
           </View>
           <Text style={styles.linkArrow}>›</Text>
         </AnimatedPressable>
+
+        {/* ══════════ DELIGHT: Custom tracking nudge (Day 8-9) ══════════ */}
+        {!hasSeen(DELIGHT_KEYS.CUSTOM_TRACKING_NUDGE) && trialDay >= 8 && trialDay <= 10 && (
+          <View style={styles.customNudgeCard}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+              <Text style={{ fontSize: 14 }}>🔬</Text>
+              <Text style={styles.customNudgeLabel}>DID YOU KNOW?</Text>
+            </View>
+            <Text style={styles.customNudgeTitle}>You can track anything</Text>
+            <Text style={styles.customNudgeSub}>
+              Add custom symptoms specific to you — like specific foods, exercise, or supplements — and we{'\u2019'}ll look for patterns.
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 10, marginTop: 10 }}>
+              <AnimatedPressable
+                onPress={() => {
+                  markSeen(DELIGHT_KEYS.CUSTOM_TRACKING_NUDGE);
+                  router.push({ pathname: '/(app)/quick-log', params: { mode: 'morning' } });
+                }}
+                scaleDown={0.97}
+                style={styles.customNudgeBtn}
+              >
+                <Text style={styles.customNudgeBtnText}>Try it now</Text>
+              </AnimatedPressable>
+              <AnimatedPressable onPress={() => markSeen(DELIGHT_KEYS.CUSTOM_TRACKING_NUDGE)} scaleDown={0.97}>
+                <Text style={{ fontSize: 12, color: '#78716c', lineHeight: 32 }}>Maybe later</Text>
+              </AnimatedPressable>
+            </View>
+          </View>
+        )}
 
         {/* Gratitude journal entry */}
         <AnimatedPressable
@@ -551,4 +606,48 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   progressText: { fontSize: 12, color: '#78716c' },
+
+  // Custom tracking nudge (Day 8-9)
+  customNudgeCard: {
+    marginHorizontal: 24,
+    marginBottom: 12,
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#e7e5e4',
+    borderStyle: 'dashed',
+  },
+  customNudgeLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#a8a29e',
+    letterSpacing: 1,
+  },
+  customNudgeTitle: { fontSize: 15, fontWeight: '700', color: '#1c1917', marginBottom: 4 },
+  customNudgeSub: { fontSize: 13, color: '#78716c', lineHeight: 19 },
+  customNudgeBtn: {
+    backgroundColor: '#1c1917',
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  customNudgeBtnText: { fontSize: 13, fontWeight: '600', color: '#ffffff' },
+
+  // Locked journal (trial expired)
+  lockedJournal: {
+    marginHorizontal: 24,
+    marginBottom: 16,
+    alignItems: 'center',
+    paddingVertical: 32,
+  },
+  lockedJournalTitle: { fontSize: 18, fontWeight: '700', color: '#1c1917', marginBottom: 6 },
+  lockedJournalSub: { fontSize: 14, color: '#78716c', textAlign: 'center', lineHeight: 20, marginBottom: 16, paddingHorizontal: 8 },
+  lockedJournalBtn: {
+    backgroundColor: '#1c1917',
+    borderRadius: 14,
+    paddingHorizontal: 28,
+    paddingVertical: 12,
+  },
+  lockedJournalBtnText: { fontSize: 14, fontWeight: '600', color: '#ffffff' },
 });

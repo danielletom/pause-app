@@ -17,7 +17,7 @@ import { apiRequest } from '@/lib/api';
 import { useProfile } from '@/lib/useProfile';
 import { useHealthData } from '@/lib/useHealthData';
 import { useSleepTracking } from '@/lib/useSleepTracking';
-import { getTrialDay, isTrialExpired, getCheckInDays, getDaysUntilInsights, getStreakMessage } from '@/lib/trial';
+import { getTrialDay, isTrialExpired, getTrialDaysLeft, getCheckInDays, getDaysUntilInsights, getStreakMessage } from '@/lib/trial';
 import { useDelight, DELIGHT_KEYS } from '@/lib/delight-context';
 
 /* ─── Date helpers ────────────────────────────────────────── */
@@ -200,6 +200,7 @@ export default function HomeScreen() {
   const [weekTrends, setWeekTrends] = useState<Record<string, { thisWeek: number; lastWeek: number }>>({});
   const [periodEnabled, setPeriodEnabled] = useState(false);
   const [periodCycle, setPeriodCycle] = useState<any>(null);
+  const [sleepCompare, setSleepCompare] = useState<{ lastNight: number; nightBefore: number } | null>(null);
   const hasLoadedOnce = useRef(false);
 
   // Delight system
@@ -274,6 +275,16 @@ export default function HomeScreen() {
           setLastLoggedHoursAgo(hrs);
         }
       }
+      // Sleep comparison for Day 2 card
+      if (Array.isArray(recentLogs) && recentLogs.length >= 2) {
+        const mornings = recentLogs
+          .filter((l: any) => l.logType === 'morning' && l.sleepHours != null)
+          .sort((a: any, b: any) => b.date.localeCompare(a.date));
+        if (mornings.length >= 2) {
+          setSleepCompare({ lastNight: mornings[0].sleepHours, nightBefore: mornings[1].sleepHours });
+        }
+      }
+
       // Set recommendation + AI data from home API
       if (homeData) {
         if (homeData.recommendation) setRecommendation(homeData.recommendation);
@@ -518,7 +529,7 @@ export default function HomeScreen() {
                   <Text style={styles.trialEndedTitle}>Your free trial ended</Text>
                   <Text style={styles.trialEndedSub}>Subscribe to keep logging + unlock new insights</Text>
                 </View>
-                <AnimatedPressable onPress={() => router.push('/(app)/paywall')} scaleDown={0.97}>
+                <AnimatedPressable onPress={() => router.push('/(app)/paywall' as any)} scaleDown={0.97}>
                   <Text style={{ fontSize: 13, color: '#a78bfa', fontWeight: '600' }}>→</Text>
                 </AnimatedPressable>
               </View>
@@ -549,6 +560,83 @@ export default function HomeScreen() {
                 <Text style={styles.quizDataBody}>
                   82% of women in {profile.stage === 'peri' ? 'perimenopause' : profile.stage === 'meno' ? 'menopause' : profile.stage === 'post' ? 'post-menopause' : 'this stage'} experience these. You're not alone — and now we know what to watch for.
                 </Text>
+              </View>
+            )}
+
+            {/* ══════════ DELIGHT: SLEEP COMPARISON (Day 2-3) ══════════ */}
+            {!hasSeen(DELIGHT_KEYS.SLEEP_COMPARISON) && isToday && trialDay >= 2 && trialDay <= 3 && sleepCompare && (
+              <View style={styles.sleepCompareCard}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text style={styles.sleepCompareTitle}>Your sleep, side by side</Text>
+                  <AnimatedPressable onPress={() => markSeen(DELIGHT_KEYS.SLEEP_COMPARISON)} scaleDown={0.95}>
+                    <Text style={{ fontSize: 12, color: '#5eead4' }}>Dismiss</Text>
+                  </AnimatedPressable>
+                </View>
+                <View style={styles.sleepCompareBars}>
+                  <View style={styles.sleepCompareBarWrap}>
+                    <View style={[styles.sleepCompareBar, { height: Math.min(80, sleepCompare.nightBefore * 10) }]} />
+                    <Text style={styles.sleepCompareHours}>{sleepCompare.nightBefore}h</Text>
+                    <Text style={styles.sleepCompareDay}>Night before</Text>
+                  </View>
+                  <View style={styles.sleepCompareBarWrap}>
+                    <View style={[styles.sleepCompareBar, styles.sleepCompareBarActive, { height: Math.min(80, sleepCompare.lastNight * 10) }]} />
+                    <Text style={styles.sleepCompareHours}>{sleepCompare.lastNight}h</Text>
+                    <Text style={styles.sleepCompareDay}>Last night</Text>
+                  </View>
+                </View>
+                <Text style={styles.sleepCompareHint}>
+                  {sleepCompare.lastNight >= sleepCompare.nightBefore
+                    ? 'Trending up \u2014 keep it going!'
+                    : 'A bit less sleep. Watch how you feel today.'}
+                </Text>
+              </View>
+            )}
+
+            {/* ══════════ DELIGHT: FIRST PATTERN (Day 4-7) ══════════ */}
+            {!hasSeen(DELIGHT_KEYS.FIRST_PATTERN) && isToday && trialDay >= 4 && trialDay <= 7 && topCorrelations.length > 0 && (
+              <View style={styles.firstPatternCard}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                  <View style={styles.firstPatternDot} />
+                  <Text style={styles.firstPatternLabel}>FIRST PATTERN DETECTED</Text>
+                </View>
+                <Text style={styles.firstPatternTitle}>{topCorrelations[0].humanLabel || `${topCorrelations[0].factor} \u2192 ${topCorrelations[0].symptom}`}</Text>
+                <Text style={styles.firstPatternSub}>
+                  {topCorrelations[0].direction === 'positive'
+                    ? `When ${topCorrelations[0].factor.replace(/_/g, ' ')} is higher, ${topCorrelations[0].symptom.replace(/_/g, ' ')} tends to be worse.`
+                    : `When ${topCorrelations[0].factor.replace(/_/g, ' ')} is lower, ${topCorrelations[0].symptom.replace(/_/g, ' ')} tends to improve.`}
+                </Text>
+                <Text style={styles.firstPatternHint}>Based on your first {trialDay} days of data.</Text>
+                <AnimatedPressable
+                  onPress={() => { markSeen(DELIGHT_KEYS.FIRST_PATTERN); router.push('/(app)/(tabs)/insights'); }}
+                  scaleDown={0.97}
+                  style={styles.firstPatternBtn}
+                >
+                  <Text style={styles.firstPatternBtnText}>See all patterns \u2192</Text>
+                </AnimatedPressable>
+              </View>
+            )}
+
+            {/* ══════════ DELIGHT: CORRELATION CARD (Day 8-10) ══════════ */}
+            {!hasSeen(DELIGHT_KEYS.CORRELATION_CARD) && isToday && trialDay >= 8 && trialDay <= 10 && topCorrelations.length >= 2 && (
+              <View style={styles.correlationCard}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                  <Text style={{ fontSize: 14 }}>🧠</Text>
+                  <Text style={styles.correlationLabel}>YOUR TOP CORRELATIONS</Text>
+                </View>
+                <Text style={styles.correlationTitle}>Patterns only visible with {trialDay}+ days of data</Text>
+                {topCorrelations.slice(0, 2).map((c, i) => (
+                  <View key={i} style={styles.correlationRow}>
+                    <View style={[styles.correlationDot, { backgroundColor: i === 0 ? '#2dd4bf' : '#f59e0b' }]} />
+                    <Text style={styles.correlationText}>{c.humanLabel || `${c.factor} \u2192 ${c.symptom}`}</Text>
+                  </View>
+                ))}
+                <AnimatedPressable
+                  onPress={() => { markSeen(DELIGHT_KEYS.CORRELATION_CARD); router.push('/(app)/(tabs)/insights'); }}
+                  scaleDown={0.97}
+                  style={{ marginTop: 10 }}
+                >
+                  <Text style={{ fontSize: 12, color: '#2dd4bf', fontWeight: '600' }}>Explore insights \u2192</Text>
+                </AnimatedPressable>
               </View>
             )}
 
@@ -603,8 +691,76 @@ export default function HomeScreen() {
               </View>
             )}
 
+            {/* ══════════ LOCKED STATE (Day 20+): Full locked home ══════════ */}
+            {trialExpired && isToday && (
+              <View>
+                {/* Locked check-in card */}
+                <AnimatedPressable
+                  onPress={() => { hapticLight(); router.push('/(app)/paywall' as any); }}
+                  scaleDown={0.97}
+                  style={styles.lockedCheckinCard}
+                >
+                  <View style={styles.lockedOverlay}>
+                    <Text style={{ fontSize: 24 }}>🔒</Text>
+                  </View>
+                  <View style={{ opacity: 0.5 }}>
+                    <View style={styles.heroContentRow}>
+                      <View style={styles.heroIconWrap}>
+                        <Text style={{ fontSize: 24 }}>🌤</Text>
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.heroTitle}>Morning check-in</Text>
+                        <Text style={styles.heroSubtitle}>Subscribe to continue logging</Text>
+                      </View>
+                    </View>
+                  </View>
+                </AnimatedPressable>
+
+                {/* Readiness locked */}
+                <View style={[styles.readinessCard, { opacity: 0.4 }]}>
+                  <Text style={styles.readinessLabel}>READINESS SCORE</Text>
+                  <Text style={[styles.readinessValue, { fontSize: 32 }]}>{'\u2014'}</Text>
+                  <Text style={styles.readinessNarrative}>Subscribe to see your daily readiness</Text>
+                </View>
+
+                {/* SOS always free */}
+                <AnimatedPressable
+                  onPress={() => { hapticMedium(); router.push('/(app)/sos'); }}
+                  scaleDown={0.97}
+                  style={styles.sosAlwaysFree}
+                >
+                  <View style={styles.sosIcon}>
+                    <Text style={{ fontSize: 14 }}>❄️</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.sosTitle}>SOS — Hot flash?</Text>
+                    <Text style={styles.sosSubtitle}>Always free — breathing + grounding</Text>
+                  </View>
+                  <View style={styles.sosFreeBadge}>
+                    <Text style={styles.sosFreeText}>Free</Text>
+                  </View>
+                </AnimatedPressable>
+
+                {/* Past data accessible */}
+                <AnimatedPressable
+                  onPress={() => { hapticLight(); router.push('/(app)/calendar'); }}
+                  scaleDown={0.97}
+                  style={styles.pastDataCard}
+                >
+                  <View style={styles.pastDataIcon}>
+                    <Text style={{ fontSize: 14 }}>📊</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.pastDataTitle}>Your past data</Text>
+                    <Text style={styles.pastDataSub}>Everything you logged is still yours</Text>
+                  </View>
+                  <Text style={{ fontSize: 16, color: '#d6d3d1' }}>{'\u203A'}</Text>
+                </AnimatedPressable>
+              </View>
+            )}
+
             {/* ══════════ STATE 1: BEFORE CHECK-INS ══════════ */}
-            {isToday && !morningDone && !eveningDone && (
+            {isToday && !trialExpired && !morningDone && !eveningDone && (
               <AnimatedPressable
                 onPress={() => {
                   hapticMedium();
@@ -636,7 +792,7 @@ export default function HomeScreen() {
             )}
 
             {/* ══════════ STATE 2: MORNING DONE, EVENING PENDING ══════════ */}
-            {isToday && morningDone && !eveningDone && (
+            {isToday && !trialExpired && morningDone && !eveningDone && (
               <View style={styles.comboCard}>
                 {/* Morning done row */}
                 <AnimatedPressable
@@ -689,7 +845,7 @@ export default function HomeScreen() {
             )}
 
             {/* ══════════ STATE 3: BOTH DONE — Collapsed check-ins ══════════ */}
-            {isToday && morningDone && eveningDone && (
+            {isToday && !trialExpired && morningDone && eveningDone && (
               <AnimatedPressable
                 onPress={() => { hapticLight(); router.navigate('/(app)/calendar' as any); }}
                 scaleDown={0.98}
@@ -2594,4 +2750,158 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 10,
   },
+
+  // Sleep comparison card (teal, Day 2-3)
+  sleepCompareCard: {
+    backgroundColor: '#042f2e',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+  },
+  sleepCompareTitle: { fontSize: 14, fontWeight: '700', color: '#ccfbf1' },
+  sleepCompareBars: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 32,
+    marginTop: 14,
+    marginBottom: 10,
+    alignItems: 'flex-end',
+  },
+  sleepCompareBarWrap: { alignItems: 'center', gap: 4 },
+  sleepCompareBar: {
+    width: 36,
+    borderRadius: 6,
+    backgroundColor: '#115e59',
+  },
+  sleepCompareBarActive: { backgroundColor: '#2dd4bf' },
+  sleepCompareHours: { fontSize: 14, fontWeight: '800', color: '#f0fdfa' },
+  sleepCompareDay: { fontSize: 11, color: '#5eead4' },
+  sleepCompareHint: { fontSize: 12, color: '#99f6e4', textAlign: 'center' },
+
+  // First pattern card (dark + teal accent, Day 4-7)
+  firstPatternCard: {
+    backgroundColor: '#1c1917',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    borderLeftWidth: 3,
+    borderLeftColor: '#2dd4bf',
+  },
+  firstPatternDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#2dd4bf',
+  },
+  firstPatternLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#5eead4',
+    letterSpacing: 1,
+  },
+  firstPatternTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#ffffff',
+    marginBottom: 4,
+  },
+  firstPatternSub: { fontSize: 13, color: '#a8a29e', lineHeight: 18 },
+  firstPatternHint: { fontSize: 11, color: '#78716c', marginTop: 6 },
+  firstPatternBtn: {
+    marginTop: 10,
+    backgroundColor: '#292524',
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  firstPatternBtnText: { fontSize: 13, fontWeight: '600', color: '#2dd4bf' },
+
+  // Correlation card (dark, Day 8-10)
+  correlationCard: {
+    backgroundColor: '#1c1917',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+  },
+  correlationLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#a8a29e',
+    letterSpacing: 1,
+  },
+  correlationTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#ffffff',
+    marginBottom: 10,
+  },
+  correlationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 6,
+  },
+  correlationDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  correlationText: { fontSize: 13, color: '#d6d3d1' },
+
+  // Locked state (Day 20+)
+  lockedCheckinCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#e7e5e4',
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  lockedOverlay: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    zIndex: 1,
+  },
+  sosAlwaysFree: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#ecfdf5',
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#a7f3d0',
+  },
+  sosFreeBadge: {
+    backgroundColor: '#10b981',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  sosFreeText: { fontSize: 11, fontWeight: '700', color: '#ffffff' },
+  pastDataCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#f5f5f4',
+  },
+  pastDataIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: '#f5f5f4',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pastDataTitle: { fontSize: 14, fontWeight: '600', color: '#1c1917' },
+  pastDataSub: { fontSize: 12, color: '#78716c', marginTop: 1 },
 });

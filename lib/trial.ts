@@ -67,12 +67,15 @@ export function getStreakMessage(streak: number): string {
   if (streak <= 1) return '';
   if (streak === 2) return '2 in a row. That\u2019s how patterns start.';
   if (streak === 3) return '3 days \u2014 you\u2019re building a picture.';
-  if (streak < 7) return `${streak} day streak. Each day sharpens the picture.`;
-  if (streak === 7) return '7 days! Your body is starting to talk.';
+  if (streak === 4) return '4 days. We can start to see the shape of your week.';
+  if (streak === 5) return '5 days \u2014 halfway to your first insights.';
+  if (streak === 6) return '6 days. Tomorrow we unlock your patterns.';
+  if (streak === 7) return 'One full week! Your first insights are ready.';
   if (streak === 10) return '10 days of showing up for yourself.';
   if (streak === 14) return '2 weeks of data. Your insights are powerful now.';
-  if (streak < 20) return `${streak} day streak 🔥`;
-  return `${streak} day streak — incredible commitment 🔥`;
+  if (streak === 21) return '3 weeks. You know your body better than most.';
+  if (streak < 20) return `${streak} day streak. Your picture gets clearer every day.`;
+  return `${streak} day streak \u2014 incredible commitment.`;
 }
 
 /** Calculate days until insights unlock (day 7) */
