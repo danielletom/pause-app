@@ -2,7 +2,7 @@
   "expo": {
     "name": "pause-app",
     "slug": "pause-app",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "pauseapp",
@@ -17,9 +17,9 @@
       "supportsTablet": true,
       "infoPlist": {
         "UIBackgroundModes": [
-          "audio",
           "audio"
-        ]
+        ],
+        "ITSAppUsesNonExemptEncryption": false
       },
       "bundleIdentifier": "com.danielletom.pause-app"
     },
@@ -52,6 +52,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "54d95774-a7d0-478a-afc7-4cce18c4cf1c"
+      }
+    },
+    "owner": "danielletom"
   }
 }
