@@ -13,6 +13,9 @@ import Svg, { Circle } from 'react-native-svg';
 import AnimatedPressable from '@/components/AnimatedPressable';
 import { hapticLight, hapticSelection } from '@/lib/haptics';
 import { apiRequest } from '@/lib/api';
+import { getTrialDay } from '@/lib/trial';
+import { useProfile } from '@/lib/useProfile';
+import { useDelight, DELIGHT_KEYS } from '@/lib/delight-context';
 
 // ─── Constants ──────────────────────────────────────────
 const TABS = [
@@ -247,6 +250,9 @@ export default function InsightsScreen() {
   const { getToken } = useAuth();
   const router = useRouter();
   const params = useLocalSearchParams<{ symptom?: string }>();
+  const { profile } = useProfile();
+  const { hasSeen, markSeen } = useDelight();
+  const trialDay = getTrialDay(profile?.createdAt);
   const [activeTab, setActiveTab] = useState<'patterns' | 'normal'>('patterns');
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -556,14 +562,30 @@ export default function InsightsScreen() {
         <View style={styles.tabRow}>
           {TABS.map((tab) => {
             const active = tab.key === activeTab;
+            const isNormalTab = tab.key === 'normal';
+            const normalLocked = isNormalTab && trialDay < 14;
+            const showNewBadge = isNormalTab && trialDay >= 14 && !hasSeen(DELIGHT_KEYS.DAY14_NORMAL_UNLOCK);
             return (
               <AnimatedPressable
                 key={tab.key}
-                onPress={() => { hapticSelection(); setActiveTab(tab.key as 'patterns' | 'normal'); }}
+                onPress={() => {
+                  if (normalLocked) return;
+                  hapticSelection();
+                  setActiveTab(tab.key as 'patterns' | 'normal');
+                  if (showNewBadge) markSeen(DELIGHT_KEYS.DAY14_NORMAL_UNLOCK);
+                }}
                 scaleDown={0.97}
-                style={[styles.tab, active && styles.tabActive]}
+                style={[styles.tab, active && styles.tabActive, normalLocked && { opacity: 0.5 }]}
               >
-                <Text style={[styles.tabText, active && styles.tabTextActive]}>{tab.label}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <Text style={[styles.tabText, active && styles.tabTextActive]}>{tab.label}</Text>
+                  {showNewBadge && (
+                    <View style={{ backgroundColor: '#818cf8', borderRadius: 6, paddingHorizontal: 5, paddingVertical: 1 }}>
+                      <Text style={{ fontSize: 8, fontWeight: '700', color: '#ffffff' }}>New</Text>
+                    </View>
+                  )}
+                  {normalLocked && <Text style={{ fontSize: 10, color: '#a8a29e' }}>🔒</Text>}
+                </View>
               </AnimatedPressable>
             );
           })}

@@ -12,6 +12,9 @@ import { useAuth } from '@clerk/clerk-expo';
 import AnimatedPressable from '@/components/AnimatedPressable';
 import { hapticMedium, hapticLight } from '@/lib/haptics';
 import { apiRequest } from '@/lib/api';
+import { getTrialDay, getDaysUntilInsights } from '@/lib/trial';
+import { useProfile } from '@/lib/useProfile';
+import { useDelight, DELIGHT_KEYS } from '@/lib/delight-context';
 
 const WEEK_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -21,6 +24,9 @@ export default function JournalScreen() {
   const getTokenRef = useRef(getToken);
   getTokenRef.current = getToken;
   const hasLoadedOnce = useRef(false);
+  const { profile } = useProfile();
+  const { hasSeen, markSeen } = useDelight();
+  const trialDay = getTrialDay(profile?.createdAt);
   const [loading, setLoading] = useState(true);
   const [streak, setStreak] = useState(0);
   const [weekData, setWeekData] = useState<{ am: boolean; pm: boolean }[]>(
@@ -233,6 +239,40 @@ export default function JournalScreen() {
             )}
           </View>
         </AnimatedPressable>
+
+        {/* ══════════ DELIGHT: Evening unlock notice (Day 3+) ══════════ */}
+        {!hasSeen(DELIGHT_KEYS.DAY3_EVENING_UNLOCK) && trialDay >= 3 && trialDay <= 5 && (
+          <View style={styles.eveningUnlockCard}>
+            <View style={styles.eveningUnlockRow}>
+              <View style={styles.eveningUnlockIcon}>
+                <Text style={{ fontSize: 16 }}>🌙</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Text style={styles.eveningUnlockTitle}>Evening reflection</Text>
+                  <View style={styles.newBadge}><Text style={styles.newBadgeText}>New</Text></View>
+                </View>
+                <Text style={styles.eveningUnlockSub}>A quick wind-down helps us track your full day.</Text>
+              </View>
+              <AnimatedPressable onPress={() => markSeen(DELIGHT_KEYS.DAY3_EVENING_UNLOCK)} scaleDown={0.97}>
+                <Text style={{ fontSize: 12, color: '#818cf8', fontWeight: '600' }}>Got it</Text>
+              </AnimatedPressable>
+            </View>
+          </View>
+        )}
+
+        {/* ══════════ DELIGHT: Progress to insights ══════════ */}
+        {trialDay < 7 && streak > 0 && (
+          <View style={styles.progressCard}>
+            <Text style={styles.progressLabel}>Progress to first insights</Text>
+            <View style={styles.progressBar}>
+              <View style={[styles.progressFill, { width: `${Math.min(100, (streak / 7) * 100)}%` }]} />
+            </View>
+            <Text style={styles.progressText}>
+              {getDaysUntilInsights(streak)} more days of check-ins to unlock your patterns
+            </Text>
+          </View>
+        )}
 
         {/* This week's insight */}
         {weeklyInsight && (
@@ -457,4 +497,58 @@ const styles = StyleSheet.create({
   linkTitle: { fontSize: 16, fontWeight: '600', color: '#1c1917' },
   linkDesc: { fontSize: 14, color: '#78716c', marginTop: 1 },
   linkArrow: { fontSize: 18, color: '#78716c' },
+
+  // Evening unlock card (purple)
+  eveningUnlockCard: {
+    marginHorizontal: 24,
+    marginBottom: 12,
+    backgroundColor: '#eef2ff',
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#c7d2fe',
+  },
+  eveningUnlockRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  eveningUnlockIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: '#e0e7ff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  eveningUnlockTitle: { fontSize: 14, fontWeight: '600', color: '#1c1917' },
+  eveningUnlockSub: { fontSize: 12, color: '#6366f1', marginTop: 2 },
+  newBadge: {
+    backgroundColor: '#818cf8',
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+  },
+  newBadgeText: { fontSize: 9, fontWeight: '700', color: '#ffffff' },
+
+  // Progress to insights
+  progressCard: {
+    marginHorizontal: 24,
+    marginBottom: 12,
+    backgroundColor: '#fffbeb',
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#fef3c7',
+  },
+  progressLabel: { fontSize: 12, fontWeight: '600', color: '#b45309', marginBottom: 8 },
+  progressBar: {
+    height: 6,
+    backgroundColor: '#fef3c7',
+    borderRadius: 3,
+    overflow: 'hidden',
+    marginBottom: 6,
+  },
+  progressFill: {
+    height: 6,
+    backgroundColor: '#f59e0b',
+    borderRadius: 3,
+  },
+  progressText: { fontSize: 12, color: '#78716c' },
 });

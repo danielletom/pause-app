@@ -2,6 +2,7 @@ import { View } from 'react-native';
 import { Redirect, Stack } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
 import MiniPlayer from '@/components/MiniPlayer';
+import { DelightProvider } from '@/lib/delight-context';
 
 export default function AppLayout() {
   const { isSignedIn, isLoaded } = useAuth();
@@ -10,6 +11,7 @@ export default function AppLayout() {
   if (!isSignedIn) return <Redirect href="/(auth)/sign-in" />;
 
   return (
+    <DelightProvider>
     <View style={{ flex: 1 }}>
       <Stack screenOptions={{ headerShown: false }}>
         {/* Tabs group — the main 5 tab screens */}
@@ -52,8 +54,12 @@ export default function AppLayout() {
         <Stack.Screen name="wearables" />
         {/* Audio player (full screen) */}
         <Stack.Screen name="player" options={{ animation: 'slide_from_bottom' }} />
+        {/* Paywall + celebration screens */}
+        <Stack.Screen name="paywall" options={{ animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="week-celebration" options={{ animation: 'fade' }} />
       </Stack>
       <MiniPlayer />
     </View>
+    </DelightProvider>
   );
 }

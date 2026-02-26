@@ -17,6 +17,8 @@ import { apiRequest } from '@/lib/api';
 import { useProfile } from '@/lib/useProfile';
 import { useHealthData } from '@/lib/useHealthData';
 import { useSleepTracking } from '@/lib/useSleepTracking';
+import { getTrialDay, isTrialExpired, getCheckInDays, getDaysUntilInsights, getStreakMessage } from '@/lib/trial';
+import { useDelight, DELIGHT_KEYS } from '@/lib/delight-context';
 
 /* ─── Date helpers ────────────────────────────────────────── */
 
@@ -199,6 +201,11 @@ export default function HomeScreen() {
   const [periodEnabled, setPeriodEnabled] = useState(false);
   const [periodCycle, setPeriodCycle] = useState<any>(null);
   const hasLoadedOnce = useRef(false);
+
+  // Delight system
+  const { hasSeen, markSeen } = useDelight();
+  const trialDay = getTrialDay(profile?.createdAt);
+  const trialExpired = isTrialExpired(profile?.createdAt);
 
   const todayStr = useMemo(() => toDateStr(new Date()), []);
   const [selectedDate, setSelectedDate] = useState(todayStr);
@@ -503,6 +510,99 @@ export default function HomeScreen() {
           </View>
         ) : (
           <>
+            {/* ══════════ DELIGHT: TRIAL EXPIRED BANNER ══════════ */}
+            {trialExpired && isToday && (
+              <View style={styles.trialEndedBanner}>
+                <Text style={{ fontSize: 13 }}>💜</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.trialEndedTitle}>Your free trial ended</Text>
+                  <Text style={styles.trialEndedSub}>Subscribe to keep logging + unlock new insights</Text>
+                </View>
+                <AnimatedPressable onPress={() => router.push('/(app)/paywall')} scaleDown={0.97}>
+                  <Text style={{ fontSize: 13, color: '#a78bfa', fontWeight: '600' }}>→</Text>
+                </AnimatedPressable>
+              </View>
+            )}
+
+            {/* ══════════ DELIGHT: WELCOME BANNER (Day 0, shows once) ══════════ */}
+            {!hasSeen(DELIGHT_KEYS.WELCOME_BANNER) && isToday && trialDay <= 1 && (
+              <AnimatedPressable
+                onPress={() => markSeen(DELIGHT_KEYS.WELCOME_BANNER)}
+                scaleDown={0.99}
+                style={styles.welcomeBanner}
+              >
+                <Text style={{ fontSize: 15 }}>✦</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.welcomeTitle}>Welcome, {firstName}</Text>
+                  <Text style={styles.welcomeSub}>Your body has a story — let's start reading it.</Text>
+                </View>
+              </AnimatedPressable>
+            )}
+
+            {/* ══════════ DELIGHT: QUIZ DATA CARD (Day 0, shows once) ══════════ */}
+            {!hasSeen(DELIGHT_KEYS.QUIZ_DATA_CARD) && isToday && trialDay <= 2 && profile?.symptoms && profile.symptoms.length > 0 && (
+              <View style={styles.quizDataCard}>
+                <Text style={styles.quizDataLabel}>Based on what you told us</Text>
+                <Text style={styles.quizDataTitle}>
+                  You told us about {profile.symptoms.slice(0, 3).map((s: string) => s.replace(/_/g, ' ')).join(', ')}
+                </Text>
+                <Text style={styles.quizDataBody}>
+                  82% of women in {profile.stage === 'peri' ? 'perimenopause' : profile.stage === 'meno' ? 'menopause' : profile.stage === 'post' ? 'post-menopause' : 'this stage'} experience these. You're not alone — and now we know what to watch for.
+                </Text>
+              </View>
+            )}
+
+            {/* ══════════ DELIGHT: DAY 10 BANNER ══════════ */}
+            {!hasSeen(DELIGHT_KEYS.DAY10_BANNER) && isToday && trialDay >= 10 && trialDay <= 11 && (
+              <AnimatedPressable
+                onPress={() => markSeen(DELIGHT_KEYS.DAY10_BANNER)}
+                scaleDown={0.99}
+                style={styles.day10Banner}
+              >
+                <Text style={{ fontSize: 13 }}>💛</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.day10Title}>10 days of showing up for yourself</Text>
+                  <Text style={styles.day10Sub}>Most people stop at 3. You're building something real.</Text>
+                </View>
+              </AnimatedPressable>
+            )}
+
+            {/* ══════════ DELIGHT: DAY 3 MILESTONE ══════════ */}
+            {!hasSeen(DELIGHT_KEYS.DAY3_MILESTONE) && isToday && streak >= 3 && trialDay <= 5 && (
+              <View style={styles.milestoneCard}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                  <Text style={{ fontSize: 15 }}>✦</Text>
+                  <Text style={styles.milestoneTitle}>3 days of data</Text>
+                  <View style={styles.milestonePill}><Text style={styles.milestonePillText}>Milestone</Text></View>
+                </View>
+                <Text style={styles.milestoneSub}>You're building a picture of your health.</Text>
+                <View style={{ flexDirection: 'row', gap: 6, marginTop: 8 }}>
+                  <View style={styles.milestoneStatBox}><Text style={styles.milestoneStatNum}>3</Text><Text style={styles.milestoneStatLabel}>check-ins</Text></View>
+                  <View style={styles.milestoneStatBox}><Text style={styles.milestoneStatNum}>{symptomTrends.length}</Text><Text style={styles.milestoneStatLabel}>symptoms</Text></View>
+                  <View style={styles.milestoneStatBox}><Text style={styles.milestoneStatNum}>{sleepLog?.sleepHours ? `${sleepLog.sleepHours}h` : '—'}</Text><Text style={styles.milestoneStatLabel}>avg sleep</Text></View>
+                </View>
+                <Text style={{ fontSize: 12, color: '#78716c', marginTop: 8 }}>{getDaysUntilInsights(streak)} more days until your first insights unlock.</Text>
+                <AnimatedPressable onPress={() => markSeen(DELIGHT_KEYS.DAY3_MILESTONE)} scaleDown={0.97} style={{ marginTop: 8 }}>
+                  <Text style={{ fontSize: 12, color: '#f59e0b', fontWeight: '600' }}>Got it ✓</Text>
+                </AnimatedPressable>
+              </View>
+            )}
+
+            {/* ══════════ DELIGHT: DAY 17-19 BODY MAP ══════════ */}
+            {!hasSeen(DELIGHT_KEYS.DAY17_BODY_MAP) && isToday && trialDay >= 17 && trialDay <= 19 && (
+              <View style={styles.bodyMapCard}>
+                <Text style={styles.bodyMapLabel}>✦ YOUR {trialDay}-DAY BODY MAP</Text>
+                <Text style={styles.bodyMapTitle}>Here's what {trialDay} days{'\n'}of tracking built</Text>
+                <View style={styles.bodyMapGrid}>
+                  <View style={styles.bodyMapStat}><Text style={[styles.bodyMapNum, { color: '#f59e0b' }]}>{trialDay}</Text><Text style={styles.bodyMapStatLabel}>check-ins</Text></View>
+                  <View style={styles.bodyMapStat}><Text style={[styles.bodyMapNum, { color: '#2dd4bf' }]}>{symptomTrends.length || '—'}</Text><Text style={styles.bodyMapStatLabel}>symptoms</Text></View>
+                  <View style={styles.bodyMapStat}><Text style={[styles.bodyMapNum, { color: '#fb7185' }]}>{sleepLog?.sleepHours ? `${sleepLog.sleepHours}h` : '—'}</Text><Text style={styles.bodyMapStatLabel}>avg sleep</Text></View>
+                  <View style={styles.bodyMapStat}><Text style={[styles.bodyMapNum, { color: '#a78bfa' }]}>{topCorrelations.length}</Text><Text style={styles.bodyMapStatLabel}>correlations</Text></View>
+                </View>
+                <Text style={styles.bodyMapHint}>Scroll down for your regular dashboard ↓</Text>
+              </View>
+            )}
+
             {/* ══════════ STATE 1: BEFORE CHECK-INS ══════════ */}
             {isToday && !morningDone && !eveningDone && (
               <AnimatedPressable
@@ -2357,4 +2457,141 @@ const styles = StyleSheet.create({
   },
   periodWidgetEmptyTitle: { fontSize: 14, fontWeight: '500', color: '#1c1917' },
   periodWidgetEmptySub: { fontSize: 14, color: '#78716c', marginTop: 1 },
+
+  // ═══ Delight Cards ═══
+
+  // Trial expired banner (purple)
+  trialEndedBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: '#f5f3ff',
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#ede9fe',
+  },
+  trialEndedTitle: { fontSize: 14, fontWeight: '600', color: '#5b21b6' },
+  trialEndedSub: { fontSize: 12, color: '#7c3aed', marginTop: 2 },
+
+  // Welcome banner (amber gradient feel)
+  welcomeBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: '#fffbeb',
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#fde68a',
+  },
+  welcomeTitle: { fontSize: 14, fontWeight: '700', color: '#92400e' },
+  welcomeSub: { fontSize: 12, color: '#b45309', marginTop: 2 },
+
+  // Quiz data card
+  quizDataCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#fde68a',
+  },
+  quizDataLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#d97706',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+    marginBottom: 6,
+  },
+  quizDataTitle: { fontSize: 14, fontWeight: '600', color: '#1c1917', marginBottom: 4 },
+  quizDataBody: { fontSize: 13, color: '#78716c', lineHeight: 19 },
+
+  // Day 10 banner (rose)
+  day10Banner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: '#fff1f2',
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#fecdd3',
+  },
+  day10Title: { fontSize: 14, fontWeight: '600', color: '#9f1239' },
+  day10Sub: { fontSize: 12, color: '#e11d48', marginTop: 2 },
+
+  // Day 3 milestone card (amber)
+  milestoneCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#fde68a',
+  },
+  milestoneTitle: { fontSize: 14, fontWeight: '700', color: '#1c1917' },
+  milestonePill: {
+    backgroundColor: '#fef3c7',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  milestonePillText: { fontSize: 10, fontWeight: '700', color: '#d97706' },
+  milestoneSub: { fontSize: 13, color: '#78716c' },
+  milestoneStatBox: {
+    flex: 1,
+    backgroundColor: '#fafaf9',
+    borderRadius: 10,
+    padding: 8,
+    alignItems: 'center',
+  },
+  milestoneStatNum: { fontSize: 18, fontWeight: '800', color: '#1c1917' },
+  milestoneStatLabel: { fontSize: 11, color: '#a8a29e', marginTop: 2 },
+
+  // Day 17-19 body map (dark)
+  bodyMapCard: {
+    backgroundColor: '#1c1917',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+  },
+  bodyMapLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#a8a29e',
+    letterSpacing: 1,
+    marginBottom: 8,
+  },
+  bodyMapTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#ffffff',
+    lineHeight: 24,
+    marginBottom: 12,
+  },
+  bodyMapGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  bodyMapStat: {
+    width: '48%',
+    backgroundColor: '#292524',
+    borderRadius: 10,
+    padding: 10,
+    alignItems: 'center',
+  },
+  bodyMapNum: { fontSize: 20, fontWeight: '800' },
+  bodyMapStatLabel: { fontSize: 11, color: '#78716c', marginTop: 2 },
+  bodyMapHint: {
+    fontSize: 11,
+    color: '#78716c',
+    textAlign: 'center',
+    marginTop: 10,
+  },
 });

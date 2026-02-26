@@ -20,6 +20,8 @@ import { apiRequest } from '@/lib/api';
 import { useProfile } from '@/lib/useProfile';
 import { useSleepTracking } from '@/lib/useSleepTracking';
 import { useHealthData } from '@/lib/useHealthData';
+import { getStreak, getStreakMessage, getCheckInDays } from '@/lib/trial';
+import { useDelight, DELIGHT_KEYS } from '@/lib/delight-context';
 
 /* ─── Constants ──────────────────────────────────────── */
 
@@ -257,6 +259,11 @@ export default function QuickLogScreen() {
   const health = useHealthData();
   const { sleep: autoSleep } = useSleepTracking(new Date(logDate));
   const [sleepAutoFilled, setSleepAutoFilled] = useState(false);
+
+  // Delight: streak + first check-in tracking
+  const { hasSeen, markSeen } = useDelight();
+  const [celebStreak, setCelebStreak] = useState(0);
+  const [isFirstCheckIn, setIsFirstCheckIn] = useState(false);
 
   // Auto-fill sleep hours from HealthKit when available (Rise-style)
   useEffect(() => {
@@ -629,6 +636,21 @@ export default function QuickLogScreen() {
 
       hapticSuccess();
       setSaving(false);
+
+      // Compute streak for celebration
+      try {
+        const tkn = await getToken();
+        const recentLogs = await apiRequest('/api/logs?range=28d', tkn).catch(() => []);
+        const entries = Array.isArray(recentLogs) ? recentLogs : [];
+        const streakVal = getStreak(entries);
+        setCelebStreak(streakVal);
+        const totalCheckIns = getCheckInDays(entries);
+        if (totalCheckIns <= 1) {
+          setIsFirstCheckIn(true);
+          markSeen(DELIGHT_KEYS.FIRST_CHECKIN);
+        }
+      } catch {}
+
       setShowCelebration(true);
 
       // Animate in
@@ -1533,36 +1555,54 @@ export default function QuickLogScreen() {
 
   if (showCelebration) {
     const quote = getQuoteOfDay();
+    const streakMsg = getStreakMessage(celebStreak);
     return (
       <RNAnimated.View style={[styles.celebContainer, { opacity: celebOpacity, transform: [{ scale: celebScale }] }]}>
         <View style={styles.celebContent}>
           <RNAnimated.View style={[styles.celebCheck, { transform: [{ scale: checkScale }] }]}>
-            <Text style={styles.celebCheckText}>✓</Text>
+            <Text style={styles.celebCheckText}>{isFirstCheckIn ? '🎯' : '✓'}</Text>
           </RNAnimated.View>
 
           <Text style={styles.celebTitle}>
-            {isMorning ? 'Morning logged' : 'Evening logged'}
+            {isFirstCheckIn
+              ? 'Day 1'
+              : isMorning ? 'Morning logged' : 'Evening logged'}
           </Text>
           <Text style={styles.celebSubtitle}>
-            {isMorning
-              ? "Great start — you'll check in again tonight."
-              : "You're building a clearer picture of your health."}
+            {isFirstCheckIn
+              ? "This is where it starts. Your body has a story \u2014 and now we\u2019re listening."
+              : isMorning
+                ? "Great start \u2014 you'll check in again tonight."
+                : "You're building a clearer picture of your health."}
           </Text>
 
-          {/* Stats row */}
-          <View style={styles.celebStatsRow}>
-            <View style={styles.celebStat}>
-              <Text style={styles.celebStatValue}>🔥</Text>
-              <Text style={styles.celebStatLabel}>Keep going!</Text>
+          {/* Streak banner */}
+          {celebStreak >= 2 && !isFirstCheckIn && (
+            <View style={styles.celebStreakBanner}>
+              <Text style={styles.celebStreakEmoji}>🔥</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.celebStreakCount}>{celebStreak} days in a row</Text>
+                {streakMsg ? <Text style={styles.celebStreakMsg}>{streakMsg}</Text> : null}
+              </View>
             </View>
-            <View style={styles.celebStat}>
-              <Text style={styles.celebStatValue}>📊</Text>
-              <Text style={styles.celebStatLabel}>Building insights</Text>
+          )}
+
+          {/* Stats row (only when not first check-in) */}
+          {!isFirstCheckIn && (
+            <View style={styles.celebStatsRow}>
+              <View style={styles.celebStat}>
+                <Text style={styles.celebStatValue}>🔥</Text>
+                <Text style={styles.celebStatLabel}>Keep going!</Text>
+              </View>
+              <View style={styles.celebStat}>
+                <Text style={styles.celebStatValue}>📊</Text>
+                <Text style={styles.celebStatLabel}>Building insights</Text>
+              </View>
             </View>
-          </View>
+          )}
 
           {/* Evening: Day summary snapshot */}
-          {!isMorning && (
+          {!isMorning && !isFirstCheckIn && (
             <View style={styles.celebSummary}>
               {mood && (
                 <Text style={styles.celebSummaryText}>
@@ -2244,4 +2284,19 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   celebDoneText: { fontSize: 16, fontWeight: '600', color: '#1c1917' },
+
+  // Streak banner in celebration
+  celebStreakBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 16,
+    width: '100%',
+  },
+  celebStreakEmoji: { fontSize: 22 },
+  celebStreakCount: { fontSize: 14, fontWeight: '700', color: '#fbbf24' },
+  celebStreakMsg: { fontSize: 12, color: '#a8a29e', marginTop: 2 },
 });

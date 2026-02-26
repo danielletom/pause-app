@@ -53,26 +53,30 @@ export default function WelcomeScreen() {
           )}
         </TouchableOpacity>
 
-        {/* Secondary: I already purchased */}
+        {/* Or divider */}
+        <View style={styles.orRow}>
+          <View style={styles.orLine} />
+          <Text style={styles.orText}>or</Text>
+          <View style={styles.orLine} />
+        </View>
+
+        {/* Email signup */}
         <TouchableOpacity
-          style={[styles.purchasedButton, loading && styles.buttonDisabled]}
-          onPress={signInWithApple}
+          style={[styles.emailButton, loading && styles.buttonDisabled]}
+          onPress={() => router.push('/(auth)/sign-up')}
           disabled={loading}
           activeOpacity={0.8}
         >
-          <Text style={styles.purchasedButtonText}>I already purchased</Text>
+          <Text style={styles.emailButtonText}>Get started with email</Text>
         </TouchableOpacity>
 
-        {/* Fallback links */}
-        <View style={styles.fallbackRow}>
-          <TouchableOpacity onPress={() => router.push('/(auth)/sign-up')}>
-            <Text style={styles.fallbackLink}>Sign up with email</Text>
-          </TouchableOpacity>
-          <Text style={styles.fallbackDot}>·</Text>
-          <TouchableOpacity onPress={() => router.push('/(auth)/sign-in')}>
-            <Text style={styles.fallbackLink}>I have an account</Text>
-          </TouchableOpacity>
-        </View>
+        {/* Existing account link */}
+        <TouchableOpacity
+          onPress={() => router.push('/(auth)/sign-in')}
+          style={styles.ghostLink}
+        >
+          <Text style={styles.ghostLinkText}>I have an account</Text>
+        </TouchableOpacity>
 
         <Text style={styles.privacy}>Your data stays yours. Always.</Text>
       </View>
@@ -142,7 +146,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 10,
+    marginBottom: 14,
   },
   appleButtonContent: {
     flexDirection: 'row',
@@ -154,7 +158,22 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  purchasedButton: {
+  orRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 14,
+  },
+  orLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#e7e5e4',
+  },
+  orText: {
+    fontSize: 13,
+    color: '#d6d3d1',
+  },
+  emailButton: {
     backgroundColor: '#ffffff',
     borderWidth: 1,
     borderColor: '#e7e5e4',
@@ -162,36 +181,32 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
+    marginBottom: 10,
   },
-  purchasedButtonText: {
+  emailButtonText: {
     color: '#1c1917',
     fontSize: 16,
     fontWeight: '600',
   },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  fallbackRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+  ghostLink: {
     alignItems: 'center',
-    gap: 8,
+    paddingVertical: 8,
     marginBottom: 4,
   },
-  fallbackLink: {
+  ghostLinkText: {
     fontSize: 14,
     color: '#78716c',
     fontWeight: '500',
+    textDecorationLine: 'underline',
+    textDecorationStyle: 'solid',
   },
-  fallbackDot: {
-    fontSize: 14,
-    color: '#78716c',
+  buttonDisabled: {
+    opacity: 0.6,
   },
   privacy: {
     fontSize: 14,
     color: '#78716c',
     textAlign: 'center',
-    marginTop: 20,
+    marginTop: 16,
   },
 });

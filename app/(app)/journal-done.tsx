@@ -13,6 +13,7 @@ import { useAuth } from '@clerk/clerk-expo';
 import AnimatedPressable from '@/components/AnimatedPressable';
 import { hapticLight, hapticMedium } from '@/lib/haptics';
 import { apiRequest } from '@/lib/api';
+import { getStreakMessage } from '@/lib/trial';
 
 const MOOD_MAP: Record<number, { emoji: string; label: string }> = {
   1: { emoji: '😔', label: 'Rough' },
@@ -165,9 +166,11 @@ export default function JournalDoneScreen() {
             <View style={styles.streakCard}>
               <View style={styles.streakRow}>
                 <Text style={styles.streakFlame}>🔥</Text>
-                <View>
+                <View style={{ flex: 1 }}>
                   <Text style={styles.streakCount}>{streak} days in a row</Text>
-                  <Text style={styles.streakLabel}>Each day sharpens the picture</Text>
+                  <Text style={styles.streakLabel}>
+                    {getStreakMessage(streak) || 'Each day sharpens the picture'}
+                  </Text>
                 </View>
               </View>
             </View>

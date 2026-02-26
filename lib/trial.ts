@@ -1,0 +1,90 @@
+/**
+ * Trial & delight moment utilities
+ *
+ * The Pause app uses a 20-day reverse trial:
+ * - Days 0-20: everything free
+ * - Day 20+: soft paywall, SOS always free, past data accessible
+ */
+
+/** Calculate the trial day (0-indexed) from account creation date */
+export function getTrialDay(createdAt: string | null | undefined): number {
+  if (!createdAt) return 0;
+  const created = new Date(createdAt);
+  const now = new Date();
+  const diffMs = now.getTime() - created.getTime();
+  return Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
+}
+
+/** Check if the 20-day trial has expired */
+export function isTrialExpired(createdAt: string | null | undefined): boolean {
+  return getTrialDay(createdAt) >= 20;
+}
+
+/** Get remaining trial days (0 = expired) */
+export function getTrialDaysLeft(createdAt: string | null | undefined): number {
+  return Math.max(0, 20 - getTrialDay(createdAt));
+}
+
+/** Count total check-ins from a logs array */
+export function getCheckInCount(logs: any[]): number {
+  if (!Array.isArray(logs)) return 0;
+  return logs.filter((l) => l.logType === 'morning' || l.logType === 'evening').length;
+}
+
+/** Count unique days with at least one morning check-in */
+export function getCheckInDays(logs: any[]): number {
+  if (!Array.isArray(logs)) return 0;
+  const days = new Set<string>();
+  logs.forEach((l) => {
+    if (l.logType === 'morning' && l.date) days.add(l.date);
+  });
+  return days.size;
+}
+
+/** Calculate consecutive-day streak from logs (backwards from today) */
+export function getStreak(logs: any[]): number {
+  if (!Array.isArray(logs) || logs.length === 0) return 0;
+  const morningDates = new Set<string>();
+  logs.forEach((l) => {
+    if (l.logType === 'morning' && l.date) morningDates.add(l.date);
+  });
+  let streak = 0;
+  const d = new Date();
+  for (let i = 0; i < 90; i++) {
+    const dateStr = d.toISOString().split('T')[0];
+    if (morningDates.has(dateStr)) {
+      streak++;
+    } else if (i > 0) {
+      break; // allow today to be missing (haven't logged yet)
+    }
+    d.setDate(d.getDate() - 1);
+  }
+  return streak;
+}
+
+/** Get the streak message for a given streak count */
+export function getStreakMessage(streak: number): string {
+  if (streak <= 1) return '';
+  if (streak === 2) return '2 in a row. That\u2019s how patterns start.';
+  if (streak === 3) return '3 days \u2014 you\u2019re building a picture.';
+  if (streak < 7) return `${streak} day streak. Each day sharpens the picture.`;
+  if (streak === 7) return '7 days! Your body is starting to talk.';
+  if (streak === 10) return '10 days of showing up for yourself.';
+  if (streak === 14) return '2 weeks of data. Your insights are powerful now.';
+  if (streak < 20) return `${streak} day streak 🔥`;
+  return `${streak} day streak — incredible commitment 🔥`;
+}
+
+/** Calculate days until insights unlock (day 7) */
+export function getDaysUntilInsights(checkInDays: number): number {
+  return Math.max(0, 7 - checkInDays);
+}
+
+/** Determine which delight phase the user is in */
+export function getDelightPhase(trialDay: number): 'hook' | 'building' | 'investment' | 'conversion' | 'expired' {
+  if (trialDay <= 3) return 'hook';
+  if (trialDay <= 9) return 'building';
+  if (trialDay <= 16) return 'investment';
+  if (trialDay <= 20) return 'conversion';
+  return 'expired';
+}
