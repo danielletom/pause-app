@@ -611,7 +611,7 @@ export default function HomeScreen() {
                   scaleDown={0.97}
                   style={styles.firstPatternBtn}
                 >
-                  <Text style={styles.firstPatternBtnText}>See all patterns \u2192</Text>
+                  <Text style={styles.firstPatternBtnText}>{'See all patterns \u2192'}</Text>
                 </AnimatedPressable>
               </View>
             )}
@@ -635,7 +635,7 @@ export default function HomeScreen() {
                   scaleDown={0.97}
                   style={{ marginTop: 10 }}
                 >
-                  <Text style={{ fontSize: 12, color: '#2dd4bf', fontWeight: '600' }}>Explore insights \u2192</Text>
+                  <Text style={{ fontSize: 12, color: '#2dd4bf', fontWeight: '600' }}>{'Explore insights \u2192'}</Text>
                 </AnimatedPressable>
               </View>
             )}
