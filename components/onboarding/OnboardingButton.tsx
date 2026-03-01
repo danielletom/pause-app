@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, StyleSheet, ViewStyle } from 'react-native';
+import { Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
 import AnimatedPressable from '@/components/AnimatedPressable';
 import { hapticMedium } from '@/lib/haptics';
 
@@ -9,6 +9,7 @@ interface OnboardingButtonProps {
   variant?: 'primary' | 'secondary' | 'ghost';
   disabled?: boolean;
   style?: ViewStyle;
+  textStyle?: TextStyle;
 }
 
 export default function OnboardingButton({
@@ -17,6 +18,7 @@ export default function OnboardingButton({
   variant = 'primary',
   disabled = false,
   style,
+  textStyle,
 }: OnboardingButtonProps) {
   const handlePress = () => {
     hapticMedium();
@@ -43,6 +45,7 @@ export default function OnboardingButton({
           variant === 'primary' && styles.primaryText,
           variant === 'secondary' && styles.secondaryText,
           variant === 'ghost' && styles.ghostText,
+          textStyle,
         ]}
       >
         {children}

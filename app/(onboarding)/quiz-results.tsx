@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -8,89 +8,66 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import OnboardingButton from '@/components/onboarding/OnboardingButton';
-import AnimatedPressable from '@/components/AnimatedPressable';
-
-const features = [
-  'Daily symptom + mood tracking',
-  'AI pattern analysis — your unique triggers',
-  'Sleep Score + Readiness Score',
-  'Doctor-ready reports you can print',
-];
+import { useOnboarding } from '@/lib/onboarding-context';
 
 export default function QuizResultsScreen() {
   const router = useRouter();
-  const [waitlisted, setWaitlisted] = useState(false);
+  const { data } = useOnboarding();
+  const name = data.name || 'there';
+
+  // Focus areas from quiz symptoms
+  const focusAreas = [
+    { emoji: '\uD83D\uDD25', label: 'Hot flashes' },
+    { emoji: '\uD83D\uDE34', label: 'Sleep' },
+    { emoji: '\uD83C\uDF2B\uFE0F', label: 'Brain fog' },
+  ];
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerLabel}>Based on your symptoms & answers</Text>
-          <Text style={styles.headerTitle}>Your Pause plan</Text>
+        {/* Hero */}
+        <View style={styles.hero}>
+          <Text style={{ fontSize: 28, marginBottom: 10 }}>{'\u2726'}</Text>
+          <Text style={styles.heroTitle}>We see you, {name}</Text>
+          <Text style={styles.heroSub}>Based on what you told us, here's your plan</Text>
         </View>
 
-        {/* What's Going On Card */}
-        <View style={styles.darkCard}>
-          <Text style={styles.darkCardLabel}>WHAT'S GOING ON</Text>
-          <Text style={styles.darkCardText}>
-            Your estrogen is declining, and that's behind the{' '}
-            <Text style={styles.amber}>hot flashes</Text>,{' '}
-            <Text style={styles.amber}>sleep disruption</Text>, and{' '}
-            <Text style={styles.amber}>brain fog</Text> you told us about.
-            This is biological — not in your head.
-          </Text>
-        </View>
-
-        {/* Part 1: Free App */}
-        <Text style={styles.sectionLabel}>Here's how Pause helps:</Text>
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardEmoji}>📊</Text>
-            <View style={styles.cardHeaderText}>
-              <Text style={styles.cardTitle}>Understand your body</Text>
-              <Text style={styles.cardSubtitle}>The Pause app — free for 20 days</Text>
-            </View>
-          </View>
-          <Text style={styles.cardDesc}>
-            Track your symptoms daily and within 14 days, Pause shows you{' '}
-            <Text style={styles.bold}>exactly why</Text> you feel the way you do
-            — your triggers, your patterns, what makes things better and worse.
-          </Text>
-          <View style={styles.featureList}>
-            {features.map((f) => (
-              <View key={f} style={styles.featureRow}>
-                <Text style={styles.featureCheck}>✓</Text>
-                <Text style={styles.featureText}>{f}</Text>
+        {/* Focus Areas */}
+        <View style={styles.focusCard}>
+          <Text style={styles.focusLabel}>YOUR FOCUS AREAS</Text>
+          <View style={styles.focusPills}>
+            {focusAreas.map((area) => (
+              <View key={area.label} style={styles.focusPill}>
+                <Text style={{ fontSize: 12 }}>{area.emoji}</Text>
+                <Text style={styles.focusPillText}>{area.label}</Text>
               </View>
             ))}
           </View>
+          <Text style={styles.focusDesc}>
+            82% of women in perimenopause experience these.{'\n'}
+            You're not alone {'\u2014'} and now we know what to watch for.
+          </Text>
         </View>
 
-        {/* Waitlist Card */}
-        <View style={styles.waitlistCard}>
-          <Text style={styles.waitlistIcon}>✦</Text>
-          <Text style={styles.waitlistHeadline}>Something's in the works</Text>
-          <Text style={styles.waitlistBody}>
-            We're developing a supplement matched to profiles like yours. Based
-            on Pueraria mirifica — a natural phytoestrogen shown to reduce hot
-            flashes by 40-60%. Want to know when it's ready?
-          </Text>
-          {!waitlisted ? (
-            <AnimatedPressable
-              onPress={() => setWaitlisted(true)}
-              scaleDown={0.97}
-              style={styles.waitlistButton}
-            >
-              <Text style={styles.waitlistButtonText}>Notify me</Text>
-            </AnimatedPressable>
-          ) : (
-            <View style={styles.waitlistConfirmed}>
-              <Text style={styles.waitlistConfirmedText}>
-                ✓ You're on the list — we'll let you know
-              </Text>
+        {/* Program card */}
+        <View style={styles.programCard}>
+          <View style={styles.programRow}>
+            <View style={styles.programIcon}>
+              <Text style={{ fontSize: 16 }}>{'\uD83D\uDCCA'}</Text>
             </View>
-          )}
+            <View style={{ flex: 1 }}>
+              <Text style={styles.programTitle}>Your 14-day program starts now</Text>
+              <Text style={styles.programSub}>Daily lessons + check-ins. Patterns in 7 days.</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* User quote */}
+        <View style={styles.quoteWrap}>
+          <Text style={styles.quoteText}>
+            "I finally understood <Text style={{ fontStyle: 'italic' }}>why</Text> I was waking at 3am."
+          </Text>
+          <Text style={styles.quoteAuthor}>{'\u2014'} Sarah, 47</Text>
         </View>
       </ScrollView>
 
@@ -98,9 +75,12 @@ export default function QuizResultsScreen() {
       <View style={styles.footer}>
         <OnboardingButton
           onPress={() => router.push('/(onboarding)/notif-setup')}
+          style={{ backgroundColor: '#f59e0b' }}
+          textStyle={{ color: '#1c1917' }}
         >
-          Continue
+          Get started free
         </OnboardingButton>
+        <Text style={styles.footerNote}>Free for 20 days {'\u00B7'} No credit card needed</Text>
       </View>
     </SafeAreaView>
   );
@@ -109,165 +89,132 @@ export default function QuizResultsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#fafaf9',
   },
   scrollContent: {
     paddingHorizontal: 24,
-    paddingTop: 16,
+    paddingTop: 24,
     paddingBottom: 16,
   },
-  header: {
-    marginBottom: 16,
+  hero: {
+    alignItems: 'center',
+    marginBottom: 24,
   },
-  headerLabel: {
+  heroTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#1c1917',
+    letterSpacing: -0.3,
+    textAlign: 'center',
+  },
+  heroSub: {
     fontSize: 14,
     color: '#78716c',
-    marginBottom: 4,
+    marginTop: 6,
+    textAlign: 'center',
   },
-  headerTitle: {
-    fontSize: 26,
-    fontWeight: '700',
-    color: '#1c1917',
-  },
-  darkCard: {
-    backgroundColor: '#1c1917',
+  focusCard: {
+    backgroundColor: '#ffffff',
     borderRadius: 16,
-    padding: 18,
-    marginBottom: 16,
+    padding: 20,
+    alignItems: 'center',
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#f5f5f4',
   },
-  darkCardLabel: {
-    fontSize: 14,
+  focusLabel: {
+    fontSize: 11,
     fontWeight: '700',
-    color: '#f59e0b',
     letterSpacing: 1,
-    marginBottom: 8,
-  },
-  darkCardText: {
-    fontSize: 16,
-    color: '#ffffff',
-    lineHeight: 22,
-  },
-  amber: {
     color: '#f59e0b',
-    fontWeight: '600',
-  },
-  sectionLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#44403c',
     marginBottom: 12,
   },
-  card: {
+  focusPills: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 8,
+    marginBottom: 14,
+  },
+  focusPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#fef3c7',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  focusPillText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#92400e',
+  },
+  focusDesc: {
+    fontSize: 13,
+    color: '#78716c',
+    textAlign: 'center',
+    lineHeight: 19,
+  },
+  programCard: {
+    backgroundColor: '#fafaf9',
     borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 2,
-    borderColor: '#1c1917',
+    padding: 14,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#e7e5e4',
   },
-  cardHeader: {
+  programRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    marginBottom: 12,
   },
-  cardEmoji: {
-    fontSize: 22,
+  programIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: '#fef3c7',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  cardHeaderText: {
-    flex: 1,
-  },
-  cardTitle: {
-    fontSize: 16,
+  programTitle: {
+    fontSize: 15,
     fontWeight: '700',
     color: '#1c1917',
   },
-  cardSubtitle: {
-    fontSize: 14,
-    color: '#78716c',
-    marginTop: 1,
+  programSub: {
+    fontSize: 13,
+    color: '#a8a29e',
+    marginTop: 2,
   },
-  cardDesc: {
-    fontSize: 16,
-    color: '#78716c',
-    lineHeight: 20,
-    marginBottom: 12,
-  },
-  bold: {
-    fontWeight: '600',
-    color: '#44403c',
-  },
-  featureList: {
-    gap: 6,
-  },
-  featureRow: {
-    flexDirection: 'row',
+  quoteWrap: {
     alignItems: 'center',
-    gap: 8,
-  },
-  featureCheck: {
-    fontSize: 14,
-    color: '#78716c',
-  },
-  featureText: {
-    fontSize: 16,
-    color: '#78716c',
-  },
-
-  // Waitlist card
-  waitlistCard: {
-    backgroundColor: '#fefbeb',
-    borderWidth: 1,
-    borderColor: '#fef3c7',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-  },
-  waitlistIcon: {
-    fontSize: 20,
-    color: '#f59e0b',
     marginBottom: 8,
+    paddingVertical: 8,
   },
-  waitlistHeadline: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1c1917',
-    marginBottom: 6,
-  },
-  waitlistBody: {
+  quoteText: {
     fontSize: 14,
     color: '#78716c',
+    fontStyle: 'italic',
+    textAlign: 'center',
     lineHeight: 20,
-    marginBottom: 14,
   },
-  waitlistButton: {
-    backgroundColor: '#ffffff',
-    borderWidth: 1,
-    borderColor: '#e7e5e4',
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: 'center',
+  quoteAuthor: {
+    fontSize: 12,
+    color: '#a8a29e',
+    marginTop: 4,
   },
-  waitlistButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1c1917',
-  },
-  waitlistConfirmed: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  waitlistConfirmedText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#166534',
-  },
-
   footer: {
     paddingHorizontal: 24,
     paddingBottom: 40,
     paddingTop: 16,
     borderTopWidth: 1,
     borderTopColor: '#f5f5f4',
+    alignItems: 'center',
+  },
+  footerNote: {
+    fontSize: 13,
+    color: '#a8a29e',
+    marginTop: 8,
   },
 });

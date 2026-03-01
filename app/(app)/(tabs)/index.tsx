@@ -149,6 +149,59 @@ function computeReadiness(entries: LogEntry[]): number | null {
   return Math.min(99, Math.max(5, score));
 }
 
+/* ─── Readiness tip — actionable advice by score band ──── */
+function readinessTip(score: number, sleepHours?: number | null): {
+  headline: string;
+  tip: string;
+  emoji: string;
+  color: string;
+  bgColor: string;
+  borderColor: string;
+} {
+  if (score >= 85) {
+    return {
+      headline: 'Great day ahead',
+      tip: 'Go for a walk, start that project, or call someone you\u2019ve been meaning to catch up with.',
+      emoji: '\uD83D\uDCAA',
+      color: '#16a34a',
+      bgColor: '#f0fdf4',
+      borderColor: '#bbf7d0',
+    };
+  }
+  if (score >= 65) {
+    return {
+      headline: 'Good day',
+      tip: 'You\u2019ve got solid energy. A moderate workout or creative task could feel great today.',
+      emoji: '\u2728',
+      color: '#0d9488',
+      bgColor: '#f0fdfa',
+      borderColor: '#99f6e4',
+    };
+  }
+  if (score >= 40) {
+    return {
+      headline: 'Take it easy today',
+      tip: sleepHours && sleepHours < 6
+        ? `${sleepHours} hours of sleep is tough. A 20-minute nap before 2pm can help without disrupting tonight\u2019s sleep.`
+        : 'Listen to your body. Gentle movement or a quiet evening might serve you better than pushing hard.',
+      emoji: '\uD83D\uDCA1',
+      color: '#d97706',
+      bgColor: '#fffbeb',
+      borderColor: '#fde68a',
+    };
+  }
+  return {
+    headline: 'Rest day',
+    tip: sleepHours && sleepHours < 5
+      ? `Only ${sleepHours} hours of sleep \u2014 your body needs rest. Be kind to yourself and take it slow.`
+      : 'Your body is carrying a lot today. Cancel what you can, rest when you can.',
+    emoji: '\uD83D\uDC9C',
+    color: '#e11d48',
+    bgColor: '#fff1f2',
+    borderColor: '#fecdd3',
+  };
+}
+
 interface Medication {
   id: number;
   name: string;
@@ -950,7 +1003,7 @@ export default function HomeScreen() {
               const scoreNum = score ?? 0;
               const circumference = 150.8;
               const arcLength = (scoreNum / 100) * circumference;
-              const activityLabel = scoreNum >= 70 ? 'Your body is ready' : scoreNum >= 40 ? 'Mixed day' : 'Go gentle';
+              const tip = readinessTip(scoreNum, sleepLog?.sleepHours);
               const aiNarrative = recommendation || narrative || null;
 
               return (
@@ -958,7 +1011,7 @@ export default function HomeScreen() {
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                     <View>
                       <Text style={styles.readinessLabel}>READINESS SCORE</Text>
-                      <Text style={styles.readinessValue}>{score ?? '—'}</Text>
+                      <Text style={styles.readinessValue}>{score ?? '\u2014'}</Text>
                     </View>
                     <View style={{ width: 56, height: 56 }}>
                       <Svg width={56} height={56} viewBox="0 0 56 56">
@@ -975,7 +1028,7 @@ export default function HomeScreen() {
                       </Svg>
                     </View>
                   </View>
-                  <Text style={styles.readinessActivityLabel}>{activityLabel}</Text>
+                  <Text style={styles.readinessActivityLabel}>{tip.headline}</Text>
                   {(() => {
                     if (isRefreshing && !aiNarrative) {
                       return (
@@ -993,7 +1046,7 @@ export default function HomeScreen() {
                     const topSym = symptomTrends.length > 0 ? symptomTrends[0].name.replace(/_/g, ' ') : null;
                     let msg = '';
                     if (scoreNum >= 70) {
-                      msg = hrs ? `${hrs} hours of sleep and your body is responding well — a good day to be active.` : 'Your body is doing well today.';
+                      msg = hrs ? `${hrs} hours of sleep and your body is responding well \u2014 a good day to be active.` : 'Your body is doing well today.';
                     } else if (scoreNum >= 40) {
                       const sleepNote = hrs ? `${hrs} hours of sleep is keeping things steady` : 'Some things are working in your favour';
                       const dragNote = topSym ? `, but ${topSym} is weighing on things` : ', though your body could use some care';
@@ -1004,6 +1057,12 @@ export default function HomeScreen() {
                     }
                     return <Text style={styles.readinessNarrative}>{msg}</Text>;
                   })()}
+                  {/* Actionable tip */}
+                  <View style={{ borderTopWidth: 1, borderTopColor: '#dbeafe', paddingTop: 10, marginTop: 10 }}>
+                    <Text style={{ fontSize: 12, color: '#64748b', lineHeight: 17 }}>
+                      {tip.emoji} <Text style={{ fontWeight: '600' }}>{scoreNum >= 65 ? 'Idea:' : 'Tip:'}</Text> {tip.tip}
+                    </Text>
+                  </View>
                 </View>
               );
             })()}

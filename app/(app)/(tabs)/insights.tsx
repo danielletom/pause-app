@@ -540,13 +540,15 @@ export default function InsightsScreen() {
 
   // Learning state thresholds — use maxDaysEver so switching to 1W doesn't regress
   const patternsLearning = maxDaysEver.current < 7;
-  const normalLearning = maxDaysEver.current < 14;
+  const normalLearning = maxDaysEver.current < 7;
 
-  const headerSub = totalDays > 0
-    ? patternsLearning
-      ? `${totalDays} days logged. Still learning your patterns.`
-      : `${totalDays} days of data. Insights updated daily.`
-    : 'Log a few days and your patterns will start appearing here.';
+  const headerSub = activeTab === 'normal' && normalLearning
+    ? `Day ${totalDays} of 7 to first insights`
+    : totalDays > 0
+      ? patternsLearning
+        ? `${totalDays} days logged. Still learning your patterns.`
+        : `${totalDays} days of data. Insights updated daily.`
+      : 'Log a few days and your patterns will start appearing here.';
 
   return (
     <SafeAreaView style={styles.container}>
@@ -564,8 +566,8 @@ export default function InsightsScreen() {
           {TABS.map((tab) => {
             const active = tab.key === activeTab;
             const isNormalTab = tab.key === 'normal';
-            const normalLocked = isNormalTab && trialDay < 14;
-            const showNewBadge = isNormalTab && trialDay >= 14 && !hasSeen(DELIGHT_KEYS.DAY14_NORMAL_UNLOCK);
+            const normalLocked = false;
+            const showNewBadge = isNormalTab && !normalLearning && !hasSeen(DELIGHT_KEYS.DAY14_NORMAL_UNLOCK);
             return (
               <AnimatedPressable
                 key={tab.key}
@@ -861,209 +863,78 @@ export default function InsightsScreen() {
           </>
 
         ) : activeTab === 'normal' && normalLearning ? (
-          /* ═══════════════ AM I NORMAL? — LEARNING STATE ═══════════════ */
+          /* ═══════════════ AM I NORMAL? — EMPTY STATE (< 7 DAYS) ═══════════════ */
           <>
-            {/* ─── Learning mode hero ────────────── */}
-            <View style={ls.heroCard}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 16 }}>
-                {/* Progress ring */}
-                <View style={ls.progressRingWrapSmall}>
-                  <Svg width={80} height={80} viewBox="0 0 80 80">
-                    <Circle cx={40} cy={40} r={36} fill="none" stroke="#292524" strokeWidth={3} />
-                    <Circle
-                      cx={40} cy={40} r={36}
-                      fill="none"
-                      stroke="#a8a29e"
-                      strokeWidth={3}
-                      strokeDasharray={`${(totalDays / 14) * 226} ${226 - (totalDays / 14) * 226}`}
-                      strokeLinecap="round"
-                      transform="rotate(-90 40 40)"
-                    />
-                  </Svg>
-                  <View style={ls.progressRingInnerSmall}>
-                    <Text style={ls.progressRingNumberSmall}>{totalDays}</Text>
-                    <Text style={ls.progressRingOfSmall}>of 14</Text>
-                  </View>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={ls.heroTitle}>{totalDays === 0 ? 'Start tracking to compare' : 'Almost ready to compare'}</Text>
-                  <Text style={[ls.heroDesc, { marginBottom: 0 }]}>
-                    {totalDays === 0
-                      ? 'Log your first check-in to begin. After 14 days we can show you how your experience compares to '
-                      : `${14 - totalDays} more day${14 - totalDays > 1 ? 's' : ''} and we can show you how your experience compares to `}
-                    <Text style={{ color: '#78716c' }}>12,847 other women</Text> in perimenopause.
-                  </Text>
-                </View>
-              </View>
-
-              {/* 14-day dot grid (2 rows of 7) */}
-              <View style={ls.dotGrid}>
-                {Array.from({ length: 14 }).map((_, i) => (
-                  <View
-                    key={i}
-                    style={[
-                      ls.dotGridItem,
-                      { backgroundColor: i < totalDays ? '#a8a29e' : '#292524' },
-                    ]}
-                  />
-                ))}
-              </View>
-              <View style={ls.dotGridLabels}>
-                <Text style={ls.dotGridLabelText}>Day 1</Text>
-                <Text style={[ls.dotGridLabelText, { color: '#78716c', fontWeight: '500' }]}>{totalDays === 0 ? 'Start →' : `Day ${totalDays} ←`}</Text>
-                <Text style={ls.dotGridLabelText}>Day 14</Text>
-              </View>
-            </View>
-
-            {/* ─── Why 14 days? ─── */}
-            <View style={ls.explainerCard}>
-              <View style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start' }}>
-                <View style={ls.questionCircle}>
-                  <Text style={{ fontSize: 14, color: '#78716c' }}>?</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={ls.explainerTitle}>Why do we need 14 days?</Text>
-                  <Text style={ls.explainerDesc}>
-                    Menopause symptoms fluctuate week to week. Two weeks gives us enough data to place you reliably within your peer group, so the comparison is meaningful.
-                  </Text>
-                </View>
-              </View>
-            </View>
-
-            {/* ─── Your peer group (preview) ─── */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Your peer group (preview)</Text>
-              <View style={ls.peerGroupCard}>
-                <Text style={{ fontSize: 14, color: '#78716c', marginBottom: 12 }}>
-                  Based on your profile, we'll match you with:
-                </Text>
-                {[
-                  { emoji: '👥', title: 'Early perimenopause', sub: 'Your menopause stage' },
-                  { emoji: '🎂', title: 'Ages 40–49', sub: 'Your age bracket' },
-                  { emoji: '📊', title: 'Moderate symptoms', sub: totalDays === 0 ? 'Will refine as you log' : `Based on your first ${totalDays} days` },
-                ].map((item, i) => (
-                  <View key={i} style={ls.peerGroupRow}>
-                    <View style={ls.peerGroupIcon}>
-                      <Text style={{ fontSize: 14 }}>{item.emoji}</Text>
-                    </View>
-                    <View>
-                      <Text style={ls.peerGroupTitle}>{item.title}</Text>
-                      <Text style={ls.peerGroupSub}>{item.sub}</Text>
-                    </View>
-                  </View>
-                ))}
-                <View style={ls.peerGroupDivider} />
-                <Text style={{ fontSize: 14, color: '#78716c', lineHeight: 18 }}>
-                  <Text style={{ fontWeight: '600', color: '#44403c' }}>12,847 women</Text> in your cohort · All data is fully anonymous
-                </Text>
-              </View>
-            </View>
-
-            {/* ─── What you'll see (blurred benchmark previews) ─── */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>What you'll see</Text>
-              <View style={{ gap: 8 }}>
-                {[
-                  { name: 'Hot flashes', fillPct: '75%', markerPct: '60%' },
-                  { name: 'Sleep disruption', fillPct: '60%', markerPct: '45%' },
-                  { name: 'Anxiety', fillPct: '50%', markerPct: '35%' },
-                ].map((bm, i) => (
-                  <View key={i} style={ls.blurBenchmarkCard}>
-                    <View style={ls.blurBenchmarkOverlay}>
-                      {i === 0 && (
-                        <>
-                          <Text style={ls.blurBenchmarkOverlayText}>Unlocks in {14 - totalDays} days</Text>
-                          <Text style={{ fontSize: 14, color: '#78716c' }}>We'll place you on this scale</Text>
-                        </>
-                      )}
-                    </View>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                      <Text style={{ fontSize: 14, fontWeight: '600', color: '#78716c' }}>{bm.name}</Text>
-                      <View style={ls.blurBadge}>
-                        <Text style={{ fontSize: 12, color: '#78716c' }}>? of women</Text>
-                      </View>
-                    </View>
-                    <View style={ls.blurPopBar}>
-                      <View style={[ls.blurPopBarFill, { width: bm.fillPct as any }]} />
-                      <View style={[ls.blurPopMarker, { left: bm.markerPct as any }]} />
-                    </View>
-                    {i === 0 && (
-                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 }}>
-                        <Text style={{ fontSize: 14, color: '#78716c' }}>Less frequent</Text>
-                        <Text style={{ fontSize: 14, color: '#78716c' }}>You</Text>
-                        <Text style={{ fontSize: 14, color: '#78716c' }}>More frequent</Text>
-                      </View>
-                    )}
-                  </View>
-                ))}
-              </View>
-            </View>
-
-            {/* ─── Did you know? (community facts) ─── */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Did you know?</Text>
-              <View style={{ gap: 8 }}>
-                <View style={ls.communityFactGreen}>
-                  <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-start' }}>
-                    <Text style={{ color: '#047857', fontSize: 14 }}>↓</Text>
-                    <Text style={ls.communityFactText}>
-                      <Text style={{ fontWeight: '600', color: '#1c1917' }}>82% of women</Text> in early perimenopause experience hot flashes. You're not alone in this.
-                    </Text>
-                  </View>
-                </View>
-                <View style={ls.communityFactGreen}>
-                  <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-start' }}>
-                    <Text style={{ color: '#047857', fontSize: 14 }}>↓</Text>
-                    <Text style={ls.communityFactText}>
-                      Pause members who tracked consistently for 8 weeks saw symptom severity drop by{' '}
-                      <Text style={{ fontWeight: '600', color: '#1c1917' }}>an average of 31%</Text>.
-                    </Text>
-                  </View>
-                </View>
-                <View style={ls.communityFactAmber}>
-                  <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-start' }}>
-                    <Text style={{ color: '#b45309', fontSize: 14 }}>✦</Text>
-                    <Text style={ls.communityFactText}>
-                      The #1 trigger across all Pause users?{' '}
-                      <Text style={{ fontWeight: '600', color: '#1c1917' }}>Poor sleep</Text>. It shows up in 73% of correlation reports.
-                    </Text>
-                  </View>
-                </View>
-              </View>
-            </View>
-
-            {/* ─── Your journey stats ─── */}
-            <View style={ls.journeyCard}>
-              <Text style={ls.journeyLabel}>YOUR JOURNEY</Text>
-              <View style={ls.journeyRow}>
-                <View style={ls.journeyStat}>
-                  <Text style={ls.journeyStatNumber}>{totalDays}</Text>
-                  <Text style={ls.journeyStatLabel}>days logged</Text>
-                </View>
-                <View style={ls.journeyDivider} />
-                <View style={ls.journeyStat}>
-                  <Text style={ls.journeyStatNumber}>{totalCheckins}</Text>
-                  <Text style={ls.journeyStatLabel}>check-ins</Text>
-                </View>
-                <View style={ls.journeyDivider} />
-                <View style={ls.journeyStat}>
-                  <Text style={ls.journeyStatNumber}>{uniqueSymptomCount}</Text>
-                  <Text style={ls.journeyStatLabel}>symptoms</Text>
-                </View>
-              </View>
-              <Text style={ls.journeyDesc}>
-                You are building a picture of your health that only you have. {14 - totalDays} more days and we can show you where you stand.
+            {/* Hero */}
+            <View style={{ alignItems: 'center', paddingTop: 8 }}>
+              <Text style={{ fontSize: 48, marginBottom: 12 }}>{'\uD83D\uDC69\u200D\uD83D\uDC69\u200D\uD83D\uDC67\u200D\uD83D\uDC67'}</Text>
+              <Text style={{ fontSize: 18, fontWeight: '700', color: '#1c1917', marginBottom: 6 }}>See how you compare</Text>
+              <Text style={{ fontSize: 13, color: '#78716c', lineHeight: 19, textAlign: 'center', maxWidth: 300, marginBottom: 20 }}>
+                After 7 days of check-ins, we'll show you how your symptoms compare to 12,847 other women in perimenopause.
               </Text>
             </View>
 
-            {/* ─── CTA ─── */}
-            <AnimatedPressable
-              onPress={() => { hapticLight(); router.navigate('/(app)/log' as any); }}
-              scaleDown={0.97}
-              style={ls.bigCta}
-            >
-              <Text style={ls.bigCtaText}>Log today's check-in</Text>
-            </AnimatedPressable>
+            {/* Progress card */}
+            <View style={ne.progressCard}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                <Text style={{ fontSize: 13, fontWeight: '600', color: '#1c1917' }}>Your progress</Text>
+                <Text style={{ fontSize: 13, color: '#d97706', fontWeight: '700' }}>{totalDays} / 7 days</Text>
+              </View>
+              <View style={ne.progressBarBg}>
+                <View style={[ne.progressBarFill, { width: `${Math.min((totalDays / 7) * 100, 100)}%` }]} />
+              </View>
+              <Text style={{ fontSize: 12, color: '#a8a29e', marginTop: 8 }}>
+                {7 - totalDays > 0
+                  ? `${7 - totalDays} more check-in${7 - totalDays > 1 ? 's' : ''} to unlock your comparisons`
+                  : 'Comparisons unlocked!'}
+              </Text>
+            </View>
+
+            {/* What you'll see */}
+            <View style={{ marginTop: 20, marginBottom: 10 }}>
+              <Text style={{ fontSize: 14, fontWeight: '700', color: '#1c1917' }}>What you'll see</Text>
+            </View>
+
+            {/* Blurred preview symptom rows */}
+            <View style={{ opacity: 0.45 }}>
+              {[
+                { emoji: '\uD83D\uDD25', name: 'Hot flashes', badge: 'Very common', badgeBg: '#dcfce7', badgeColor: '#166534', sub: '82% of women get these' },
+                { emoji: '\uD83D\uDE34', name: 'Sleep disruption', badge: 'Very common', badgeBg: '#dcfce7', badgeColor: '#166534', sub: '78% of women experience this' },
+                { emoji: '\uD83C\uDF2B\uFE0F', name: 'Brain fog', badge: 'Common', badgeBg: '#fef9c3', badgeColor: '#854d0e', sub: '62% of women get this' },
+              ].map((item, i) => (
+                <View key={i} style={ne.previewRow}>
+                  <Text style={{ fontSize: 18 }}>{item.emoji}</Text>
+                  <View style={{ flex: 1 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      <Text style={{ fontSize: 14, fontWeight: '600', color: '#1c1917' }}>{item.name}</Text>
+                      <View style={{ backgroundColor: item.badgeBg, borderRadius: 99, paddingHorizontal: 8, paddingVertical: 3 }}>
+                        <Text style={{ fontSize: 11, fontWeight: '600', color: item.badgeColor }}>{item.badge}</Text>
+                      </View>
+                    </View>
+                    <Text style={{ fontSize: 12, color: '#a8a29e', marginTop: 1 }}>{item.sub}</Text>
+                  </View>
+                  <Text style={{ fontSize: 14, color: '#d6d3d1' }}>{'\u203A'}</Text>
+                </View>
+              ))}
+            </View>
+
+            {/* Encouragement card */}
+            <View style={ne.encourageCard}>
+              <View style={ne.encourageIcon}>
+                <Text style={{ fontSize: 14 }}>{'\uD83D\uDC9A'}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 13, fontWeight: '600', color: '#166534', marginBottom: 2 }}>You're not alone in this</Text>
+                <Text style={{ fontSize: 12, color: '#4b5563', lineHeight: 18 }}>
+                  Thousands of women are tracking the same symptoms.{' '}
+                  {7 - totalDays > 0
+                    ? `In ${7 - totalDays} more day${7 - totalDays > 1 ? 's' : ''}, you'll see exactly how your experience compares.`
+                    : 'Your comparisons are ready!'}
+                </Text>
+              </View>
+            </View>
+
+            <View style={{ height: 20 }} />
           </>
 
         ) : activeTab === 'patterns' ? (
@@ -1972,6 +1843,59 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   lockedInsightsBtnText: { fontSize: 14, fontWeight: '600', color: '#ffffff' },
+});
+
+// ─── Normal Empty State Styles ──────────────────────────
+const ne = StyleSheet.create({
+  progressCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#e7e5e4',
+  },
+  progressBarBg: {
+    height: 8,
+    backgroundColor: '#f5f5f4',
+    borderRadius: 4,
+    overflow: 'hidden' as const,
+  },
+  progressBarFill: {
+    height: '100%',
+    borderRadius: 4,
+    backgroundColor: '#f59e0b',
+  },
+  previewRow: {
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
+    padding: 14,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: '#e7e5e4',
+    marginBottom: 6,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 10,
+  },
+  encourageCard: {
+    marginTop: 20,
+    borderRadius: 16,
+    padding: 16,
+    flexDirection: 'row' as const,
+    gap: 10,
+    alignItems: 'flex-start' as const,
+    backgroundColor: '#f0fdf4',
+    borderWidth: 1,
+    borderColor: '#bbf7d0',
+  },
+  encourageIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#ffffff',
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
 });
 
 // ─── Learning State Styles ──────────────────────────────

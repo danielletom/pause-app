@@ -368,14 +368,14 @@ export default function JournalScreen() {
             router.push('/(app)/gratitude-journal');
           }}
           scaleDown={0.97}
-          style={[styles.linkCard, { backgroundColor: '#fffbeb', borderWidth: 1, borderColor: '#fef3c7' }]}
+          style={[styles.linkCard, { borderWidth: 1, borderColor: '#f5f5f4' }]}
         >
-          <View style={[styles.linkIcon, { backgroundColor: '#fef3c7' }]}>
+          <View style={[styles.linkIcon, { backgroundColor: '#f5f5f4' }]}>
             <Text style={styles.linkIconText}>✦</Text>
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.linkTitle}>Gratitude journal</Text>
-            <Text style={styles.linkDesc}>The good things you have noticed</Text>
+            <Text style={styles.linkTitle}>Gratitude history</Text>
+            <Text style={styles.linkDesc}>The good things you've noticed</Text>
           </View>
           <Text style={styles.linkArrow}>›</Text>
         </AnimatedPressable>
@@ -586,23 +586,23 @@ const styles = StyleSheet.create({
   progressCard: {
     marginHorizontal: 24,
     marginBottom: 12,
-    backgroundColor: '#fffbeb',
+    backgroundColor: '#f0fdfa',
     borderRadius: 16,
     padding: 14,
     borderWidth: 1,
-    borderColor: '#fef3c7',
+    borderColor: '#99f6e4',
   },
-  progressLabel: { fontSize: 12, fontWeight: '600', color: '#b45309', marginBottom: 8 },
+  progressLabel: { fontSize: 12, fontWeight: '600', color: '#0d9488', marginBottom: 8 },
   progressBar: {
     height: 6,
-    backgroundColor: '#fef3c7',
+    backgroundColor: '#ccfbf1',
     borderRadius: 3,
     overflow: 'hidden',
     marginBottom: 6,
   },
   progressFill: {
     height: 6,
-    backgroundColor: '#f59e0b',
+    backgroundColor: '#14b8a6',
     borderRadius: 3,
   },
   progressText: { fontSize: 12, color: '#78716c' },

@@ -157,7 +157,7 @@ export default function GratitudeJournalScreen() {
               <Text style={s.statBarLabel}>Most grateful for</Text>
               <Text style={s.statBarValue}>{topThemeMeta.label}</Text>
               <Text style={s.statBarSub}>
-                {stats.topTheme.count} entries · auto-detected by AI ✦
+                {stats.topTheme.count} entries ✦
               </Text>
             </View>
             <View style={s.statBarEmoji}>
@@ -184,7 +184,7 @@ export default function GratitudeJournalScreen() {
           >
             <Text style={{ fontSize: 18 }}>◐</Text>
             <Text style={s.navPillTitle}>Themes</Text>
-            <Text style={s.navPillSub}>AI-detected</Text>
+            <Text style={s.navPillSub}>Patterns</Text>
           </AnimatedPressable>
           <AnimatedPressable
             onPress={() => { hapticLight(); router.push('/(app)/gratitude-reflect'); }}

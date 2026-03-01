@@ -229,10 +229,18 @@ export default function LearnScreen() {
                         .map((ep) => {
                           const isDone = completedSet.has(String(ep.id));
                           const isCurrentEp = data?.currentLesson?.id === ep.id;
+                          // Calculate total program day for this episode (week * days + day)
+                          const epTotalDay = ((ep.programWeek ?? 1) - 1) * 7 + (ep.programDay ?? 1);
+                          const userTotalDay = data?.totalDay ?? 1;
+                          const isFuture = epTotalDay > userTotalDay;
+                          const isLocked = isFuture && !isDone;
+                          const daysUntil = epTotalDay - userTotalDay;
+
                           return (
                             <AnimatedPressable
                               key={ep.id}
                               onPress={() => {
+                                if (isLocked) return;
                                 hapticMedium();
                                 if (ep.audioUrl) {
                                   router.push({
@@ -241,20 +249,26 @@ export default function LearnScreen() {
                                   });
                                 }
                               }}
-                              scaleDown={0.97}
+                              scaleDown={isLocked ? 1 : 0.97}
                               style={[
                                 styles.episodeCard,
                                 isCurrentEp && { borderColor: colors.accent, borderWidth: 2 },
+                                isDone && { opacity: 0.7 },
+                                isLocked && { opacity: 0.4 },
                               ]}
                             >
                               <View style={styles.episodeLeft}>
-                                {/* Day number + completion */}
+                                {/* Day number + completion + lock */}
                                 <View style={[
                                   styles.dayBadge,
-                                  isDone ? { backgroundColor: '#059669' } : { backgroundColor: '#f5f5f4' },
+                                  isDone ? { backgroundColor: '#059669' }
+                                    : isLocked ? { backgroundColor: '#f5f5f4' }
+                                    : { backgroundColor: '#f5f5f4' },
                                 ]}>
                                   {isDone ? (
-                                    <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>✓</Text>
+                                    <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>{'\u2713'}</Text>
+                                  ) : isLocked ? (
+                                    <Text style={{ fontSize: 12 }}>{'\uD83D\uDD12'}</Text>
                                   ) : (
                                     <Text style={{ color: '#78716c', fontSize: 12, fontWeight: '600' }}>
                                       D{ep.programDay}
@@ -262,29 +276,44 @@ export default function LearnScreen() {
                                   )}
                                 </View>
                                 <View style={{ flex: 1 }}>
-                                  <View style={styles.episodeTypeRow}>
-                                    <Text style={{ fontSize: 14 }}>{typeIcon(ep.contentType)}</Text>
-                                    <Text style={styles.episodeType}>{typeLabel(ep.contentType)}</Text>
-                                    {ep.durationMinutes ? (
-                                      <Text style={styles.episodeDur}>{ep.durationMinutes} min</Text>
-                                    ) : null}
-                                  </View>
-                                  <Text style={[styles.episodeTitle, isDone && styles.episodeTitleDone]} numberOfLines={2}>
-                                    {ep.title}
-                                  </Text>
-                                  {ep.programAction ? (
-                                    <Text style={styles.episodeAction} numberOfLines={1}>
-                                      Tonight: {ep.programAction}
-                                    </Text>
-                                  ) : null}
+                                  {isLocked ? (
+                                    <>
+                                      <Text style={[styles.episodeTitle, { color: '#a8a29e' }]} numberOfLines={1}>
+                                        {ep.title}
+                                      </Text>
+                                      <Text style={{ fontSize: 12, color: '#d6d3d1', marginTop: 2 }}>
+                                        {daysUntil === 1 ? 'Unlocks tomorrow' : `Unlocks in ${daysUntil} days`}
+                                      </Text>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <View style={styles.episodeTypeRow}>
+                                        <Text style={{ fontSize: 14 }}>{typeIcon(ep.contentType)}</Text>
+                                        <Text style={styles.episodeType}>{typeLabel(ep.contentType)}</Text>
+                                        {ep.durationMinutes ? (
+                                          <Text style={styles.episodeDur}>
+                                            {ep.durationMinutes} min{isDone ? ' \u00B7 Completed' : ''}
+                                          </Text>
+                                        ) : null}
+                                      </View>
+                                      <Text style={[styles.episodeTitle, isDone && styles.episodeTitleDone]} numberOfLines={2}>
+                                        {ep.title}
+                                      </Text>
+                                      {ep.programAction ? (
+                                        <Text style={styles.episodeAction} numberOfLines={1}>
+                                          {ep.programAction}
+                                        </Text>
+                                      ) : null}
+                                    </>
+                                  )}
                                 </View>
                               </View>
-                              {!ep.audioUrl && (
+                              {!isLocked && !ep.audioUrl && (
                                 <View style={styles.comingSoonBadge}>
                                   <Text style={styles.comingSoonText}>Soon</Text>
                                 </View>
                               )}
-                              {isCurrentEp && (
+                              {isCurrentEp && !isLocked && (
                                 <View style={[styles.currentBadge, { backgroundColor: colors.accent }]}>
                                   <Text style={styles.currentBadgeText}>Up next</Text>
                                 </View>

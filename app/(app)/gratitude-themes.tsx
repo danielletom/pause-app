@@ -71,10 +71,10 @@ export default function GratitudeThemesScreen() {
         <View style={s.topBar}>
           <BackButton />
         </View>
-        <Text style={s.label}>AI-DETECTED THEMES</Text>
+        <Text style={s.label}>YOUR THEMES</Text>
         <Text style={s.title}>What lights you up</Text>
         <Text style={s.subtitle}>
-          Our AI reads your words and finds the patterns. You never tag anything — we figure it out.
+          We read your words and find the patterns. You never tag anything — it's all automatic.
         </Text>
 
         {/* Bubble visualisation */}
@@ -151,12 +151,12 @@ export default function GratitudeThemesScreen() {
           );
         })}
 
-        {/* AI Insight */}
+        {/* Insight */}
         {stats?.topTheme && (
           <View style={s.insightCard}>
             <Text style={s.insightIcon}>✦</Text>
             <View style={{ flex: 1 }}>
-              <Text style={s.insightTitle}>AI insight · Your gratitude DNA</Text>
+              <Text style={s.insightTitle}>Your gratitude DNA</Text>
               <Text style={s.insightBody}>
                 You lean toward {THEME_META[stats.topTheme.theme]?.label?.toLowerCase() || 'connection'} — {Math.round((stats.topTheme.count / totalEntries) * 100)}% of what you notice is about {THEME_META[stats.topTheme.theme]?.desc?.toLowerCase() || 'the people around you'}.
                 Themes evolve as you journal more.
