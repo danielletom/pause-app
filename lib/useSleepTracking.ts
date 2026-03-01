@@ -1,9 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
-import {
-  isHealthDataAvailable,
-  queryQuantitySamples,
-} from '@kingstinct/react-native-healthkit';
 import { Platform } from 'react-native';
+
+// Lazy-load HealthKit to prevent crashes on device if native module isn't ready
+let HK: typeof import('@kingstinct/react-native-healthkit') | null = null;
+if (Platform.OS === 'ios') {
+  try {
+    HK = require('@kingstinct/react-native-healthkit');
+  } catch {
+    HK = null;
+  }
+}
 
 /**
  * Rise-style sleep tracking: infer sleep from gaps in step data.
@@ -44,7 +50,7 @@ async function inferSleepFromSteps(forDate: Date): Promise<SleepData | null> {
   const noonToday = new Date(forDate);
   noonToday.setHours(12, 0, 0, 0);
 
-  const samples = await queryQuantitySamples(STEP_TYPE, {
+  const samples = await HK!.queryQuantitySamples(STEP_TYPE, {
     limit: -1, // fetch all
     ascending: true,
     filter: {
@@ -111,7 +117,7 @@ export function useSleepTracking(date?: Date): UseSleepTrackingReturn {
       return;
     }
 
-    if (!isHealthDataAvailable()) {
+    if (!HK || !HK.isHealthDataAvailable()) {
       setError('HealthKit not available');
       setLoading(false);
       return;

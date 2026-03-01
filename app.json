@@ -42,6 +42,12 @@
       "expo-secure-store",
       "expo-web-browser",
       [
+        "expo-notifications",
+        {
+          "sounds": []
+        }
+      ],
+      [
         "@kingstinct/react-native-healthkit",
         {
           "NSHealthShareUsageDescription": "Pause reads your activity data to automatically track your sleep and improve your health insights.",

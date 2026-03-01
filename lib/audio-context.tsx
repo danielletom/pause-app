@@ -50,7 +50,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
     Audio.setAudioModeAsync({
       playsInSilentModeIOS: true,
       staysActiveInBackground: true,
-    });
+    }).catch(() => {});
   }, []);
 
   const onPlaybackStatusUpdate = useCallback((status: AVPlaybackStatus) => {

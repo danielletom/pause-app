@@ -37,7 +37,7 @@ export default function SOSScreen() {
   const router = useRouter();
   const navRef = useNavigationContainerRef();
   const safeBack = () => {
-    if (navRef.canGoBack()) safeBack();
+    if (navRef.canGoBack()) router.back();
     else router.replace('/(app)/(tabs)' as any);
   };
   const [step, setStep] = useState<Step>('intro');

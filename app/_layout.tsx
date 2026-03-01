@@ -97,7 +97,9 @@ function RootLayoutNav() {
         }
         if (finalStatus !== 'granted') return;
 
-        const pushToken = await Notifications.getExpoPushTokenAsync();
+        const pushToken = await Notifications.getExpoPushTokenAsync({
+          projectId: '54d95774-a7d0-478a-afc7-4cce18c4cf1c',
+        });
         const token = await getToken();
         await apiRequest('/api/push-token', token, {
           method: 'POST',
