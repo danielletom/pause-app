@@ -254,6 +254,9 @@ export default function HomeScreen() {
   const [periodEnabled, setPeriodEnabled] = useState(false);
   const [periodCycle, setPeriodCycle] = useState<any>(null);
   const [sleepCompare, setSleepCompare] = useState<{ lastNight: number; nightBefore: number } | null>(null);
+  const [programLesson, setProgramLesson] = useState<{ id: number; title: string; contentType: string; durationMinutes: number | null; programWeek: number; programDay: number } | null>(null);
+  const [programDone, setProgramDone] = useState(0);
+  const [programTotal, setProgramTotal] = useState(0);
   const hasLoadedOnce = useRef(false);
 
   // Delight system
@@ -349,6 +352,14 @@ export default function HomeScreen() {
         if (homeData.narrative) setNarrative(homeData.narrative);
         if (homeData.topCorrelations) setTopCorrelations(homeData.topCorrelations);
       }
+
+      // Fetch program progress for "Your program" card
+      try {
+        const prog = await apiRequest('/api/program/progress', token);
+        if (prog?.currentLesson) setProgramLesson(prog.currentLesson);
+        if (prog?.totalDone != null) setProgramDone(prog.totalDone);
+        if (prog?.totalEpisodes) setProgramTotal(prog.totalEpisodes);
+      } catch { /* non-critical */ }
 
       // Compute weekly symptom trends from 28-day logs
       if (Array.isArray(recentLogs) && recentLogs.length > 0) {
@@ -1476,68 +1487,50 @@ export default function HomeScreen() {
               </View>
             )}
 
-            {/* ══════════ TONIGHT'S PLAN ══════════ */}
-            {isToday && (
+            {/* ══════════ YOUR PROGRAM — today's lesson ══════════ */}
+            {isToday && programLesson && (
               <View style={styles.section}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 }}>
-                  <Text style={styles.sectionTitle}>Tonight's plan</Text>
-                  <Text style={{ fontSize: 14 }}>🌙</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Text style={styles.sectionTitle}>Your program</Text>
+                    <Text style={{ fontSize: 14 }}>{'\u2728'}</Text>
+                  </View>
+                  <AnimatedPressable onPress={() => { hapticLight(); router.push('/(app)/learn' as any); }} scaleDown={0.97}>
+                    <Text style={{ fontSize: 13, color: '#f59e0b', fontWeight: '600' }}>See all {'\u2192'}</Text>
+                  </AnimatedPressable>
                 </View>
-                <View style={{ gap: 8 }}>
-                  {/* Program audio — next episode (no week/day label) */}
-                  <AnimatedPressable
-                    onPress={() => { hapticLight(); router.push('/(app)/player' as any); }}
-                    scaleDown={0.97}
-                    style={styles.tonightProgramCard}
-                  >
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                      <View style={styles.tonightProgramIcon}>
-                        <Text style={{ fontSize: 16, color: '#ffffff' }}>✦</Text>
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={[styles.tonightProgramTitle, { color: '#ffffff' }]}>
-                          {/* Use suggestedAudio title if from program, else default */}
-                          Why Sleep Changes in Perimenopause
-                        </Text>
-                        <Text style={[styles.tonightProgramSub, { color: '#a8a29e' }]}>Podcast · 20 min</Text>
-                      </View>
-                      <View style={[styles.tonightPlayBtn, { backgroundColor: '#44403c' }]}>
-                        <Text style={{ fontSize: 12, color: '#ffffff', marginLeft: 2 }}>▶</Text>
-                      </View>
-                    </View>
-                  </AnimatedPressable>
 
-                  {/* Evening meditation */}
-                  <AnimatedPressable
-                    onPress={() => { hapticLight(); router.push('/(app)/player' as any); }}
-                    scaleDown={0.97}
-                    style={styles.tonightMeditationCard}
-                  >
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                      <View style={styles.tonightMeditationIcon}>
-                        <Text style={{ fontSize: 18 }}>🧘‍♀️</Text>
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.tonightProgramTitle}>Body Scan for Sleep</Text>
-                        <Text style={styles.tonightProgramSub}>Meditation · 15 min</Text>
-                      </View>
-                      <View style={styles.tonightPlayBtn}>
-                        <Text style={{ fontSize: 12, color: '#a8a29e', marginLeft: 2 }}>▶</Text>
-                      </View>
+                {/* Today's lesson — amber highlight */}
+                <AnimatedPressable
+                  onPress={() => {
+                    hapticMedium();
+                    router.push({ pathname: '/(app)/player' as any, params: { id: programLesson.id, source: 'program' } });
+                  }}
+                  scaleDown={0.97}
+                  style={styles.programTodayCard}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                    <View style={styles.programTodayIcon}>
+                      <Text style={{ fontSize: 12, color: '#ffffff', fontWeight: '700' }}>D{programLesson.programDay}</Text>
                     </View>
-                  </AnimatedPressable>
-
-                  {/* Tomorrow forecast */}
-                  {tomorrowForecast && (
-                    <View style={styles.tonightInsight}>
-                      <Text style={{ fontSize: 14, color: '#047857', marginTop: 2 }}>💡</Text>
-                      <Text style={styles.tonightInsightText}>
-                        <Text style={{ fontWeight: '500', color: '#44403c' }}>Looking ahead: </Text>
-                        {tomorrowForecast}
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.programTodayTitle} numberOfLines={2}>{programLesson.title}</Text>
+                      <Text style={styles.programTodaySub}>
+                        {programLesson.contentType === 'meditation' ? 'Meditation' : programLesson.contentType === 'podcast' ? 'Podcast' : 'Lesson'}
+                        {programLesson.durationMinutes ? ` \u00B7 ${programLesson.durationMinutes} min` : ''}
                       </Text>
                     </View>
-                  )}
-                </View>
+                    <View style={styles.programPlayBtn}>
+                      <Text style={{ fontSize: 12, color: '#1c1917', marginLeft: 2 }}>{'\u25B6'}</Text>
+                    </View>
+                  </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 }}>
+                    <View style={{ flex: 1, height: 3, backgroundColor: '#fde68a', borderRadius: 2, overflow: 'hidden' }}>
+                      <View style={{ width: `${programTotal > 0 ? Math.round((programDone / programTotal) * 100) : 0}%`, height: 3, backgroundColor: '#f59e0b', borderRadius: 2 }} />
+                    </View>
+                    <Text style={{ fontSize: 11, color: '#b45309' }}>{programDone}/{programTotal}</Text>
+                  </View>
+                </AnimatedPressable>
               </View>
             )}
 
@@ -2437,125 +2430,37 @@ const styles = StyleSheet.create({
   },
   medsEmptyButtonText: { fontSize: 16, fontWeight: '600', color: '#1c1917' },
 
-  // Tonight's Plan — enhanced
-  tonightWeekLabel: { fontSize: 14, color: '#b45309', fontWeight: '500' },
-  programLessonCard: {
+  // Your Program — today's lesson card
+  programTodayCard: {
     backgroundColor: '#fffbeb',
     borderRadius: 16,
     padding: 16,
-    borderWidth: 1,
-    borderColor: '#fef3c7',
+    borderWidth: 1.5,
+    borderColor: '#f59e0b',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  programLessonIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    backgroundColor: '#fbbf24',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  programLessonIconText: { fontSize: 14, fontWeight: '700', color: '#ffffff' },
-  programLessonTitle: { fontSize: 16, fontWeight: '500', color: '#1c1917' },
-  programLessonDur: { fontSize: 14, color: '#78716c', marginTop: 1 },
-  programLessonWeek: { fontSize: 14, color: '#b45309', marginTop: 2 },
-  tonightPlayBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#1c1917',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  tonightPlayBtnLight: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#f5f5f4',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  tonightTagRow: {
-    flexDirection: 'row',
-    gap: 4,
-    marginTop: 4,
-  },
-  tonightTag: {
-    backgroundColor: '#f5f5f4',
-    borderRadius: 4,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
-  tonightTagText: { fontSize: 14, color: '#78716c' },
-  tonightInsight: {
-    backgroundColor: '#f5f5f4',
-    borderRadius: 16,
-    padding: 12,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 8,
-  },
-  tonightInsightText: {
-    fontSize: 14,
-    color: '#78716c',
-    lineHeight: 20,
-    flex: 1,
-  },
-
-  // Tonight's Plan — program + meditation cards
-  tonightProgramCard: {
-    backgroundColor: '#1c1917',
-    borderRadius: 16,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.04,
     shadowRadius: 4,
     elevation: 2,
   },
-  tonightProgramIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: '#44403c',
+  programTodayIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: '#f59e0b',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  tonightProgramTitle: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: '#1c1917',
-  },
-  tonightProgramSub: {
-    fontSize: 13,
-    color: '#78716c',
-    marginTop: 2,
-  },
-  tonightMeditationCard: {
-    backgroundColor: '#ffffff',
+  programTodayTitle: { fontSize: 15, fontWeight: '600', color: '#1c1917' },
+  programTodaySub: { fontSize: 13, color: '#78716c', marginTop: 2 },
+  programPlayBtn: {
+    width: 32,
+    height: 32,
     borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#f5f5f4',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  tonightMeditationIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: '#f5f5f4',
+    backgroundColor: '#fbbf24',
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
 
   // Wellness Centre entry card (legacy — removed from view)
