@@ -12,10 +12,18 @@ export default function OnboardingLayout() {
     <OnboardingProvider>
       <Stack
         screenOptions={{
-          headerShown: false,
+          headerShown: true,
+          headerTitle: '',
+          headerBackTitle: 'Back',
+          headerShadowVisible: false,
+          headerStyle: { backgroundColor: '#fafaf9' },
+          headerTintColor: '#78716c',
           animation: 'slide_from_right',
         }}
-      />
+      >
+        {/* First screen has no back button */}
+        <Stack.Screen name="about-you" options={{ headerShown: false }} />
+      </Stack>
     </OnboardingProvider>
   );
 }

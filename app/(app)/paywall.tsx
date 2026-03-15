@@ -6,6 +6,7 @@ import {
   ScrollView,
   StyleSheet,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuth } from '@clerk/clerk-expo';
@@ -39,7 +40,7 @@ export default function PaywallScreen() {
           const token = await getToken();
           const [logs, correlations, progress] = await Promise.all([
             apiRequest('/api/logs?range=90d', token).catch(() => []),
-            apiRequest('/api/correlations', token).catch(() => ({ correlations: [] })),
+            apiRequest('/api/insights/correlations', token).catch(() => ({ correlations: [] })),
             apiRequest('/api/program/progress', token).catch(() => null),
           ]);
           const days = getCheckInDays(Array.isArray(logs) ? logs : []);
@@ -144,7 +145,11 @@ export default function PaywallScreen() {
         <AnimatedPressable
           onPress={() => {
             hapticMedium();
-            // TODO: integrate with RevenueCat / Apple IAP
+            Alert.alert(
+              'Coming soon',
+              'Subscriptions are launching very soon. We\'ll notify you when they\'re ready. In the meantime, enjoy your free access!',
+              [{ text: 'Got it', style: 'default' }]
+            );
           }}
           scaleDown={0.97}
           style={s.ctaButton}

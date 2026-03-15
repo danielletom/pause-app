@@ -85,6 +85,12 @@ interface CorrelationsResponse {
     hurts: PipelineHelpsHurtsEntry[];
   };
   contradictions?: ContradictionEntry[];
+  weeklyStory?: string;
+  symptomGuidance?: Record<string, {
+    explanation: string;
+    recommendations: string[];
+    relatedFactors: string[];
+  }>;
 }
 
 interface BenchmarkSymptom {
@@ -266,6 +272,7 @@ export default function InsightsScreen() {
   // Pipeline enrichments from naturopath agent
   const [pipelineHelpsHurts, setPipelineHelpsHurts] = useState<CorrelationsResponse['helpsHurts'] | null>(null);
   const [contradictions, setContradictions] = useState<ContradictionEntry[]>([]);
+  const [pipelineWeeklyStory, setPipelineWeeklyStory] = useState<string | null>(null);
 
   // API-backed state for benchmarks
   const [benchmarkData, setBenchmarkData] = useState<BenchmarksResponse | null>(null);
@@ -309,10 +316,12 @@ export default function InsightsScreen() {
         // Pipeline enrichments (optional)
         setPipelineHelpsHurts(correlationsData.helpsHurts ?? null);
         setContradictions(correlationsData.contradictions ?? []);
+        setPipelineWeeklyStory(correlationsData.weeklyStory ?? null);
       } else {
         setCorrelations([]);
         setPipelineHelpsHurts(null);
         setContradictions([]);
+        setPipelineWeeklyStory(null);
       }
 
       // Set benchmark data from API
@@ -547,7 +556,11 @@ export default function InsightsScreen() {
     : totalDays > 0
       ? patternsLearning
         ? `${totalDays} days logged. Still learning your patterns.`
-        : `${totalDays} days of data. Insights updated daily.`
+        : dataQuality === 'strong'
+          ? `${totalDays} days of data. Strong insights.`
+          : dataQuality === 'moderate'
+            ? `${totalDays} days of data. Patterns emerging.`
+            : `${totalDays} days of data. Insights updated daily.`
       : 'Log a few days and your patterns will start appearing here.';
 
   return (
@@ -941,11 +954,11 @@ export default function InsightsScreen() {
           /* ═══════════════ MY PATTERNS TAB ═══════════════ */
           <>
             {/* ─── Your story ───────────────────────── */}
-            {weeklyStory && weeklyStory.narrative ? (
+            {(pipelineWeeklyStory || (weeklyStory && weeklyStory.narrative)) ? (
               <View style={styles.storyCard}>
                 <Text style={styles.storyLabel}>YOUR STORY THIS WEEK</Text>
-                <Text style={styles.storyNarrative}>{weeklyStory.narrative}</Text>
-                {weeklyStory.bestDay && weeklyStory.worstDay && (
+                <Text style={styles.storyNarrative}>{pipelineWeeklyStory || weeklyStory?.narrative}</Text>
+                {weeklyStory?.bestDay && weeklyStory?.worstDay && (
                   <View style={styles.storyDays}>
                     <View style={styles.storyDayCard}>
                       <Text style={styles.storyDayEmoji}>😊</Text>

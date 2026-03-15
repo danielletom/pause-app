@@ -36,7 +36,7 @@ export default function JournalScreen() {
   const [morningDone, setMorningDone] = useState(false);
   const [eveningDone, setEveningDone] = useState(false);
   const [weeklyInsight, setWeeklyInsight] = useState<string | null>(null);
-  const [eveningAvailable, setEveningAvailable] = useState(new Date().getHours() >= 19);
+  const [eveningAvailable, setEveningAvailable] = useState(new Date().getHours() >= 14);
 
   useFocusEffect(
     useCallback(() => {
@@ -252,7 +252,7 @@ export default function JournalScreen() {
                   ? 'Done ✓'
                   : eveningAvailable
                     ? 'Mood, energy, and a highlight from today'
-                    : 'Opens at 7 PM'}
+                    : 'Available from 2 PM'}
               </Text>
             </View>
             {eveningDone ? (

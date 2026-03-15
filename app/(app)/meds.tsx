@@ -40,7 +40,7 @@ interface MedLog {
   taken: boolean;
 }
 
-type TabKey = 'supplements' | 'current' | 'hrt';
+type TabKey = 'supplements' | 'current' | 'hrt' | 'labs';
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: 'current', label: 'Current' },

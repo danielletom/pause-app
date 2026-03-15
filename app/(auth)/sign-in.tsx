@@ -174,7 +174,29 @@ export default function SignInScreen() {
               />
             </View>
 
-            <TouchableOpacity style={styles.forgotButton}>
+            <TouchableOpacity
+              style={styles.forgotButton}
+              onPress={async () => {
+                if (!email.trim()) {
+                  setError('Enter your email first, then tap "Forgot password?"');
+                  return;
+                }
+                try {
+                  setLoading(true);
+                  setError('');
+                  await signIn!.create({
+                    strategy: 'reset_password_email_code',
+                    identifier: email.trim(),
+                  });
+                  router.push({ pathname: '/(auth)/reset-password' as any, params: { email: email.trim() } });
+                } catch (err: any) {
+                  const msg = err?.errors?.[0]?.longMessage || err?.message || 'Could not send reset email. Please try again.';
+                  setError(msg);
+                } finally {
+                  setLoading(false);
+                }
+              }}
+            >
               <Text style={styles.forgotLink}>Forgot password?</Text>
             </TouchableOpacity>
           </View>

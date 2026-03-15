@@ -47,6 +47,12 @@ interface LogEntry {
   loggedAt: string | null;
 }
 
+interface SymptomGuidance {
+  explanation: string;
+  recommendations: string[];
+  relatedFactors: string[];
+}
+
 export default function SymptomDetailScreen() {
   const router = useRouter();
   const { getToken } = useAuth();
@@ -54,6 +60,7 @@ export default function SymptomDetailScreen() {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const hasLoadedOnce = useRef(false);
+  const [personalGuidance, setPersonalGuidance] = useState<SymptomGuidance | null>(null);
 
   const symptomKey = (symptom || '').toLowerCase().replace(/\s+/g, '_');
   const symptomLabel = (symptom || '').replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').replace(/^./, (s) => s.toUpperCase());
@@ -68,8 +75,16 @@ export default function SymptomDetailScreen() {
         try {
           if (!hasLoadedOnce.current) setLoading(true);
           const token = await getToken();
-          const data = await apiRequest('/api/logs?range=28d', token).catch(() => []);
+          const [data, correlationsData] = await Promise.all([
+            apiRequest('/api/logs?range=28d', token).catch(() => []),
+            apiRequest('/api/insights/correlations', token).catch(() => null),
+          ]);
           setLogs(Array.isArray(data) ? data : []);
+          // Extract personalized symptom guidance from pipeline
+          if (correlationsData?.symptomGuidance && symptomKey) {
+            const guidance = correlationsData.symptomGuidance[symptomKey] || null;
+            setPersonalGuidance(guidance);
+          }
           hasLoadedOnce.current = true;
         } catch {
           hasLoadedOnce.current = true;
@@ -148,7 +163,8 @@ export default function SymptomDetailScreen() {
 
   // Benchmark data
   const benchmark = BENCHMARKS[symptomKey];
-  const recs = RECOMMENDATIONS[symptomKey] || [];
+  const recs = personalGuidance?.recommendations || RECOMMENDATIONS[symptomKey] || [];
+  const explanation = personalGuidance?.explanation;
 
   // % change vs previous 28 days (mock: we only have 28 days total)
   const halfIdx = Math.floor(logs.length / 2);
@@ -260,10 +276,19 @@ export default function SymptomDetailScreen() {
               </View>
             )}
 
+            {/* Personalised explanation from AI pipeline */}
+            {explanation && (
+              <View style={{ backgroundColor: '#f5f3ff', borderRadius: 12, padding: 12, marginBottom: 12 }}>
+                <Text style={{ fontSize: 14, color: '#44403c', lineHeight: 20 }}>
+                  {explanation}
+                </Text>
+              </View>
+            )}
+
             {/* Recommendations */}
             {recs.length > 0 && (
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Based on your data — try this</Text>
+                <Text style={styles.sectionTitle}>{personalGuidance ? 'Personalised recommendations' : 'Based on your data — try this'}</Text>
                 <View style={{ gap: 8 }}>
                   {recs.map((rec, i) => (
                     <View key={i} style={styles.recCard}>
