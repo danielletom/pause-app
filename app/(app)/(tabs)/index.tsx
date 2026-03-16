@@ -239,7 +239,6 @@ export default function HomeScreen() {
   const [articles, setArticles] = useState<ArticleSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [streak, setStreak] = useState(0);
-  const [lastLoggedHoursAgo, setLastLoggedHoursAgo] = useState<number | null>(null);
   const [weekLogStatus, setWeekLogStatus] = useState<Record<string, { am: boolean; pm: boolean }>>({});
   const [recommendation, setRecommendation] = useState<string | null>(null);
   const [isAiGenerated, setIsAiGenerated] = useState(false);
@@ -250,6 +249,7 @@ export default function HomeScreen() {
   const [tomorrowForecast, setTomorrowForecast] = useState<string | null>(null);
   const [narrative, setNarrative] = useState<string | null>(null);
   const [topCorrelations, setTopCorrelations] = useState<{ factor: string; symptom: string; direction: string; effectSizePct: number; humanLabel: string }[]>([]);
+  const [suggestedAudio, setSuggestedAudio] = useState<{ id: number; title: string; contentType: string; durationMinutes: number | null; category: string | null } | null>(null);
   const [weekTrends, setWeekTrends] = useState<Record<string, { thisWeek: number; lastWeek: number }>>({});
   const [periodEnabled, setPeriodEnabled] = useState(false);
   const [periodCycle, setPeriodCycle] = useState<any>(null);
@@ -289,7 +289,7 @@ export default function HomeScreen() {
         apiRequest(`/api/logs?date=${selectedDate}`, token).catch(() => []),
         apiRequest('/api/meds', token).catch(() => []),
         apiRequest(`/api/meds/logs?date=${todayDate}`, token).catch(() => []),
-        apiRequest('/api/logs?range=28d', token).catch(() => []),
+        apiRequest('/api/logs?range=7d', token).catch(() => []),
         apiRequest('/api/articles', token).catch(() => []),
         apiRequest(`/api/insights/home?date=${selectedDate}`, token).catch(() => null),
         apiRequest('/api/period/settings', token).catch(() => null),
@@ -301,36 +301,20 @@ export default function HomeScreen() {
       if (Array.isArray(medLogsData)) setTodayMedLogs(medLogsData);
       if (Array.isArray(articlesData)) setArticles(articlesData.slice(0, 3));
 
-      // Calculate streak — deduplicate by date first
-      if (Array.isArray(recentLogs) && recentLogs.length > 0) {
-        // Get unique dates that have logs
-        const uniqueDates = [...new Set(recentLogs.map((l: any) => l.date))]
-          .sort((a, b) => b.localeCompare(a)); // newest first
-
-        let count = 0;
-        const checkDate = new Date();
-        // If today has no log yet, start checking from yesterday
-        if (uniqueDates[0] !== todayDate) {
-          checkDate.setDate(checkDate.getDate() - 1);
-        }
-        for (const logDate of uniqueDates) {
-          const expected = checkDate.toISOString().split('T')[0];
-          if (logDate === expected) {
-            count++;
-            checkDate.setDate(checkDate.getDate() - 1);
-          } else if (logDate < expected) {
-            break; // gap found
-          }
-          // Skip duplicates (logDate > expected shouldn't happen with sorted unique dates)
-        }
-        setStreak(count);
-        // Hours since last log
-        if (uniqueDates.length > 0) {
-          const lastDate = new Date(uniqueDates[0] + 'T12:00:00');
-          const hrs = Math.round((Date.now() - lastDate.getTime()) / 3600000);
-          setLastLoggedHoursAgo(hrs);
-        }
+      // Set recommendation + AI data from home API (uses server-computed streak instead of client-side)
+      if (homeData) {
+        if (homeData.recommendation) setRecommendation(homeData.recommendation);
+        setIsAiGenerated(!!homeData.isAiGenerated);
+        if (homeData.readiness != null) setServerReadiness(homeData.readiness);
+        if (homeData.readinessComponents) setReadinessComponents(homeData.readinessComponents);
+        if (homeData.insightNudge) setInsightNudge(homeData.insightNudge);
+        if (homeData.tomorrowForecast) setTomorrowForecast(homeData.tomorrowForecast);
+        if (homeData.narrative) setNarrative(homeData.narrative);
+        if (homeData.topCorrelations) setTopCorrelations(homeData.topCorrelations);
+        if (homeData.streak != null) setStreak(homeData.streak);
+        if (homeData.suggestedAudio) setSuggestedAudio(homeData.suggestedAudio);
       }
+
       // Sleep comparison for Day 2 card
       if (Array.isArray(recentLogs) && recentLogs.length >= 2) {
         const mornings = recentLogs
@@ -341,18 +325,6 @@ export default function HomeScreen() {
         }
       }
 
-      // Set recommendation + AI data from home API
-      if (homeData) {
-        if (homeData.recommendation) setRecommendation(homeData.recommendation);
-        setIsAiGenerated(!!homeData.isAiGenerated);
-        if (homeData.readiness != null) setServerReadiness(homeData.readiness);
-        if (homeData.readinessComponents) setReadinessComponents(homeData.readinessComponents);
-        if (homeData.insightNudge) setInsightNudge(homeData.insightNudge);
-        if (homeData.tomorrowForecast) setTomorrowForecast(homeData.tomorrowForecast);
-        if (homeData.narrative) setNarrative(homeData.narrative);
-        if (homeData.topCorrelations) setTopCorrelations(homeData.topCorrelations);
-      }
-
       // Fetch program progress for "Your program" card
       try {
         const prog = await apiRequest('/api/program/progress', token);
@@ -361,7 +333,7 @@ export default function HomeScreen() {
         if (prog?.totalEpisodes) setProgramTotal(prog.totalEpisodes);
       } catch { /* non-critical */ }
 
-      // Compute weekly symptom trends from 28-day logs
+      // Compute weekly symptom trends from recent logs
       if (Array.isArray(recentLogs) && recentLogs.length > 0) {
         const now = new Date();
         const thisWeekStart = new Date(now);
@@ -1365,6 +1337,51 @@ export default function HomeScreen() {
                   {tomorrowForecast}
                 </Text>
               </View>
+            )}
+
+            {/* Suggested audio — personalized based on top symptom + time of day */}
+            {suggestedAudio && (
+              <AnimatedPressable
+                onPress={() => { hapticLight(); router.push('/(app)/program' as any); }}
+                scaleDown={0.97}
+                style={{
+                  backgroundColor: '#faf5ff',
+                  borderRadius: 14,
+                  padding: 14,
+                  marginTop: 4,
+                  marginBottom: 8,
+                  borderWidth: 1,
+                  borderColor: '#e9d5ff',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 12,
+                }}
+              >
+                <View style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
+                  backgroundColor: '#e9d5ff',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                  <Text style={{ fontSize: 18 }}>
+                    {suggestedAudio.contentType === 'meditation' ? '🧘' : '🎧'}
+                  </Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 11, fontWeight: '600', color: '#7c3aed', letterSpacing: 0.5, marginBottom: 2 }}>
+                    SUGGESTED FOR YOU
+                  </Text>
+                  <Text style={{ fontSize: 14, fontWeight: '600', color: '#1c1917' }} numberOfLines={1}>
+                    {suggestedAudio.title}
+                  </Text>
+                  <Text style={{ fontSize: 12, color: '#78716c', marginTop: 1 }}>
+                    {suggestedAudio.contentType === 'meditation' ? 'Meditation' : 'Audio'}{suggestedAudio.durationMinutes ? ` · ${suggestedAudio.durationMinutes} min` : ''}{suggestedAudio.category ? ` · ${suggestedAudio.category}` : ''}
+                  </Text>
+                </View>
+                <Text style={{ fontSize: 16, color: '#d6d3d1' }}>›</Text>
+              </AnimatedPressable>
             )}
 
             {/* Morning / Evening summary cards */}

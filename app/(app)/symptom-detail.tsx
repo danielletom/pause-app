@@ -282,6 +282,18 @@ export default function SymptomDetailScreen() {
                 <Text style={{ fontSize: 14, color: '#44403c', lineHeight: 20 }}>
                   {explanation}
                 </Text>
+                {personalGuidance?.relatedFactors && personalGuidance.relatedFactors.length > 0 && (
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
+                    <Text style={{ fontSize: 12, color: '#78716c', fontWeight: '600' }}>Related:</Text>
+                    {personalGuidance.relatedFactors.map((factor, i) => (
+                      <View key={i} style={{ backgroundColor: '#ede9fe', borderRadius: 99, paddingHorizontal: 8, paddingVertical: 3 }}>
+                        <Text style={{ fontSize: 11, color: '#6d28d9', fontWeight: '500' }}>
+                          {factor.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
               </View>
             )}
 

@@ -78,7 +78,6 @@ interface CorrelationsResponse {
   correlations: CorrelationItem[];
   lastComputed: string | null;
   dataQuality: 'building' | 'moderate' | 'strong';
-  totalFound: number;
   // Pipeline enrichments (optional)
   helpsHurts?: {
     helps: PipelineHelpsHurtsEntry[];
@@ -86,11 +85,6 @@ interface CorrelationsResponse {
   };
   contradictions?: ContradictionEntry[];
   weeklyStory?: string;
-  symptomGuidance?: Record<string, {
-    explanation: string;
-    recommendations: string[];
-    relatedFactors: string[];
-  }>;
 }
 
 interface BenchmarkSymptom {
@@ -269,6 +263,7 @@ export default function InsightsScreen() {
   // API-backed state for correlations
   const [correlations, setCorrelations] = useState<CorrelationItem[]>([]);
   const [dataQuality, setDataQuality] = useState<string>('building');
+  const [lastComputed, setLastComputed] = useState<string | null>(null);
   // Pipeline enrichments from naturopath agent
   const [pipelineHelpsHurts, setPipelineHelpsHurts] = useState<CorrelationsResponse['helpsHurts'] | null>(null);
   const [contradictions, setContradictions] = useState<ContradictionEntry[]>([]);
@@ -313,6 +308,7 @@ export default function InsightsScreen() {
       if (correlationsData?.correlations) {
         setCorrelations(correlationsData.correlations);
         setDataQuality(correlationsData.dataQuality || 'building');
+        setLastComputed(correlationsData.lastComputed ?? null);
         // Pipeline enrichments (optional)
         setPipelineHelpsHurts(correlationsData.helpsHurts ?? null);
         setContradictions(correlationsData.contradictions ?? []);
@@ -570,7 +566,36 @@ export default function InsightsScreen() {
         <View style={styles.headerRow}>
           <View style={{ flex: 1 }}>
             <Text style={styles.headerTitle}>Why you feel this way</Text>
-            <Text style={styles.headerSub}>{headerSub}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2 }}>
+              <Text style={styles.headerSub}>{headerSub}</Text>
+              {!patternsLearning && activeTab === 'patterns' && (
+                <View style={{
+                  backgroundColor: dataQuality === 'strong' ? '#dcfce7' : dataQuality === 'moderate' ? '#fef9c3' : '#f1f5f9',
+                  borderRadius: 99,
+                  paddingHorizontal: 8,
+                  paddingVertical: 3,
+                }}>
+                  <Text style={{
+                    fontSize: 10,
+                    fontWeight: '600',
+                    color: dataQuality === 'strong' ? '#166534' : dataQuality === 'moderate' ? '#854d0e' : '#64748b',
+                  }}>
+                    {dataQuality === 'strong' ? '● Strong' : dataQuality === 'moderate' ? '● Moderate' : '● Building'}
+                  </Text>
+                </View>
+              )}
+            </View>
+            {lastComputed && !patternsLearning && activeTab === 'patterns' && (
+              <Text style={{ fontSize: 11, color: '#a8a29e', marginTop: 2 }}>
+                Updated {(() => {
+                  const diff = Date.now() - new Date(lastComputed).getTime();
+                  const hrs = Math.floor(diff / 3600000);
+                  if (hrs < 1) return 'just now';
+                  if (hrs < 24) return `${hrs}h ago`;
+                  return `${Math.floor(hrs / 24)}d ago`;
+                })()}
+              </Text>
+            )}
           </View>
         </View>
 
