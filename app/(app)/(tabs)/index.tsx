@@ -1386,7 +1386,7 @@ export default function HomeScreen() {
             {/* Suggested audio — personalized based on top symptom + time of day */}
             {suggestedAudio && (
               <AnimatedPressable
-                onPress={() => { hapticLight(); router.push('/(app)/program' as any); }}
+                onPress={() => { hapticLight(); router.push({ pathname: '/(app)/player', params: { id: String(suggestedAudio.id) } }); }}
                 scaleDown={0.97}
                 style={{
                   backgroundColor: '#faf5ff',
