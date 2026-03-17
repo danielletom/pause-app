@@ -127,7 +127,7 @@ export default function ErrorScreen({
     if (onGoHome) {
       onGoHome();
     } else {
-      router.replace('/(app)/(tabs)/home' as any);
+      router.replace('/(app)/(tabs)');
     }
   };
 
