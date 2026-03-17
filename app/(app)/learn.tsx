@@ -139,7 +139,7 @@ export default function LearnScreen() {
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>Your 8-Week Program</Text>
+          <Text style={styles.title}>Your 14-Day Program</Text>
           <Text style={styles.subtitle}>The Pause Pod — your guide through menopause</Text>
         </View>
 
