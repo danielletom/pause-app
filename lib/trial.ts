@@ -15,8 +15,9 @@ export function getTrialDay(createdAt: string | null | undefined): number {
   return Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
 }
 
-/** Check if the 20-day trial has expired */
-export function isTrialExpired(createdAt: string | null | undefined): boolean {
+/** Check if the 20-day trial has expired. Paid users are never expired. */
+export function isTrialExpired(createdAt: string | null | undefined, isPaid?: boolean): boolean {
+  if (isPaid) return false;
   return getTrialDay(createdAt) >= 20;
 }
 

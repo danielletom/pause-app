@@ -14,6 +14,7 @@ import { hapticMedium, hapticLight } from '@/lib/haptics';
 import { apiRequest } from '@/lib/api';
 import { getTrialDay, isTrialExpired, getDaysUntilInsights } from '@/lib/trial';
 import { useProfile } from '@/lib/useProfile';
+import { useSubscription } from '@/lib/useSubscription';
 import { useDelight, DELIGHT_KEYS } from '@/lib/delight-context';
 
 const WEEK_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -25,9 +26,10 @@ export default function JournalScreen() {
   getTokenRef.current = getToken;
   const hasLoadedOnce = useRef(false);
   const { profile } = useProfile();
+  const { isPaid } = useSubscription();
   const { hasSeen, markSeen } = useDelight();
   const trialDay = getTrialDay(profile?.createdAt);
-  const trialExpired = isTrialExpired(profile?.createdAt);
+  const trialExpired = isTrialExpired(profile?.createdAt, isPaid);
   const [loading, setLoading] = useState(true);
   const [streak, setStreak] = useState(0);
   const [weekData, setWeekData] = useState<{ am: boolean; pm: boolean }[]>(
@@ -169,31 +171,7 @@ export default function JournalScreen() {
           </View>
         </View>
 
-        {/* Trial expired gate */}
-        {trialExpired && (
-          <View style={styles.lockedJournal}>
-            <Text style={{ fontSize: 24, marginBottom: 8 }}>{'\uD83D\uDD12'}</Text>
-            <Text style={styles.lockedJournalTitle}>Journal locked</Text>
-            <Text style={styles.lockedJournalSub}>Subscribe to keep tracking your symptoms, sleep, and mood daily.</Text>
-            <AnimatedPressable
-              onPress={() => router.push('/(app)/paywall' as any)}
-              scaleDown={0.97}
-              style={styles.lockedJournalBtn}
-            >
-              <Text style={styles.lockedJournalBtnText}>See plans</Text>
-            </AnimatedPressable>
-            <AnimatedPressable
-              onPress={() => router.push('/(app)/calendar')}
-              scaleDown={0.97}
-              style={{ marginTop: 10 }}
-            >
-              <Text style={{ fontSize: 13, color: '#78716c' }}>View past entries {'\u2192'}</Text>
-            </AnimatedPressable>
-          </View>
-        )}
-
         {/* Morning card */}
-        {!trialExpired && (<>
         <AnimatedPressable
           onPress={() => {
             hapticMedium();
@@ -264,7 +242,6 @@ export default function JournalScreen() {
             )}
           </View>
         </AnimatedPressable>
-        </>)}
 
         {/* ══════════ DELIGHT: Evening unlock notice (Day 3+) ══════════ */}
         {!hasSeen(DELIGHT_KEYS.DAY3_EVENING_UNLOCK) && trialDay >= 3 && trialDay <= 5 && (

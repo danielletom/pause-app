@@ -15,6 +15,7 @@ import { hapticLight, hapticSelection } from '@/lib/haptics';
 import { apiRequest } from '@/lib/api';
 import { getTrialDay, isTrialExpired } from '@/lib/trial';
 import { useProfile } from '@/lib/useProfile';
+import { useSubscription } from '@/lib/useSubscription';
 import { useDelight, DELIGHT_KEYS } from '@/lib/delight-context';
 
 // ─── Constants ──────────────────────────────────────────
@@ -251,9 +252,10 @@ export default function InsightsScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ symptom?: string }>();
   const { profile } = useProfile();
+  const { isPaid } = useSubscription();
   const { hasSeen, markSeen } = useDelight();
   const trialDay = getTrialDay(profile?.createdAt);
-  const trialExpired = isTrialExpired(profile?.createdAt);
+  const trialExpired = isTrialExpired(profile?.createdAt, isPaid);
   const [activeTab, setActiveTab] = useState<'patterns' | 'normal'>('patterns');
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -632,30 +634,8 @@ export default function InsightsScreen() {
           })}
         </View>
 
-        {/* Trial expired gate */}
-        {trialExpired ? (
-          <View style={styles.lockedInsights}>
-            <Text style={{ fontSize: 32, marginBottom: 12 }}>{'\uD83D\uDD12'}</Text>
-            <Text style={styles.lockedInsightsTitle}>Your insights are waiting</Text>
-            <Text style={styles.lockedInsightsSub}>
-              Subscribe to keep tracking and see your evolving patterns, correlations, and benchmarks.
-            </Text>
-            <AnimatedPressable
-              onPress={() => router.push('/(app)/paywall' as any)}
-              scaleDown={0.97}
-              style={styles.lockedInsightsBtn}
-            >
-              <Text style={styles.lockedInsightsBtnText}>See plans</Text>
-            </AnimatedPressable>
-            <AnimatedPressable
-              onPress={() => router.push('/(app)/calendar')}
-              scaleDown={0.97}
-              style={{ marginTop: 10 }}
-            >
-              <Text style={{ fontSize: 13, color: '#78716c' }}>View past data {'\u2192'}</Text>
-            </AnimatedPressable>
-          </View>
-        ) : loading ? (
+        {/* Content — always show data, overlay paywall if expired */}
+        {loading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#1c1917" />
           </View>
@@ -1379,6 +1359,34 @@ export default function InsightsScreen() {
           </>
         )}
       </ScrollView>
+
+      {/* Soft paywall overlay for expired trial — data is visible behind */}
+      {trialExpired && (
+        <View style={pw.overlay}>
+          <View style={pw.fade} />
+          <View style={pw.card}>
+            <Text style={{ fontSize: 24, marginBottom: 8 }}>{'\u2728'}</Text>
+            <Text style={pw.title}>Unlock your full insights</Text>
+            <Text style={pw.sub}>
+              Your patterns are ready. Subscribe to see all correlations, benchmarks, and personalised recommendations.
+            </Text>
+            <AnimatedPressable
+              onPress={() => router.push('/(app)/paywall' as any)}
+              scaleDown={0.97}
+              style={pw.btn}
+            >
+              <Text style={pw.btnText}>See plans</Text>
+            </AnimatedPressable>
+            <AnimatedPressable
+              onPress={() => router.push('/(app)/calendar')}
+              scaleDown={0.97}
+              style={{ marginTop: 8 }}
+            >
+              <Text style={{ fontSize: 13, color: '#78716c' }}>View past data {'\u2192'}</Text>
+            </AnimatedPressable>
+          </View>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -2296,4 +2304,54 @@ const ls = StyleSheet.create({
     marginBottom: 20,
   },
   bigCtaText: { fontSize: 14, fontWeight: '600', color: '#ffffff' },
+});
+
+const pw = StyleSheet.create({
+  overlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    pointerEvents: 'box-none',
+  },
+  fade: {
+    height: 120,
+    backgroundColor: 'transparent',
+  },
+  card: {
+    backgroundColor: '#fafaf9',
+    paddingTop: 24,
+    paddingBottom: 100,
+    paddingHorizontal: 32,
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: '#f5f5f4',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1c1917',
+    textAlign: 'center',
+    marginBottom: 6,
+  },
+  sub: {
+    fontSize: 14,
+    color: '#78716c',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 16,
+    maxWidth: 280,
+  },
+  btn: {
+    backgroundColor: '#1c1917',
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 48,
+    alignItems: 'center',
+  },
+  btnText: { fontSize: 15, fontWeight: '600', color: '#ffffff' },
 });

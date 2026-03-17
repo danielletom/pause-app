@@ -18,6 +18,7 @@ import { useProfile } from '@/lib/useProfile';
 import { useHealthData } from '@/lib/useHealthData';
 import { useSleepTracking } from '@/lib/useSleepTracking';
 import { getTrialDay, isTrialExpired, getTrialDaysLeft, getCheckInDays, getDaysUntilInsights, getStreakMessage } from '@/lib/trial';
+import { useSubscription } from '@/lib/useSubscription';
 import { useDelight, DELIGHT_KEYS } from '@/lib/delight-context';
 
 /* ─── Date helpers ────────────────────────────────────────── */
@@ -230,6 +231,7 @@ export default function HomeScreen() {
   const getTokenRef = useRef(getToken);
   getTokenRef.current = getToken;
   const { profile } = useProfile();
+  const { isPaid } = useSubscription();
   const healthData = useHealthData();
   const { sleep: autoSleep } = useSleepTracking();
   const router = useRouter();
@@ -262,7 +264,7 @@ export default function HomeScreen() {
   // Delight system
   const { hasSeen, markSeen } = useDelight();
   const trialDay = getTrialDay(profile?.createdAt);
-  const trialExpired = isTrialExpired(profile?.createdAt);
+  const trialExpired = isTrialExpired(profile?.createdAt, isPaid);
 
   const todayStr = useMemo(() => toDateStr(new Date()), []);
   const [selectedDate, setSelectedDate] = useState(todayStr);
