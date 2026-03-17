@@ -277,37 +277,24 @@ export default function JournalScreen() {
           </View>
         )}
 
-        {/* This week's insight */}
+        {/* This week's insight — lightweight text, no card */}
         {weeklyInsight && (
-          <View style={styles.insightCard}>
-            <View style={styles.insightRow}>
-              <Text style={styles.insightStar}>✦</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.insightTitle}>This week's story</Text>
-                <Text style={styles.insightText}>{weeklyInsight}</Text>
-              </View>
-            </View>
+          <View style={styles.insightSection}>
+            <Text style={styles.insightLabel}>This week's story</Text>
+            <Text style={styles.insightText}>{weeklyInsight}</Text>
           </View>
         )}
 
-        {/* Week view link */}
-        <AnimatedPressable
-          onPress={() => {
-            hapticLight();
-            router.push('/(app)/calendar');
-          }}
-          scaleDown={0.97}
-          style={styles.linkCard}
-        >
-          <View style={styles.linkIcon}>
-            <Text style={styles.linkIconText}>📅</Text>
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.linkTitle}>View full week</Text>
-            <Text style={styles.linkDesc}>Daily entries and what we have spotted</Text>
-          </View>
-          <Text style={styles.linkArrow}>›</Text>
-        </AnimatedPressable>
+        {/* Secondary links — minimal, no card styling */}
+        <View style={styles.linksSection}>
+          <AnimatedPressable
+            onPress={() => { hapticLight(); router.push('/(app)/calendar'); }}
+            scaleDown={0.97}
+            style={styles.linkRow}
+          >
+            <Text style={styles.linkRowText}>View full week</Text>
+            <Text style={styles.linkRowArrow}>›</Text>
+          </AnimatedPressable>
 
         {/* ══════════ DELIGHT: Custom tracking nudge (Day 8-9) ══════════ */}
         {!hasSeen(DELIGHT_KEYS.CUSTOM_TRACKING_NUDGE) && trialDay >= 8 && trialDay <= 10 && (
@@ -338,24 +325,15 @@ export default function JournalScreen() {
           </View>
         )}
 
-        {/* Gratitude journal entry */}
-        <AnimatedPressable
-          onPress={() => {
-            hapticLight();
-            router.push('/(app)/gratitude-journal');
-          }}
-          scaleDown={0.97}
-          style={[styles.linkCard, { borderWidth: 1, borderColor: '#f5f5f4' }]}
-        >
-          <View style={[styles.linkIcon, { backgroundColor: '#f5f5f4' }]}>
-            <Text style={styles.linkIconText}>✦</Text>
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.linkTitle}>Gratitude history</Text>
-            <Text style={styles.linkDesc}>The good things you've noticed</Text>
-          </View>
-          <Text style={styles.linkArrow}>›</Text>
-        </AnimatedPressable>
+          <AnimatedPressable
+            onPress={() => { hapticLight(); router.push('/(app)/gratitude-journal'); }}
+            scaleDown={0.97}
+            style={styles.linkRow}
+          >
+            <Text style={styles.linkRowText}>Gratitude history</Text>
+            <Text style={styles.linkRowArrow}>›</Text>
+          </AnimatedPressable>
+        </View>
 
       </ScrollView>
     </SafeAreaView>
@@ -486,49 +464,31 @@ const styles = StyleSheet.create({
     borderColor: '#d6d3d1',
   },
 
-  /* Insight card */
-  insightCard: {
+  /* Insight — lightweight text section */
+  insightSection: {
     marginHorizontal: 24,
-    marginBottom: 12,
-    backgroundColor: '#fffbeb',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#fef3c7',
+    marginBottom: 16,
+    paddingTop: 4,
   },
-  insightRow: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
-  insightStar: { fontSize: 18, color: '#b45309' },
-  insightTitle: { fontSize: 16, fontWeight: '600', color: '#1c1917', marginBottom: 4 },
-  insightText: { fontSize: 16, color: '#78716c', lineHeight: 22 },
+  insightLabel: { fontSize: 12, fontWeight: '600', color: '#a8a29e', letterSpacing: 0.3, marginBottom: 6 },
+  insightText: { fontSize: 14, color: '#78716c', lineHeight: 20 },
 
-  /* Link cards */
-  linkCard: {
+  /* Secondary links — minimal rows */
+  linksSection: {
     marginHorizontal: 24,
-    marginBottom: 10,
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: 16,
+    marginTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#f5f5f4',
+    paddingTop: 8,
+  },
+  linkRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 4,
-    elevation: 1,
+    justifyContent: 'space-between',
+    paddingVertical: 14,
   },
-  linkIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: '#f5f5f4',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  linkIconText: { fontSize: 14, color: '#78716c' },
-  linkTitle: { fontSize: 16, fontWeight: '600', color: '#1c1917' },
-  linkDesc: { fontSize: 14, color: '#78716c', marginTop: 1 },
-  linkArrow: { fontSize: 18, color: '#78716c' },
+  linkRowText: { fontSize: 15, fontWeight: '500', color: '#78716c' },
+  linkRowArrow: { fontSize: 18, color: '#d6d3d1' },
 
   // Evening unlock card (purple)
   eveningUnlockCard: {
