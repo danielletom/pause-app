@@ -120,10 +120,11 @@ export default function MedsScreen() {
         setLoading(true);
       }
       const token = await getToken();
-      const [medsData, medLogsData, weekLogsData] = await Promise.all([
+      const [medsData, medLogsData, weekLogsData, waitlistData] = await Promise.all([
         apiRequest('/api/meds', token).catch(() => []),
         apiRequest(`/api/meds/logs?date=${today}`, token).catch(() => []),
         apiRequest('/api/meds/logs?range=7', token).catch(() => []),
+        apiRequest('/api/waitlist?product=supplement', token).catch(() => ({ joined: false })),
       ]);
       setMeds(medsData);
       if (Array.isArray(medLogsData)) {
@@ -131,6 +132,9 @@ export default function MedsScreen() {
       }
       if (Array.isArray(weekLogsData)) {
         setWeekLogs(weekLogsData);
+      }
+      if (waitlistData?.joined) {
+        setWaitlisted(true);
       }
       hasLoadedOnce.current = true;
     } catch (err: any) {
@@ -292,7 +296,17 @@ export default function MedsScreen() {
                   </Text>
                   {!waitlisted ? (
                     <AnimatedPressable
-                      onPress={() => setWaitlisted(true)}
+                      onPress={async () => {
+                        hapticSuccess();
+                        setWaitlisted(true);
+                        try {
+                          const token = await getToken();
+                          await apiRequest('/api/waitlist', token, {
+                            method: 'POST',
+                            body: JSON.stringify({ product: 'supplement' }),
+                          });
+                        } catch { /* non-critical */ }
+                      }}
                       scaleDown={0.97}
                       style={styles.waitlistButton}
                     >

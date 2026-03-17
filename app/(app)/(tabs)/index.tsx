@@ -6,6 +6,8 @@ import {
   ScrollView,
   StyleSheet,
   ActivityIndicator,
+  PanResponder,
+  Animated as RNAnimated,
 } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useUser, useAuth } from '@clerk/clerk-expo';
@@ -27,12 +29,12 @@ function toDateStr(d: Date): string {
   return d.toISOString().split('T')[0];
 }
 
-function buildWeekStrip(): { dateStr: string; day: string; num: number; isToday: boolean }[] {
+function buildWeekStrip(weekOffset = 0): { dateStr: string; day: string; num: number; isToday: boolean }[] {
   const today = new Date();
   const dayOfWeek = today.getDay(); // 0=Sun
   const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
   const monday = new Date(today);
-  monday.setDate(today.getDate() - mondayOffset);
+  monday.setDate(today.getDate() - mondayOffset + weekOffset * 7);
   const days: { dateStr: string; day: string; num: number; isToday: boolean }[] = [];
   for (let i = 0; i < 7; i++) {
     const d = new Date(monday);
@@ -268,8 +270,46 @@ export default function HomeScreen() {
 
   const todayStr = useMemo(() => toDateStr(new Date()), []);
   const [selectedDate, setSelectedDate] = useState(todayStr);
-  const dateStrip = useMemo(() => buildWeekStrip(), []);
+  const [weekOffset, setWeekOffset] = useState(0);
+  const dateStrip = useMemo(() => buildWeekStrip(weekOffset), [weekOffset]);
   const isToday = selectedDate === todayStr;
+
+  // Swipe to change week
+  const stripTranslateX = useRef(new RNAnimated.Value(0)).current;
+  const weekSwipePan = useMemo(() => PanResponder.create({
+    onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 15 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
+    onPanResponderMove: (_, g) => { stripTranslateX.setValue(g.dx); },
+    onPanResponderRelease: (_, g) => {
+      const threshold = 50;
+      if (g.dx < -threshold) {
+        // Swiped left → next week
+        RNAnimated.timing(stripTranslateX, { toValue: -400, duration: 150, useNativeDriver: true }).start(() => {
+          setWeekOffset(prev => {
+            const next = prev + 1;
+            const newWeek = buildWeekStrip(next);
+            setSelectedDate(newWeek[0].dateStr);
+            return next;
+          });
+          stripTranslateX.setValue(0);
+          hapticSelection();
+        });
+      } else if (g.dx > threshold) {
+        // Swiped right → previous week
+        RNAnimated.timing(stripTranslateX, { toValue: 400, duration: 150, useNativeDriver: true }).start(() => {
+          setWeekOffset(prev => {
+            const next = prev - 1;
+            const newWeek = buildWeekStrip(next);
+            setSelectedDate(newWeek[0].dateStr);
+            return next;
+          });
+          stripTranslateX.setValue(0);
+          hapticSelection();
+        });
+      } else {
+        RNAnimated.spring(stripTranslateX, { toValue: 0, useNativeDriver: true }).start();
+      }
+    },
+  }), []);
 
   const dateString = useMemo(() => formatDateHeader(selectedDate), [selectedDate]);
   const firstName = profile?.name?.split(' ')[0] || user?.firstName || 'there';
@@ -509,34 +549,36 @@ export default function HomeScreen() {
           </AnimatedPressable>
         </View>
 
-        {/* Streak calendar strip — 7-day week with AM/PM dots */}
-        <View style={styles.weekStrip}>
-          {dateStrip.map((item) => {
-            const selected = item.dateStr === selectedDate;
-            const status = weekLogStatus[item.dateStr];
-            return (
-              <AnimatedPressable
-                key={item.dateStr}
-                onPress={() => {
-                  hapticSelection();
-                  setSelectedDate(item.dateStr);
-                }}
-                scaleDown={0.9}
-                style={[styles.weekStripItem, selected && styles.weekStripItemSelected]}
-              >
-                <Text style={[styles.weekStripDay, selected && styles.weekStripDaySelected]}>
-                  {item.day}
-                </Text>
-                <Text style={[styles.weekStripNum, selected && styles.weekStripNumSelected]}>
-                  {item.num}
-                </Text>
-                <View style={styles.weekDotRow}>
-                  <View style={[styles.weekDot, status?.am ? styles.weekDotAm : styles.weekDotEmpty]} />
-                  <View style={[styles.weekDot, status?.pm ? styles.weekDotPm : styles.weekDotEmpty]} />
-                </View>
-              </AnimatedPressable>
-            );
-          })}
+        {/* Streak calendar strip — 7-day week with AM/PM dots, swipeable */}
+        <View {...weekSwipePan.panHandlers} style={styles.weekStripContainer}>
+          <RNAnimated.View style={[styles.weekStrip, { transform: [{ translateX: stripTranslateX }] }]}>
+            {dateStrip.map((item) => {
+              const selected = item.dateStr === selectedDate;
+              const status = weekLogStatus[item.dateStr];
+              return (
+                <AnimatedPressable
+                  key={item.dateStr}
+                  onPress={() => {
+                    hapticSelection();
+                    setSelectedDate(item.dateStr);
+                  }}
+                  scaleDown={0.9}
+                  style={[styles.weekStripItem, selected && styles.weekStripItemSelected]}
+                >
+                  <Text style={[styles.weekStripDay, selected && styles.weekStripDaySelected]}>
+                    {item.day}
+                  </Text>
+                  <Text style={[styles.weekStripNum, selected && styles.weekStripNumSelected]}>
+                    {item.num}
+                  </Text>
+                  <View style={styles.weekDotRow}>
+                    <View style={[styles.weekDot, status?.am ? styles.weekDotAm : styles.weekDotEmpty]} />
+                    <View style={[styles.weekDot, status?.pm ? styles.weekDotPm : styles.weekDotEmpty]} />
+                  </View>
+                </AnimatedPressable>
+              );
+            })}
+          </RNAnimated.View>
         </View>
         <View style={styles.weekLegend}>
           <View style={styles.weekLegendItem}>
@@ -1084,7 +1126,7 @@ export default function HomeScreen() {
                       <AnimatedPressable
                         key={med.id}
                         onPress={async () => {
-                          hapticLight();
+                          hapticMedium();
                           try {
                             const token = await getTokenRef.current();
                             await apiRequest('/api/meds/logs', token, {
@@ -1114,7 +1156,7 @@ export default function HomeScreen() {
                           </Text>
                         </View>
                         <View style={[styles.medRowCheck, taken && styles.medRowCheckDone]}>
-                          {taken && <Text style={{ fontSize: 10, color: '#fff', fontWeight: '700' }}>✓</Text>}
+                          {taken && <Text style={{ fontSize: 14, color: '#fff', fontWeight: '700' }}>✓</Text>}
                         </View>
                       </AnimatedPressable>
                     );
@@ -1707,10 +1749,13 @@ const styles = StyleSheet.create({
   avatarText: { fontSize: 14, fontWeight: '500', color: '#ffffff' },
 
   // Week strip
+  weekStripContainer: {
+    overflow: 'hidden',
+    marginBottom: 6,
+  },
   weekStrip: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 6,
     gap: 2,
   },
   weekStripItem: {
@@ -2138,7 +2183,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    paddingVertical: 6,
+    paddingVertical: 10,
+    minHeight: 56,
   },
   medRowIcon: {
     width: 36,
@@ -2162,9 +2208,9 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
   medRowCheck: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     borderWidth: 2,
     borderColor: '#e7e5e4',
     alignItems: 'center',
